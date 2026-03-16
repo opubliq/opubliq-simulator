@@ -432,43 +432,55 @@ def clean_data(raw_path: str) -> pd.DataFrame:
     }
 
     # --- Q14A ---
-    # op_attitude_q14a — Inferred 5-point attitude scale for Q14A
+    # identity_q14a — Identity scale (Quebecois only to Canadian only)
     # Source: Q14A
-    # Assumption: Codes 8.0 and 9.0 treated as missing (not in provided codebook)
-    df_clean['op_attitude_q14a'] = df['Q14A'].map({
-        1.0: 'strongly_disagree',
-        2.0: 'disagree',
-        3.0: 'neither',
-        4.0: 'agree',
-        5.0: 'strongly_agree',
+    # Note: Split sample 50%. Codes 8=Don't know, 9=Refused
+    df_clean['identity_q14a'] = df['Q14A'].map({
+        1.0: 'quebecois_only',
+        2.0: 'quebecois_first',
+        3.0: 'both_equally',
+        4.0: 'canadian_first',
+        5.0: 'canadian_only',
         8.0: np.nan,
         9.0: np.nan,
     })
-    CODEBOOK_VARIABLES['op_attitude_q14a'] = {
+    CODEBOOK_VARIABLES['identity_q14a'] = {
         'original_variable': 'Q14A',
-        'question_label': "Province de résidence (Inferred from context)",
+        'question_label': "Identity: Quebecois vs Canadian (order: Quebecois first)",
         'type': 'categorical',
-        'value_labels': {'strongly_disagree': "Strongly Disagree", 'disagree': "Disagree", 'neither': "Neither Agree nor Disagree", 'agree': "Agree", 'strongly_agree': "Strongly Agree"},
+        'value_labels': {
+            'quebecois_only': "Uniquement Québécois(e), pas du tout Canadien(ne)",
+            'quebecois_first': "D'abord Québécois(e), puis Canadien(ne)",
+            'both_equally': "Également Québécois(e) et Canadien(ne)",
+            'canadian_first': "D'abord Canadien(ne), puis Québécois(e)",
+            'canadian_only': "Uniquement Canadien(ne), pas du tout Québécois(e)",
+        },
     }
 
     # --- Q14B ---
-    # ses_Q14B — Inferred political data point from Q14B
+    # identity_q14b — Identity scale (Canadian only to Quebecois only, reversed order)
     # Source: Q14B
-    # Assumption: Codes 1-5 are categories, codes 8, 9, and NaN are missing. Type inferred as categorical.
-    df_clean['ses_Q14B'] = df['Q14B'].map({
-        1.0: 'choice_1',
-        2.0: 'choice_2',
-        3.0: 'choice_3',
-        4.0: 'choice_4',
-        5.0: 'choice_5',
+    # Note: Split sample 50%. Codes 8=Don't know, 9=Refused
+    df_clean['identity_q14b'] = df['Q14B'].map({
+        1.0: 'canadian_only',
+        2.0: 'canadian_first',
+        3.0: 'both_equally',
+        4.0: 'quebecois_first',
+        5.0: 'quebecois_only',
         8.0: np.nan,
         9.0: np.nan,
     })
-    CODEBOOK_VARIABLES['ses_Q14B'] = {
+    CODEBOOK_VARIABLES['identity_q14b'] = {
         'original_variable': 'Q14B',
-        'question_label': "Inferred data point from Q14B (no codebook entry provided)",
+        'question_label': "Identity: Canadian vs Quebecois (order: Canadian first)",
         'type': 'categorical',
-        'value_labels': {'choice_1': "Category 1", 'choice_2': "Category 2", 'choice_3': "Category 3", 'choice_4': "Category 4", 'choice_5': "Category 5"},
+        'value_labels': {
+            'canadian_only': "Uniquement Canadien(ne), pas du tout Québécois(e)",
+            'canadian_first': "D'abord Canadien(ne), puis Québécois(e)",
+            'both_equally': "É également comme Canadien(ne) et comme Québécois(e)",
+            'quebecois_first': "D'abord Québécois(e), puis Canadien(ne)",
+            'quebecois_only': "Uniquement Québécois(e), pas du tout Canadien(ne)",
+        },
     }
 
     # --- Q15 ---
@@ -551,20 +563,28 @@ def clean_data(raw_path: str) -> pd.DataFrame:
     }
 
     # --- Q19 ---
-    # op_q19 — Likely a choice question response for Q19
+    # op_vote_intention_independentist — Intention de vote indépendantiste
     # Source: Q19
-    # Assumption: Codes 8.0 (Don't Know) and 9.0 (Refused) are mapped to np.nan as they are unlabelled here.
-    df_clean['op_q19'] = df['Q19'].map({
-        1.0: 'choice_a',
-        2.0: 'choice_b',
-        8.0: np.nan,
-        9.0: np.nan,
+    # TODO: Valider le mapping exact des intentions de vote à partir du codebook (Quebec Election Study 2014 FR.doc)
+    # Le mapping ci-dessous est une hypothèse.
+    df_clean['op_vote_intention_independentist'] = df['Q19'].map({
+        # 1.0: 'yes',
+        # 2.0: 'no',
+        # 3.0: 'dont_know',
+        # 4.0: 'refused',
+        # 98.0: np.nan, # Don't know
+        # 99.0: np.nan, # Refused
     })
-    CODEBOOK_VARIABLES['op_q19'] = {
+    CODEBOOK_VARIABLES['op_vote_intention_independentist'] = {
         'original_variable': 'Q19',
-        'question_label': "Response to question 19 (inferred)",
+        'question_label': "Si un référendum sur l'indépendance du Québec avait lieu demain, voteriez-vous OUI ou NON?", # TODO: Confirmer le libellé exact de la question dans le codebook
         'type': 'categorical',
-        'value_labels': {'choice_a': "First Option", 'choice_b': "Second Option"},
+        'value_labels': {
+            # 'yes': "OUI",
+            # 'no': "NON",
+            # 'dont_know': "Ne sait pas",
+            # 'refused': "Refusé",
+        } # TODO: Confirmer les labels de valeur exacts dans le codebook
     }
 
     # --- Q2 ---

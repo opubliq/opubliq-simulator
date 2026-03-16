@@ -730,6 +730,50 @@ def clean_data(df):
         }
     }
 
+    # --- Q5A ---
+    # behav_vote_hypothetical_2018 — Choix de vote hypothétique 2018 (si n'a pas voted)
+    # Source: Q5A
+    df_clean['behav_vote_hypothetical_2018'] = df['q5a'].map({
+        1.0: 'plq',
+        2.0: 'pq',
+        3.0: 'caq',
+        4.0: 'qs',
+        95.0: 'spoiled_ballot',
+        96.0: 'other_party',
+        99.0: np.nan
+    })
+    CODEBOOK_VARIABLES['behav_vote_hypothetical_2018'] = {
+        'original_variable': 'q5a',
+        'question_label': "Si vous aviez été voter le jour de cette election, pour quel parti auriez-vous vote?",
+        'type': 'categorical',
+        'value_labels': {
+            'plq': "Parti liberal du Quebec",
+            'pq': "Parti quebecois",
+            'caq': "Coalition avenir Quebec",
+            'qs': "Quebec solidaire",
+            'spoiled_ballot': "J'aurais annule mon vote",
+            'other_party': "Un autre parti"
+        }
+    }
+
+    # --- Q7 ---
+    # behav_first_choice — Le parti vote etait-il le premier choix?
+    # Source: Q7
+    df_clean['behav_first_choice'] = df['q7'].map({
+        1.0: 'yes',
+        2.0: 'no',
+        9.0: np.nan
+    })
+    CODEBOOK_VARIABLES['behav_first_choice'] = {
+        'original_variable': 'q7',
+        'question_label': "Est-ce que ce parti etait votre premier choix?",
+        'type': 'binary',
+        'value_labels': {
+            'yes': "Oui",
+            'no': "Non"
+        }
+    }
+
     # --- Q8 ---
     # behav_party_preference — Parti préféré (même si pas voté)
     # Source: Q8
@@ -780,6 +824,75 @@ def clean_data(df):
             'other': "Autre parti",
             'did_not_vote': "N'a pas voté",
             'dont_remember': "Ne se rappelle plus"
+        }
+    }
+
+    # --- Q50x1 ---
+    # behav_vote_at_16_control — Vote à 16 ans (control)
+    # Source: Q50x1
+    df_clean['behav_vote_at_16_control'] = df['q50x1'].map({
+        1.0: 'strongly_agree',
+        2.0: 'somewhat_agree',
+        3.0: 'somewhat_disagree',
+        4.0: 'strongly_disagree',
+        98.0: np.nan,
+        99.0: np.nan
+    })
+    CODEBOOK_VARIABLES['behav_vote_at_16_control'] = {
+        'original_variable': 'q50x1',
+        'question_label': "Êtes-vous en accord ou en désaccord avec l'idée d'abaisser l'âge de voter à 16 ans? (contrôle)",
+        'type': 'ordinal',
+        'value_labels': {
+            'strongly_agree': "Fortement d'accord",
+            'somewhat_agree': "Plutôt d'accord",
+            'somewhat_disagree': "Plutôt en désaccord",
+            'strongly_disagree': "Fortement en désaccord"
+        }
+    }
+
+    # --- Q50x2 ---
+    # behav_vote_at_16_argument_participation — Vote à 16 ans (argument participation)
+    # Source: Q50x2
+    df_clean['behav_vote_at_16_argument_participation'] = df['q50x2'].map({
+        1.0: 'strongly_agree',
+        2.0: 'somewhat_agree',
+        3.0: 'somewhat_disagree',
+        4.0: 'strongly_disagree',
+        98.0: np.nan,
+        99.0: np.nan
+    })
+    CODEBOOK_VARIABLES['behav_vote_at_16_argument_participation'] = {
+        'original_variable': 'q50x2',
+        'question_label': "Êtes-vous en accord ou en désaccord avec l'idée d'abaisser l'âge de voter à 16 ans? (argument: participation)",
+        'type': 'ordinal',
+        'value_labels': {
+            'strongly_agree': "Fortement d'accord",
+            'somewhat_agree': "Plutôt d'accord",
+            'somewhat_disagree': "Plutôt en désaccord",
+            'strongly_disagree': "Fortement en désaccord"
+        }
+    }
+
+    # --- Q50x3 ---
+    # behav_vote_at_16_argument_rights — Vote à 16 ans (argument rights)
+    # Source: Q50x3
+    df_clean['behav_vote_at_16_argument_rights'] = df['q50x3'].map({
+        1.0: 'strongly_agree',
+        2.0: 'somewhat_agree',
+        3.0: 'somewhat_disagree',
+        4.0: 'strongly_disagree',
+        98.0: np.nan,
+        99.0: np.nan
+    })
+    CODEBOOK_VARIABLES['behav_vote_at_16_argument_rights'] = {
+        'original_variable': 'q50x3',
+        'question_label': "Êtes-vous en accord ou en désaccord avec l'idée d'abaisser l'âge de voter à 16 ans? (argument: droits)",
+        'type': 'ordinal',
+        'value_labels': {
+            'strongly_agree': "Fortement d'accord",
+            'somewhat_agree': "Plutôt d'accord",
+            'somewhat_disagree': "Plutôt en désaccord",
+            'strongly_disagree': "Fortement en désaccord"
         }
     }
 
@@ -2859,6 +2972,572 @@ def clean_data(df):
             'yes_several_times': "Oui, plusieurs fois",
             'yes_once': "Oui, une fois",
             'no_never': "Non, jamais"
+        }
+    }
+
+    # --- Q68 ---
+    # op_religious_attendance — Fréquence de participation aux messes
+    # Source: Q68
+    df_clean['op_religious_attendance'] = df['q68'].map({
+        1.0: 'every_week',
+        2.0: 'twice_per_month',
+        3.0: 'once_per_month',
+        4.0: 'once_or_twice_per_year',
+        5.0: 'almost_never',
+        98.0: np.nan,
+        99.0: np.nan
+    })
+    CODEBOOK_VARIABLES['op_religious_attendance'] = {
+        'original_variable': 'q68',
+        'question_label': "Sans compter les mariages et les funérailles, combien de fois assistez-vous aux messes à votre lieu de culte?",
+        'type': 'ordinal',
+        'value_labels': {
+            'every_week': "Chaque semaine",
+            'twice_per_month': "Deux fois par mois",
+            'once_per_month': "Une fois par mois",
+            'once_or_twice_per_year': "Une ou deux fois par année",
+            'almost_never': "Presque jamais (ou jamais)"
+        }
+    }
+
+    # --- Q71_1 ---
+    # op_ethnic_origin_canadian — Origine ethnique: Canadienne, Québécoise
+    # Source: Q71_1
+    df_clean['op_ethnic_origin_canadian'] = df['q71_1'].map({
+        1.0: 'selected'
+    })
+    CODEBOOK_VARIABLES['op_ethnic_origin_canadian'] = {
+        'original_variable': 'q71_1',
+        'question_label': "De quelle origine ethnique êtes-vous? Canadienne, Québécoise",
+        'type': 'binary',
+        'value_labels': {
+            'selected': "Sélectionné"
+        }
+    }
+
+    # --- Q71_2 ---
+    # op_ethnic_origin_aboriginal — Origine ethnique: Autochtone
+    # Source: Q71_2
+    df_clean['op_ethnic_origin_aboriginal'] = df['q71_2'].map({
+        1.0: 'selected'
+    })
+    CODEBOOK_VARIABLES['op_ethnic_origin_aboriginal'] = {
+        'original_variable': 'q71_2',
+        'question_label': "De quelle origine ethnique êtes-vous? Autochtone (Amérindienne, Premières nations)",
+        'type': 'binary',
+        'value_labels': {
+            'selected': "Sélectionné"
+        }
+    }
+
+    # --- Q71_3 ---
+    # op_ethnic_origin_north_africa — Origine ethnique: Afrique du Nord
+    # Source: Q71_3
+    df_clean['op_ethnic_origin_north_africa'] = df['q71_3'].map({
+        1.0: 'selected'
+    })
+    CODEBOOK_VARIABLES['op_ethnic_origin_north_africa'] = {
+        'original_variable': 'q71_3',
+        'question_label': "De quelle origine ethnique êtes-vous? Afrique du Nord (Maroc, Algérie, Tunisie, Libye, Égypte)",
+        'type': 'binary',
+        'value_labels': {
+            'selected': "Sélectionné"
+        }
+    }
+
+    # --- Q71_4 ---
+    # op_ethnic_origin_africa — Origine ethnique: Afrique
+    # Source: Q71_4
+    df_clean['op_ethnic_origin_africa'] = df['q71_4'].map({
+        1.0: 'selected'
+    })
+    CODEBOOK_VARIABLES['op_ethnic_origin_africa'] = {
+        'original_variable': 'q71_4',
+        'question_label': "De quelle origine ethnique êtes-vous? Afrique (Gabon, Congo, Côte d'Ivoire, Éthiopie, Kenya, Cameroun, Mauritanie, ...) et Afrique du Sud",
+        'type': 'binary',
+        'value_labels': {
+            'selected': "Sélectionné"
+        }
+    }
+
+    # --- Q71_5 ---
+    # op_ethnic_origin_central_south_america — Origine ethnique: Amérique centrale et sud
+    # Source: Q71_5
+    df_clean['op_ethnic_origin_central_south_america'] = df['q71_5'].map({
+        1.0: 'selected'
+    })
+    CODEBOOK_VARIABLES['op_ethnic_origin_central_south_america'] = {
+        'original_variable': 'q71_5',
+        'question_label': "De quelle origine ethnique êtes-vous? Amérique centrale et sud (Nicaragua, Pérou, Bolivie, Vénézuela, Argentine, El Salvador, Guatemala, ...)",
+        'type': 'binary',
+        'value_labels': {
+            'selected': "Sélectionné"
+        }
+    }
+
+    # --- Q71_6 ---
+    # op_ethnic_origin_usa — Origine ethnique: Américaine (États-Unis)
+    # Source: Q71_6
+    df_clean['op_ethnic_origin_usa'] = df['q71_6'].map({
+        1.0: 'selected'
+    })
+    CODEBOOK_VARIABLES['op_ethnic_origin_usa'] = {
+        'original_variable': 'q71_6',
+        'question_label': "De quelle origine ethnique êtes-vous? Américaine (États-Unis)",
+        'type': 'binary',
+        'value_labels': {
+            'selected': "Sélectionné"
+        }
+    }
+
+    # --- Q71_7 ---
+    # op_ethnic_origin_mexican — Origine ethnique: Mexicaine
+    # Source: Q71_7
+    df_clean['op_ethnic_origin_mexican'] = df['q71_7'].map({
+        1.0: 'selected'
+    })
+    CODEBOOK_VARIABLES['op_ethnic_origin_mexican'] = {
+        'original_variable': 'q71_7',
+        'question_label': "De quelle origine ethnique êtes-vous? Mexicaine",
+        'type': 'binary',
+        'value_labels': {
+            'selected': "Sélectionné"
+        }
+    }
+
+    # --- Q71_8 ---
+    # op_ethnic_origin_caribbean — Origine ethnique: Antillaise
+    # Source: Q71_8
+    df_clean['op_ethnic_origin_caribbean'] = df['q71_8'].map({
+        1.0: 'selected'
+    })
+    CODEBOOK_VARIABLES['op_ethnic_origin_caribbean'] = {
+        'original_variable': 'q71_8',
+        'question_label': "De quelle origine ethnique êtes-vous? Antillaise (Haïti, Jamaïque, République Dominicaine, ....)",
+        'type': 'binary',
+        'value_labels': {
+            'selected': "Sélectionné"
+        }
+    }
+
+    # --- Q71_9 ---
+    # op_ethnic_origin_asian — Origine ethnique: Asiatique
+    # Source: Q71_9
+    df_clean['op_ethnic_origin_asian'] = df['q71_9'].map({
+        1.0: 'selected'
+    })
+    CODEBOOK_VARIABLES['op_ethnic_origin_asian'] = {
+        'original_variable': 'q71_9',
+        'question_label': "De quelle origine ethnique êtes-vous? Asiatique (Japon, Chine, Vietnam, Corée, Cambodge, ...)",
+        'type': 'binary',
+        'value_labels': {
+            'selected': "Sélectionné"
+        }
+    }
+
+    # --- Q71_10 ---
+    # op_ethnic_origin_european — Origine ethnique: Européenne
+    # Source: Q71_10
+    df_clean['op_ethnic_origin_european'] = df['q71_10'].map({
+        1.0: 'selected'
+    })
+    CODEBOOK_VARIABLES['op_ethnic_origin_european'] = {
+        'original_variable': 'q71_10',
+        'question_label': "De quelle origine ethnique êtes-vous? Européenne (France, Belgique, Italie, Espagne, Portugal, Allemagne, Autriche, Suède, Norvège, Danemark, Pays-Bas, Grèce, ...)",
+        'type': 'binary',
+        'value_labels': {
+            'selected': "Sélectionné"
+        }
+    }
+
+    # --- Q71_11 ---
+    # op_ethnic_origin_eastern_europe — Origine ethnique: Europe de l'Est
+    # Source: Q71_11
+    df_clean['op_ethnic_origin_eastern_europe'] = df['q71_11'].map({
+        1.0: 'selected'
+    })
+    CODEBOOK_VARIABLES['op_ethnic_origin_eastern_europe'] = {
+        'original_variable': 'q71_11',
+        'question_label': "De quelle origine ethnique êtes-vous? Europe de l'Est (Russie, Ukraine, Pologne, Roumanie, Ex-Yougoslavie, Croatie, République Tchèque, République Slovaque, Hongrie, ...)",
+        'type': 'binary',
+        'value_labels': {
+            'selected': "Sélectionné"
+        }
+    }
+
+    # --- Q71_12 ---
+    # op_ethnic_origin_middle_east — Origine ethnique: Moyen-Orient
+    # Source: Q71_12
+    df_clean['op_ethnic_origin_middle_east'] = df['q71_12'].map({
+        1.0: 'selected'
+    })
+    CODEBOOK_VARIABLES['op_ethnic_origin_middle_east'] = {
+        'original_variable': 'q71_12',
+        'question_label': "De quelle origine ethnique êtes-vous? Moyen-Orient, sauf l'Afrique du Nord (Jordanie, Arabie Saoudite, Irak, Liban,...)",
+        'type': 'binary',
+        'value_labels': {
+            'selected': "Sélectionné"
+        }
+    }
+
+    # --- Q71_13 ---
+    # op_ethnic_origin_turkey_armenia_iran — Origine ethnique: Turquie, Arménie, Iran, Kurde
+    # Source: Q71_13
+    df_clean['op_ethnic_origin_turkey_armenia_iran'] = df['q71_13'].map({
+        1.0: 'selected'
+    })
+    CODEBOOK_VARIABLES['op_ethnic_origin_turkey_armenia_iran'] = {
+        'original_variable': 'q71_13',
+        'question_label': "De quelle origine ethnique êtes-vous? Turquie, Arménie, Iran, Kurde",
+        'type': 'binary',
+        'value_labels': {
+            'selected': "Sélectionné"
+        }
+    }
+
+    # --- Q71_96 ---
+    # op_ethnic_origin_other — Origine ethnique: Autre origine
+    # Source: Q71_96
+    df_clean['op_ethnic_origin_other'] = df['q71_96'].map({
+        1.0: 'selected'
+    })
+    CODEBOOK_VARIABLES['op_ethnic_origin_other'] = {
+        'original_variable': 'q71_96',
+        'question_label': "De quelle origine ethnique êtes-vous? Autre origine",
+        'type': 'binary',
+        'value_labels': {
+            'selected': "Sélectionné"
+        }
+    }
+
+    # --- Q71_98 ---
+    # op_ethnic_origin_dont_know — Origine ethnique: Je ne sais pas
+    # Source: Q71_98
+    df_clean['op_ethnic_origin_dont_know'] = df['q71_98'].map({
+        1.0: 'selected'
+    })
+    CODEBOOK_VARIABLES['op_ethnic_origin_dont_know'] = {
+        'original_variable': 'q71_98',
+        'question_label': "De quelle origine ethnique êtes-vous? Je ne sais pas",
+        'type': 'binary',
+        'value_labels': {
+            'selected': "Sélectionné"
+        }
+    }
+
+    # --- Q71_99 ---
+    # op_ethnic_origin_refused — Origine ethnique: Je préfère ne pas répondre
+    # Source: Q71_99
+    df_clean['op_ethnic_origin_refused'] = df['q71_99'].map({
+        1.0: 'selected'
+    })
+    CODEBOOK_VARIABLES['op_ethnic_origin_refused'] = {
+        'original_variable': 'q71_99',
+        'question_label': "De quelle origine ethnique êtes-vous? Je préfère ne pas répondre",
+        'type': 'binary',
+        'value_labels': {
+            'selected': "Sélectionné"
+        }
+    }
+
+    # ========================================================================
+    # BEHAVIORAL - Party best for issues/groups (Q51A, Q52)
+    # ========================================================================
+
+    # --- Q51A_1 ---
+    # behav_issue_party_best_quebec_interests — Quel parti est meilleur pour défendre les intérêts du Québec
+    # Source: Q51A_1
+    df_clean['behav_issue_party_best_quebec_interests'] = df['q51a_1'].map({
+        1.0: 'plq',
+        2.0: 'pq',
+        3.0: 'caq',
+        4.0: 'qs',
+        96.0: 'other_party',
+        97.0: 'no_party',
+        98.0: np.nan,
+        99.0: np.nan
+    })
+    CODEBOOK_VARIABLES['behav_issue_party_best_quebec_interests'] = {
+        'original_variable': 'q51a_1',
+        'question_label': "Selon vous, quel parti est le meilleur pour défendre les intérêts du Québec?",
+        'type': 'categorical',
+        'value_labels': {
+            'plq': "Parti libéral du Québec",
+            'pq': "Parti québécois",
+            'caq': "Coalition avenir Québec",
+            'qs': "Québec solidaire",
+            'other_party': "Un autre parti",
+            'no_party': "Aucun de ces partis"
+        }
+    }
+
+    # --- Q51A_2 ---
+    # behav_issue_party_best_cultural_identity — Quel parti est meilleur pour défendre l'identité et la culture québécoise
+    # Source: Q51A_2
+    df_clean['behav_issue_party_best_cultural_identity'] = df['q51a_2'].map({
+        1.0: 'plq',
+        2.0: 'pq',
+        3.0: 'caq',
+        4.0: 'qs',
+        96.0: 'other_party',
+        97.0: 'no_party',
+        98.0: np.nan,
+        99.0: np.nan
+    })
+    CODEBOOK_VARIABLES['behav_issue_party_best_cultural_identity'] = {
+        'original_variable': 'q51a_2',
+        'question_label': "Selon vous, quel parti est le meilleur pour défendre l'identité et la culture québécoise?",
+        'type': 'categorical',
+        'value_labels': {
+            'plq': "Parti libéral du Québec",
+            'pq': "Parti québécois",
+            'caq': "Coalition avenir Québec",
+            'qs': "Québec solidaire",
+            'other_party': "Un autre parti",
+            'no_party': "Aucun de ces partis"
+        }
+    }
+
+    # --- Q51A_3 ---
+    # behav_issue_party_best_economy — Quel parti est meilleur pour gérer l'économie
+    # Source: Q51A_3
+    df_clean['behav_issue_party_best_economy'] = df['q51a_3'].map({
+        1.0: 'plq',
+        2.0: 'pq',
+        3.0: 'caq',
+        4.0: 'qs',
+        96.0: 'other_party',
+        97.0: 'no_party',
+        98.0: np.nan,
+        99.0: np.nan
+    })
+    CODEBOOK_VARIABLES['behav_issue_party_best_economy'] = {
+        'original_variable': 'q51a_3',
+        'question_label': "Selon vous, quel parti est le meilleur pour gérer l'économie?",
+        'type': 'categorical',
+        'value_labels': {
+            'plq': "Parti libéral du Québec",
+            'pq': "Parti québécois",
+            'caq': "Coalition avenir Québec",
+            'qs': "Québec solidaire",
+            'other_party': "Un autre parti",
+            'no_party': "Aucun de ces partis"
+        }
+    }
+
+    # --- Q51A_4 ---
+    # behav_issue_party_best_education — Quel parti est meilleur pour améliorer l'éducation
+    # Source: Q51A_4
+    df_clean['behav_issue_party_best_education'] = df['q51a_4'].map({
+        1.0: 'plq',
+        2.0: 'pq',
+        3.0: 'caq',
+        4.0: 'qs',
+        96.0: 'other_party',
+        97.0: 'no_party',
+        98.0: np.nan,
+        99.0: np.nan
+    })
+    CODEBOOK_VARIABLES['behav_issue_party_best_education'] = {
+        'original_variable': 'q51a_4',
+        'question_label': "Selon vous, quel parti est le meilleur pour améliorer l'éducation?",
+        'type': 'categorical',
+        'value_labels': {
+            'plq': "Parti libéral du Québec",
+            'pq': "Parti québécois",
+            'caq': "Coalition avenir Québec",
+            'qs': "Québec solidaire",
+            'other_party': "Un autre parti",
+            'no_party': "Aucun de ces partis"
+        }
+    }
+
+    # --- Q51A_5 ---
+    # behav_issue_party_best_environment — Quel parti est meilleur pour protéger l'environnement
+    # Source: Q51A_5
+    df_clean['behav_issue_party_best_environment'] = df['q51a_5'].map({
+        1.0: 'plq',
+        2.0: 'pq',
+        3.0: 'caq',
+        4.0: 'qs',
+        96.0: 'other_party',
+        97.0: 'no_party',
+        98.0: np.nan,
+        99.0: np.nan
+    })
+    CODEBOOK_VARIABLES['behav_issue_party_best_environment'] = {
+        'original_variable': 'q51a_5',
+        'question_label': "Selon vous, quel parti est le meilleur pour protéger l'environnement?",
+        'type': 'categorical',
+        'value_labels': {
+            'plq': "Parti libéral du Québec",
+            'pq': "Parti québécois",
+            'caq': "Coalition avenir Québec",
+            'qs': "Québec solidaire",
+            'other_party': "Un autre parti",
+            'no_party': "Aucun de ces partis"
+        }
+    }
+
+    # --- Q51A_6 ---
+    # behav_issue_party_best_health — Quel parti est meilleur pour gérer le système de santé
+    # Source: Q51A_6
+    df_clean['behav_issue_party_best_health'] = df['q51a_6'].map({
+        1.0: 'plq',
+        2.0: 'pq',
+        3.0: 'caq',
+        4.0: 'qs',
+        96.0: 'other_party',
+        97.0: 'no_party',
+        98.0: np.nan,
+        99.0: np.nan
+    })
+    CODEBOOK_VARIABLES['behav_issue_party_best_health'] = {
+        'original_variable': 'q51a_6',
+        'question_label': "Selon vous, quel parti est le meilleur pour gérer le système de santé?",
+        'type': 'categorical',
+        'value_labels': {
+            'plq': "Parti libéral du Québec",
+            'pq': "Parti québécois",
+            'caq': "Coalition avenir Québec",
+            'qs': "Québec solidaire",
+            'other_party': "Un autre parti",
+            'no_party': "Aucun de ces partis"
+        }
+    }
+
+    # --- Q51A_7 ---
+    # behav_issue_party_best_poverty — Quel parti est meilleur pour combattre la pauvreté
+    # Source: Q51A_7
+    df_clean['behav_issue_party_best_poverty'] = df['q51a_7'].map({
+        1.0: 'plq',
+        2.0: 'pq',
+        3.0: 'caq',
+        4.0: 'qs',
+        96.0: 'other_party',
+        97.0: 'no_party',
+        98.0: np.nan,
+        99.0: np.nan
+    })
+    CODEBOOK_VARIABLES['behav_issue_party_best_poverty'] = {
+        'original_variable': 'q51a_7',
+        'question_label': "Selon vous, quel parti est le meilleur pour combattre la pauvreté?",
+        'type': 'categorical',
+        'value_labels': {
+            'plq': "Parti libéral du Québec",
+            'pq': "Parti québécois",
+            'caq': "Coalition avenir Québec",
+            'qs': "Québec solidaire",
+            'other_party': "Un autre parti",
+            'no_party': "Aucun de ces partis"
+        }
+    }
+
+    # --- Q51A_8 ---
+    # behav_issue_party_best_immigration — Quel parti est meilleur pour gérer l'intégration des immigrants
+    # Source: Q51A_8
+    df_clean['behav_issue_party_best_immigration'] = df['q51a_8'].map({
+        1.0: 'plq',
+        2.0: 'pq',
+        3.0: 'caq',
+        4.0: 'qs',
+        96.0: 'other_party',
+        97.0: 'no_party',
+        98.0: np.nan,
+        99.0: np.nan
+    })
+    CODEBOOK_VARIABLES['behav_issue_party_best_immigration'] = {
+        'original_variable': 'q51a_8',
+        'question_label': "Selon vous, quel parti est le meilleur pour gérer l'intégration des immigrants au Québec?",
+        'type': 'categorical',
+        'value_labels': {
+            'plq': "Parti libéral du Québec",
+            'pq': "Parti québécois",
+            'caq': "Coalition avenir Québec",
+            'qs': "Québec solidaire",
+            'other_party': "Un autre parti",
+            'no_party': "Aucun de ces partis"
+        }
+    }
+
+    # --- Q52_1 ---
+    # behav_age_group_best_party_18_34 — Quel parti est meilleur pour les 18-34 ans
+    # Source: Q52_1
+    df_clean['behav_age_group_best_party_18_34'] = df['q52_1'].map({
+        1.0: 'plq',
+        2.0: 'pq',
+        3.0: 'caq',
+        4.0: 'qs',
+        96.0: 'other_party',
+        97.0: 'no_party',
+        98.0: np.nan,
+        99.0: np.nan
+    })
+    CODEBOOK_VARIABLES['behav_age_group_best_party_18_34'] = {
+        'original_variable': 'q52_1',
+        'question_label': "Selon vous, quel parti est le meilleur pour défendre les intérêts des gens âgés de 18 à 34 ans?",
+        'type': 'categorical',
+        'value_labels': {
+            'plq': "Parti libéral du Québec",
+            'pq': "Parti québécois",
+            'caq': "Coalition avenir Québec",
+            'qs': "Québec solidaire",
+            'other_party': "Un autre parti",
+            'no_party': "Aucun de ces partis"
+        }
+    }
+
+    # --- Q52_2 ---
+    # behav_age_group_best_party_35_54 — Quel parti est meilleur pour les 35-54 ans
+    # Source: Q52_2
+    df_clean['behav_age_group_best_party_35_54'] = df['q52_2'].map({
+        1.0: 'plq',
+        2.0: 'pq',
+        3.0: 'caq',
+        4.0: 'qs',
+        96.0: 'other_party',
+        97.0: 'no_party',
+        98.0: np.nan,
+        99.0: np.nan
+    })
+    CODEBOOK_VARIABLES['behav_age_group_best_party_35_54'] = {
+        'original_variable': 'q52_2',
+        'question_label': "Selon vous, quel parti est le meilleur pour defender les interets des gens ages de 35 a 54 ans?",
+        'type': 'categorical',
+        'value_labels': {
+            'plq': "Parti liberal du Quebec",
+            'pq': "Parti quebecois",
+            'caq': "Coalition avenir Quebec",
+            'qs': "Quebec solidaire",
+            'other_party': "Un autre parti",
+            'no_party': "Aucun de ces partis"
+        }
+    }
+
+    # --- Q52_3 ---
+    # behav_age_group_best_party_55_plus — Quel parti est meilleur pour les 55+ ans
+    # Source: Q52_3
+    df_clean['behav_age_group_best_party_55_plus'] = df['q52_3'].map({
+        1.0: 'plq',
+        2.0: 'pq',
+        3.0: 'caq',
+        4.0: 'qs',
+        96.0: 'other_party',
+        97.0: 'no_party',
+        98.0: np.nan,
+        99.0: np.nan
+    })
+    CODEBOOK_VARIABLES['behav_age_group_best_party_55_plus'] = {
+        'original_variable': 'q52_3',
+        'question_label': "Selon vous, quel parti est le meilleur pour defender les interets des gens ages de 55 ans et plus?",
+        'type': 'categorical',
+        'value_labels': {
+            'plq': "Parti liberal du Quebec",
+            'pq': "Parti quebecois",
+            'caq': "Coalition avenir Quebec",
+            'qs': "Quebec solidaire",
+            'other_party': "Un autre parti",
+            'no_party': "Aucun de ces partis"
         }
     }
 
