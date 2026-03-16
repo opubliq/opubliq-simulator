@@ -1246,181 +1246,76 @@ def clean_data(raw_path: str) -> pd.DataFrame:
     }
 
     # --- q40 ---
-    # op_q40 — Opinion/Attitude for question 40
+    # op_party_rating_pq — Évaluation Parti québécois (0-100 → 0-1)
     # Source: q40
-    # Assumption: Codes are categorical without explicit labels provided; mapped to generic strings based on observed values.
-    df_clean['op_q40'] = df['q40'].map({
-        0.0: '0',
-        1.0: '1',
-        2.0: '2',
-        3.0: '3',
-        4.0: '4',
-        5.0: '5',
-        6.0: '6',
-        7.0: '7',
-        8.0: '8',
-        9.0: '9',
-        10.0: '10',
-        11.0: '11',
-        12.0: '12',
-        13.0: '13',
-        15.0: '15',
-        17.0: '17',
-        19.0: '19',
-        20.0: '20',
-        22.0: '22',
-        25.0: '25',
-        27.0: '27',
-        28.0: '28',
-        30.0: '30',
-        34.0: '34',
-        35.0: '35',
-    })
-    CODEBOOK_VARIABLES['op_q40'] = {
+    df_clean['op_party_rating_pq'] = np.nan
+    mask = (df['q40'] >= 0) & (df['q40'] <= 100)
+    df_clean.loc[mask, 'op_party_rating_pq'] = df.loc[mask, 'q40'] / 100.0
+    CODEBOOK_VARIABLES['op_party_rating_pq'] = {
         'original_variable': 'q40',
-        'question_label': "Opinion/Attitude for question 40 (Unlabelled)",
-        'type': 'categorical',
-        'value_labels': {'0': "Code 0", '1': "Code 1", '2': "Code 2", '3': "Code 3", '4': "Code 4", '5': "Code 5", '6': "Code 6", '7': "Code 7", '8': "Code 8", '9': "Code 9", '10': "Code 10", '11': "Code 11", '12': "Code 12", '13': "Code 13", '15': "Code 15", '17': "Code 17", '19': "Code 19", '20': "Code 20", '22': "Code 22", '25': "Code 25", '27': "Code 27", '28': "Code 28", '30': "Code 30", '34': "Code 34", '35': "Code 35"},
+        'question_label': "Sur une échelle de zéro à cent, Parti québécois?",
+        'type': 'numeric',
+        'value_labels': {},
     }
 
     # --- q41 ---
-    # know_q41 — Q41 (Inferred: Unknown question label)
+    # op_party_rating_adq — Évaluation ADQ (0-100 → 0-1)
     # Source: q41
-    # Assumption: Codes observed in data are mapped to their string literal. All unmapped codes (including 11, 16, 18, 19, 21, 23, 27-29, 31-32, etc.) will result in np.nan.
-    # Assumption: Code 99.0 is treated as missing.
-    df_clean['know_q41'] = df['q41'].map({
-        0.0: 'zero',
-        1.0: 'one',
-        2.0: 'two',
-        3.0: 'three',
-        4.0: 'four',
-        5.0: 'five',
-        6.0: 'six',
-        7.0: 'seven',
-        8.0: 'eight',
-        9.0: 'nine',
-        10.0: 'ten',
-        12.0: 'twelve',
-        13.0: 'thirteen',
-        14.0: 'fourteen',
-        15.0: 'fifteen',
-        17.0: 'seventeen',
-        20.0: 'twenty',
-        22.0: 'twenty-two',
-        24.0: 'twenty-four',
-        25.0: 'twenty-five',
-        26.0: 'twenty-six',
-        30.0: 'thirty',
-        33.0: 'thirty-three',
-        34.0: 'thirty-four',
-        35.0: 'thirty-five',
-        99.0: np.nan,
-    })
-    CODEBOOK_VARIABLES['know_q41'] = {
+    df_clean['op_party_rating_adq'] = np.nan
+    mask = (df['q41'] >= 0) & (df['q41'] <= 100)
+    df_clean.loc[mask, 'op_party_rating_adq'] = df.loc[mask, 'q41'] / 100.0
+    CODEBOOK_VARIABLES['op_party_rating_adq'] = {
         'original_variable': 'q41',
-        'question_label': "Q41 (Inferred: Unknown question label)",
-        'type': 'categorical',
-        'value_labels': {'zero': "0.0", 'one': "1.0", 'two': "2.0", 'three': "3.0", 'four': "4.0", 'five': "5.0", 'six': "6.0", 'seven': "7.0", 'eight': "8.0", 'nine': "9.0", 'ten': "10.0", 'twelve': "12.0", 'thirteen': "13.0", 'fourteen': "14.0", 'fifteen': "15.0", 'seventeen': "17.0", 'twenty': "20.0", 'twenty-two': "22.0", 'twenty-four': "24.0", 'twenty-five': "25.0", 'twenty-six': "26.0", 'thirty': "30.0", 'thirty-three': "33.0", 'thirty-four': "34.0", 'thirty-five': "35.0"},
+        'question_label': "Sur une échelle de zéro à cent, ADQ?",
+        'type': 'numeric',
+        'value_labels': {},
     }
 
     # --- q42 ---
-    # behav_q42 — Generic behavioral variable based on data exploration
+    # op_party_rating_qs — Évaluation Québec Solidaire (0-100 → 0-1)
     # Source: q42
-    # Note: No codebook entry provided; mapping codes to generic labels.
-    df_clean['behav_q42'] = df['q42'].map({
-        0.0: 'code_0',
-        1.0: 'code_1',
-        2.0: 'code_2',
-        3.0: 'code_3',
-        4.0: 'code_4',
-        5.0: 'code_5',
-        6.0: 'code_6',
-        7.0: 'code_7',
-        8.0: 'code_8',
-        10.0: 'code_10',
-        11.0: 'code_11',
-        12.0: 'code_12',
-        15.0: 'code_15',
-        19.0: 'code_19',
-        20.0: 'code_20',
-        25.0: 'code_25',
-        30.0: 'code_30',
-        33.0: 'code_33',
-        35.0: 'code_35',
-        40.0: 'code_40',
-        43.0: 'code_43',
-        45.0: 'code_45',
-        50.0: 'code_50',
-        55.0: 'code_55',
-        56.0: 'code_56',
-    })
-    CODEBOOK_VARIABLES['behav_q42'] = {
+    df_clean['op_party_rating_qs'] = np.nan
+    mask = (df['q42'] >= 0) & (df['q42'] <= 100)
+    df_clean.loc[mask, 'op_party_rating_qs'] = df.loc[mask, 'q42'] / 100.0
+    CODEBOOK_VARIABLES['op_party_rating_qs'] = {
         'original_variable': 'q42',
-        'question_label': "Q42 (Labels missing, mapped based on data exploration)",
-        'type': 'categorical',
-        'value_labels': {'code_0': "Label for Code 0 (Missing)", 'code_1': "Label for Code 1 (Missing)", 'code_2': "Label for Code 2 (Missing)", 'code_3': "Label for Code 3 (Missing)", 'code_4': "Label for Code 4 (Missing)", 'code_5': "Label for Code 5 (Missing)", 'code_6': "Label for Code 6 (Missing)", 'code_7': "Label for Code 7 (Missing)", 'code_8': "Label for Code 8 (Missing)", 'code_10': "Label for Code 10 (Missing)", 'code_11': "Label for Code 11 (Missing)", 'code_12': "Label for Code 12 (Missing)", 'code_15': "Label for Code 15 (Missing)", 'code_19': "Label for Code 19 (Missing)", 'code_20': "Label for Code 20 (Missing)", 'code_25': "Label for Code 25 (Missing)", 'code_30': "Label for Code 30 (Missing)", 'code_33': "Label for Code 33 (Missing)", 'code_35': "Label for Code 35 (Missing)", 'code_40': "Label for Code 40 (Missing)", 'code_43': "Label for Code 43 (Missing)", 'code_45': "Label for Code 45 (Missing)", 'code_50': "Label for Code 50 (Missing)", 'code_55': "Label for Code 55 (Missing)", 'code_56': "Label for Code 56 (Missing)"},
+        'question_label': "Sur une échelle de zéro à cent, Québec Solidaire?",
+        'type': 'numeric',
+        'value_labels': {},
     }
 
     # --- q43 ---
-    # op_voting_intention — Voting intention (inferred)
+    # op_party_rating_green — Évaluation Parti vert (0-100 → 0-1)
     # Source: q43
-    # NOTE: Codebook entry was missing. Mapping derived from data exploration (float codes assumed to be categorical keys).
-    # Assumption: All unique float codes observed are valid categories.
-    df_clean['op_voting_intention'] = df['q43'].map({
-        0.0: 'other_or_none',
-        1.0: 'party_a',
-        2.0: 'party_b',
-        3.0: 'party_c',
-        4.0: 'party_d',
-        5.0: 'party_e',
-        7.0: 'party_f',
-        8.0: 'party_g',
-        10.0: 'party_h',
-        12.0: 'party_i',
-        13.0: 'party_j',
-        15.0: 'party_k',
-        20.0: 'party_l',
-        22.0: 'party_m',
-        25.0: 'party_n',
-        30.0: 'party_o',
-        35.0: 'party_p',
-        40.0: 'party_q',
-        45.0: 'party_r',
-        50.0: 'party_s',
-        54.0: 'party_t',
-        55.0: 'party_u',
-        60.0: 'party_v',
-        61.0: 'party_w',
-        65.0: 'party_x',
-    })
-    CODEBOOK_VARIABLES['op_voting_intention'] = {
+    df_clean['op_party_rating_green'] = np.nan
+    mask = (df['q43'] >= 0) & (df['q43'] <= 100)
+    df_clean.loc[mask, 'op_party_rating_green'] = df.loc[mask, 'q43'] / 100.0
+    CODEBOOK_VARIABLES['op_party_rating_green'] = {
         'original_variable': 'q43',
-        'question_label': "Voting intention (label inferred due to missing codebook)",
-        'type': 'categorical',
-        'value_labels': {'other_or_none': "Other/None (Code 0)", 'party_a': "Party A (Code 1)", 'party_b': "Party B (Code 2)", 'party_c': "Party C (Code 3)", 'party_d': "Party D (Code 4)", 'party_e': "Party E (Code 5)", 'party_f': "Party F (Code 7)", 'party_g': "Party G (Code 8)", 'party_h': "Party H (Code 10)", 'party_i': "Party I (Code 12)", 'party_j': "Party J (Code 13)", 'party_k': "Party K (Code 15)", 'party_l': "Party L (Code 20)", 'party_m': "Party M (Code 22)", 'party_n': "Party N (Code 25)", 'party_o': "Party O (Code 30)", 'party_p': "Party P (Code 35)", 'party_q': "Party Q (Code 40)", 'party_r': "Party R (Code 45)", 'party_s': "Party S (Code 50)", 'party_t': "Party T (Code 54)", 'party_u': "Party U (Code 55)", 'party_v': "Party V (Code 60)", 'party_w': "Party W (Code 61)", 'party_x': "Party X (Code 65)"},
+        'question_label': "Sur une échelle de zéro à cent, Parti vert?",
+        'type': 'numeric',
+        'value_labels': {},
     }
 
     # --- q44 ---
-    # op_q44 — Unlabeled question from Q44
+    # op_best_leader_competent — Quel chef est le plus compétent?
     # Source: q44
-    # Assumption: variable has no explicit codebook entry; inferred as categorical based on data.
-    # Assumption: codes 98 and 99 treated as missing (unlabelled in data exploration).
-    df_clean['op_q44'] = df['q44'].map({
-        '01': 'code_01',
-        '02': 'code_02',
-        '03': 'code_03',
-        '04': 'code_04',
-        '05': 'code_05',
-        '06': 'code_06',
-        '07': 'code_07',
+    df_clean['op_best_leader_competent'] = df['q44'].map({
+        '01': 'charest',
+        '02': 'boisclair',
+        '03': 'dumont',
+        '04': 'david',
+        '05': 'mckay',
+        '06': 'aucun',
+        '07': 'tous',
         '98': np.nan,
         '99': np.nan,
     })
-    CODEBOOK_VARIABLES['op_q44'] = {
+    CODEBOOK_VARIABLES['op_best_leader_competent'] = {
         'original_variable': 'q44',
-        'question_label': "Unlabeled question from Q44",
+        'question_label': "Selon vous, lequel des chefs de parti est le plus compétent?",
         'type': 'categorical',
-        'value_labels': {'code_01': "Code 01", 'code_02': "Code 02", 'code_03': "Code 03", 'code_04': "Code 04", 'code_05': "Code 05", 'code_06': "Code 06", 'code_07': "Code 07"},
+        'value_labels': {'charest': "Jean Charest", 'boisclair': "André Boisclair", 'dumont': "Mario Dumont", 'david': "Françoise David", 'mckay': "Scott McKay", 'aucun': "Aucun", 'tous': "Tous"},
     }
 
     # --- q45 ---
