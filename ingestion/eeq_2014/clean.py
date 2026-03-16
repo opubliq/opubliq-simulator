@@ -1366,70 +1366,60 @@ def clean_data(raw_path: str) -> pd.DataFrame:
     }
 
     # --- Q36C ---
-    # ses_freq_read_news — Fréquence de lecture des journaux
+    # op_opinion_social_c — Opinion sur un enjeu social
     # Source: Q36C
-    # Assumption: Codes 8.0 and 9.0 observed in data are treated as missing (not in codebook values).
-    # Assumption: Code 99.0 (from codebook) is treated as missing.
-    df_clean['ses_freq_read_news'] = df['Q36C'].map({
-        1.0: 'jamais',
-        2.0: 'rarement',
-        3.0: 'quelquefois',
-        4.0: 'souvent',
-        5.0: 'tres_souvent',
+    # TODO: Valider le mapping exact de l'échelle d'opinion à partir du codebook
+    df_clean['op_opinion_social_c'] = df['Q36C'].map({
+        1.0: 1.0,    # Fortement d'accord
+        2.0: 0.66,   # Plutôt d'accord
+        3.0: 0.33,   # Plutôt en désaccord
+        4.0: 0.0,    # Fortement en désaccord
         8.0: np.nan,
         9.0: np.nan,
-        99.0: np.nan,
     })
-    CODEBOOK_VARIABLES['ses_freq_read_news'] = {
+
+    CODEBOOK_VARIABLES['op_opinion_social_c'] = {
         'original_variable': 'Q36C',
-        'question_label': "Fréquence de lecture des journaux",
-        'type': 'categorical',
-        'value_labels': {'jamais': "Jamais", 'rarement': "Rarement", 'quelquefois': "Quelquefois", 'souvent': "Souvent", 'tres_souvent': "Très souvent"},
+        'question_label': "Sans l'action du gouvernement, il y aurait beaucoup plus de pauvreté dans nos sociétés.", # TODO: Confirmer dans le codebook
+        'type': 'numeric',
     }
 
     # --- Q36D ---
-    # op_attitude_q36d — Attitude question (unknown content)
+    # op_opinion_social_d — Opinion sur un enjeu social
     # Source: Q36D
-    # Note: Codebook entry was missing. Assuming 1-4 is a likert scale normalized 0-1.
-    # Codes 8.0 and 9.0 treated as missing (unlabelled in data exploration).
-    df_clean['op_attitude_q36d'] = df['Q36D'].map({
-        1.0: 0.0,    # Maps 1.0 to the lowest point (0.0)
-        2.0: 0.33,   # Maps 2.0 to the middle-low point (approx 1/3)
-        3.0: 0.66,   # Maps 3.0 to the middle-high point (approx 2/3)
-        4.0: 1.0,    # Maps 4.0 to the highest point (1.0)
-        8.0: np.nan, # Treat code 8.0 as missing
-        9.0: np.nan, # Treat code 9.0 as missing
-    })
-    CODEBOOK_VARIABLES['op_attitude_q36d'] = {
-        'original_variable': 'Q36D',
-        'question_label': "Attitude question Q36D (label unknown, using placeholder)",
-        'type': 'likert',
-        'value_labels': {
-            '0.0': "Lowest point (Code 1)",
-            '0.33': "Low point (Code 2)",
-            '0.66': "High point (Code 3)",
-            '1.0': "Highest point (Code 4)",
-        }
-    }
-
-    # --- Q36E ---
-    # ses_province — Province of residence (Inferred mapping)
-    # Source: Q36E
-    # Assumption: Codes 8 and 9 are treated as missing (not in inferred codebook).
-    # TODO: Verify mapping for Q36E as no codebook entry was provided.
-    df_clean['ses_province'] = df['Q36E'].map({
-        1.0: 'value 1',
-        2.0: 'value 2',
-        3.0: 'value 3',
-        4.0: 'value 4',
+    # TODO: Valider le mapping exact de l'échelle d'opinion à partir du codebook
+    df_clean['op_opinion_social_d'] = df['Q36D'].map({
+        1.0: 1.0,    # Fortement d'accord
+        2.0: 0.66,   # Plutôt d'accord
+        3.0: 0.33,   # Plutôt en désaccord
+        4.0: 0.0,    # Fortement en désaccord
         8.0: np.nan,
         9.0: np.nan,
     })
-    CODEBOOK_VARIABLES['ses_province'] = {
+
+    CODEBOOK_VARIABLES['op_opinion_social_d'] = {
+        'original_variable': 'Q36D',
+        'question_label': "Quand les entreprises font beaucoup d'argent, tout le monde y gagne, y compris les pauvres.", # TODO: Confirmer dans le codebook
+        'type': 'numeric',
+    }
+
+    # --- Q36E ---
+    # op_opinion_social_e — Opinion sur un enjeu social
+    # Source: Q36E
+    # TODO: Valider le mapping exact de l'échelle d'opinion à partir du codebook
+    df_clean['op_opinion_social_e'] = df['Q36E'].map({
+        1.0: 1.0,    # Fortement d'accord
+        2.0: 0.66,   # Plutôt d'accord
+        3.0: 0.33,   # Plutôt en désaccord
+        4.0: 0.0,    # Fortement en désaccord
+        8.0: np.nan,
+        9.0: np.nan,
+    })
+
+    CODEBOOK_VARIABLES['op_opinion_social_e'] = {
         'original_variable': 'Q36E',
-        'question_label': "Province of residence (Inferred)",
-        'type': 'categorical',
-        'value_labels': {'value 1': "Value 1", 'value 2': "Value 2", 'value 3': "Value 3", 'value 4': "Value 4"},
+        'question_label': "Il y a trop d'immigrants au Québec.", # TODO: Confirmer dans le codebook
+        'type': 'numeric',
     }
 
     # --- Q37 ---
