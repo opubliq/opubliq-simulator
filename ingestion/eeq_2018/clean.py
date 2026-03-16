@@ -3297,7 +3297,7 @@ def clean_data(df):
         }
     }
 
-    # --- Q51A_2 ---
+    # --- Q51_2 ---
     # behav_party_best_cultural_identity — Quel parti est meilleur pour défendre l'identité et la culture québécoise
     # Source: Q51A_2
     df_clean['behav_party_best_cultural_identity'] = df['q51a_2'].map({
@@ -3324,7 +3324,7 @@ def clean_data(df):
         }
     }
 
-    # --- Q51A_3 ---
+    # --- Q51_3 ---
     # behav_party_best_economy — Quel parti est meilleur pour gérer l'économie
     # Source: Q51A_3
     df_clean['behav_party_best_economy'] = df['q51a_3'].map({
@@ -3351,7 +3351,7 @@ def clean_data(df):
         }
     }
 
-    # --- Q51A_4 ---
+    # --- Q51_4 ---
     # behav_party_best_education — Quel parti est meilleur pour améliorer l'éducation
     # Source: Q51A_4
     df_clean['behav_party_best_education'] = df['q51a_4'].map({
@@ -3378,7 +3378,7 @@ def clean_data(df):
         }
     }
 
-    # --- Q51A_5 ---
+    # --- Q51_5 ---
     # behav_party_best_environment — Quel parti est meilleur pour protéger l'environnement
     # Source: Q51A_5
     df_clean['behav_party_best_environment'] = df['q51a_5'].map({
@@ -3405,7 +3405,7 @@ def clean_data(df):
         }
     }
 
-    # --- Q51A_6 ---
+    # --- Q51_6 ---
     # behav_party_best_health — Quel parti est meilleur pour gérer le système de santé
     # Source: Q51A_6
     df_clean['behav_party_best_health'] = df['q51a_6'].map({
@@ -3432,7 +3432,7 @@ def clean_data(df):
         }
     }
 
-    # --- Q51A_7 ---
+    # --- Q51_7 ---
     # behav_party_best_poverty — Quel parti est meilleur pour combattre la pauvreté
     # Source: Q51A_7
     df_clean['behav_party_best_poverty'] = df['q51a_7'].map({
@@ -3459,7 +3459,7 @@ def clean_data(df):
         }
     }
 
-    # --- Q51A_8 ---
+    # --- Q51_8 ---
     # behav_party_best_immigration — Quel parti est meilleur pour gérer l'intégration des immigrants
     # Source: Q51A_8
     df_clean['behav_party_best_immigration'] = df['q51a_8'].map({
@@ -3555,13 +3555,13 @@ def clean_data(df):
     })
     CODEBOOK_VARIABLES['behav_party_best_age_group_55_plus'] = {
         'original_variable': 'q52_3',
-        'question_label': "Selon vous, quel parti est le meilleur pour defender les interets des gens ages de 55 ans et plus?",
+        'question_label': "Selon vous, quel parti est le meilleur pour défendre les intérêts des gens âgés de 55 ans et plus?",
         'type': 'categorical',
         'value_labels': {
-            'plq': "Parti liberal du Quebec",
-            'pq': "Parti quebecois",
-            'caq': "Coalition avenir Quebec",
-            'qs': "Quebec solidaire",
+            'plq': "Parti libéral du Québec",
+            'pq': "Parti québécois",
+            'caq': "Coalition avenir Québec",
+            'qs': "Québec solidaire",
             'other_party': "Un autre parti",
             'no_party': "Aucun de ces partis"
         }
