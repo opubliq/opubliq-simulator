@@ -1328,42 +1328,41 @@ def clean_data(raw_path: str) -> pd.DataFrame:
     }
 
     # --- Q36A ---
-    # ses_region — Région de résidence
+    # op_opinion_social_a — Opinion sur un enjeu social
     # Source: Q36A
-    # Assumption: 8/9 treated as missing, as they are not explicitly labelled in the codebook for this variable.
-    # Note: Values are float, mapping to string for categorical variable.
-    df_clean['ses_region'] = df['Q36A'].map({
-        1.0: 'quebec',
-        2.0: 'ontario',
-        3.0: 'alberta',
-        4.0: 'manitoba_sask', # Inferring from other surveys, as 4 is unlabelled here
+    # TODO: Valider le mapping exact de l'échelle d'opinion à partir du codebook
+    df_clean['op_opinion_social_a'] = df['Q36A'].map({
+        1.0: 1.0,    # Fortement d'accord
+        2.0: 0.66,   # Plutôt d'accord
+        3.0: 0.33,   # Plutôt en désaccord
+        4.0: 0.0,    # Fortement en désaccord
         8.0: np.nan,
         9.0: np.nan,
     })
-    CODEBOOK_VARIABLES['ses_region'] = {
+
+    CODEBOOK_VARIABLES['op_opinion_social_a'] = {
         'original_variable': 'Q36A',
-        'question_label': "Région de résidence",
-        'type': 'categorical',
-        'value_labels': {'quebec': "Québec", 'ontario': "Ontario", 'alberta': "Alberta", 'manitoba_sask': "Manitoba/Saskatchewan"},
+        'question_label': "Notre société doit faire tout ce qui est nécessaire pour s'assurer que chacun ait une chance égale de réussir.", # TODO: Confirmer dans le codebook
+        'type': 'numeric',
     }
 
     # --- Q36B ---
-    # op_Q36B — Response to question Q36B (Best effort mapping)
+    # op_opinion_social_b — Opinion sur un enjeu social
     # Source: Q36B
-    # Assumption: Codes 8.0 and 9.0 are treated as missing (not labelled in context)
-    df_clean['op_Q36B'] = df['Q36B'].map({
-        1.0: 'choice_1',
-        2.0: 'choice_2',
-        3.0: 'choice_3',
-        4.0: 'choice_4',
+    # TODO: Valider le mapping exact de l'échelle d'opinion à partir du codebook
+    df_clean['op_opinion_social_b'] = df['Q36B'].map({
+        1.0: 1.0,    # Fortement d'accord
+        2.0: 0.66,   # Plutôt d'accord
+        3.0: 0.33,   # Plutôt en désaccord
+        4.0: 0.0,    # Fortement en désaccord
         8.0: np.nan,
         9.0: np.nan,
     })
-    CODEBOOK_VARIABLES['op_Q36B'] = {
+
+    CODEBOOK_VARIABLES['op_opinion_social_b'] = {
         'original_variable': 'Q36B',
-        'question_label': "Response to question Q36B",
-        'type': 'categorical',
-        'value_labels': {'choice_1': "Choice 1", 'choice_2': "Choice 2", 'choice_3': "Choice 3", 'choice_4': "Choice 4"},
+        'question_label': "Ce n'est pas si grave si certaines personnes ont plus de chance que d'autres dans la vie.", # TODO: Confirmer dans le codebook
+        'type': 'numeric',
     }
 
     # --- Q36C ---
@@ -1824,21 +1823,28 @@ def clean_data(raw_path: str) -> pd.DataFrame:
     }
 
     # --- Q46 ---
-    # op_vote_intention — Vote intention
-    # Source: Q46
-    # Assumption: Codes 8 and 9 are treated as missing (Don't know/Refused).
-    df_clean['op_vote_intention'] = df['Q46'].map({
-        1.0: 'choice_one',
-        2.0: 'choice_two',
-        3.0: 'choice_three',
+    # op_indep_econ_impact — Economic impact of independence on Quebec's situation
+    # Source: Q46 - "Si le Québec devenait un pays indépendant, croyez-vous que la
+    #          situation économique au Québec s'améliorerait, se détériorerait ou
+    #          resterait à peu près la même?"
+    # Codes: 1=S'améliorerait, 2=Se détériorerait, 3=Resterait à peu près la même,
+    #        8=Je ne sais pas, 9=Je préfère ne pas répondre
+    df_clean['op_indep_econ_impact'] = df['Q46'].map({
+        1.0: 'would_improve',
+        2.0: 'would_worsen',
+        3.0: 'would_stay_same',
         8.0: np.nan,
         9.0: np.nan,
     })
-    CODEBOOK_VARIABLES['op_vote_intention'] = {
+    CODEBOOK_VARIABLES['op_indep_econ_impact'] = {
         'original_variable': 'Q46',
-        'question_label': "Vote intention",
+        'question_label': "Economic impact of independence on Quebec's situation",
         'type': 'categorical',
-        'value_labels': {'choice_one': "Choice One", 'choice_two': "Choice Two", 'choice_three': "Choice Three"},
+        'value_labels': {
+            'would_improve': "Would improve",
+            'would_worsen': "Would worsen",
+            'would_stay_same': "Would stay the same"
+        },
     }
 
     # --- Q47 ---
