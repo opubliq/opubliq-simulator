@@ -654,57 +654,55 @@ def clean_data(raw_path: str) -> pd.DataFrame:
     }
 
     # --- Q24A ---
-    # ses_age_group — Grouped age of respondent
+    # op_constitutional_rank_1 — First choice for Quebec's constitutional future
     # Source: Q24A
-    # Assumption: codes 8 and 9 are missing values (not in provided codebook, inferred from context of typical survey coding)
-    df_clean['ses_age_group'] = df['Q24A'].map({
-        1.0: '18-29',
-        2.0: '30-44',
-        3.0: '45-64',
+    # Codes: 1=Sign Constitution 1982, 2=More powers for Quebec, 3=Independence, 8=Don't know, 9=Refuse
+    df_clean['op_constitutional_rank_1'] = df['Q24A'].map({
+        1.0: 'sign_constitution',
+        2.0: 'more_powers',
+        3.0: 'independence',
         8.0: np.nan,
         9.0: np.nan,
     })
-    CODEBOOK_VARIABLES['ses_age_group'] = {
+    CODEBOOK_VARIABLES['op_constitutional_rank_1'] = {
         'original_variable': 'Q24A',
-        'question_label': "Grouped age of respondent",
+        'question_label': "First choice for Quebec's constitutional future",
         'type': 'categorical',
-        'value_labels': {'18-29': "18-29", '30-44': "30-44", '45-64': "45-64"},
+        'value_labels': {'sign_constitution': "Sign the Constitution of 1982", 'more_powers': "More powers for Quebec", 'independence': "Independence"},
     }
 
     # --- Q24B ---
-    # behav_q24b — Response to question Q24B (Unlabelled in context)
+    # op_constitutional_rank_2 — Second choice for Quebec's constitutional future
     # Source: Q24B
-    # TODO: Verify mapping and label against codebook for Q24B. Assuming 1, 2, 3 are responses and 8, 9 are missing.
-    df_clean['behav_q24b'] = df['Q24B'].map({
-        1.0: 'response_1',
-        2.0: 'response_2',
-        3.0: 'response_3',
+    df_clean['op_constitutional_rank_2'] = df['Q24B'].map({
+        1.0: 'sign_constitution',
+        2.0: 'more_powers',
+        3.0: 'independence',
         8.0: np.nan,
         9.0: np.nan,
     })
-    CODEBOOK_VARIABLES['behav_q24b'] = {
+    CODEBOOK_VARIABLES['op_constitutional_rank_2'] = {
         'original_variable': 'Q24B',
-        'question_label': "Response to question Q24B (Requires Codebook Verification)",
+        'question_label': "Second choice for Quebec's constitutional future",
         'type': 'categorical',
-        'value_labels': {'response_1': "Response Code 1", 'response_2': "Response Code 2", 'response_3': "Response Code 3"},
+        'value_labels': {'sign_constitution': "Sign the Constitution of 1982", 'more_powers': "More powers for Quebec", 'independence': "Independence"},
     }
 
     # --- Q24C ---
-    # ses_province — Province de résidence
+    # op_constitutional_rank_3 — Third choice for Quebec's constitutional future
     # Source: Q24C
-    # Assumption: codes 8.0 and 9.0 are unmapped/missing based on data exploration. Codebook missing code 99.0 was not observed.
-    df_clean['ses_province'] = df['Q24C'].map({
-        1.0: 'quebec',
-        2.0: 'ontario',
-        3.0: 'alberta',
+    df_clean['op_constitutional_rank_3'] = df['Q24C'].map({
+        1.0: 'sign_constitution',
+        2.0: 'more_powers',
+        3.0: 'independence',
         8.0: np.nan,
         9.0: np.nan,
     })
-    CODEBOOK_VARIABLES['ses_province'] = {
+    CODEBOOK_VARIABLES['op_constitutional_rank_3'] = {
         'original_variable': 'Q24C',
-        'question_label': "Province de résidence",
+        'question_label': "Third choice for Quebec's constitutional future",
         'type': 'categorical',
-        'value_labels': {'quebec': "Québec", 'ontario': "Ontario", 'alberta': "Alberta"},
+        'value_labels': {'sign_constitution': "Sign the Constitution of 1982", 'more_powers': "More powers for Quebec", 'independence': "Independence"},
     }
 
     # --- Q25 ---
@@ -2601,30 +2599,42 @@ def clean_data(raw_path: str) -> pd.DataFrame:
     }
 
     # --- Q66 ---
-    # behav_response_q66 — Response to question Q66
+    # behav_response_q66 — Langue principale apprise à la maison dans l'enfance
     # Source: Q66
-    # Note: Labels for codes 3.0-16.0 are assumed based on data distribution; 96, 98, 99 treated as missing due to lack of codebook.
+    # Note: Codes 96, 98, 99 treated as missing (Ne sait pas, Refused)
     df_clean['behav_response_q66'] = df['Q66'].map({
-        1.0: 'option_1',
-        2.0: 'option_2',
-        3.0: 'option_3',
-        4.0: 'option_4',
-        6.0: 'option_6',
-        7.0: 'option_7',
-        8.0: 'option_8',
-        10.0: 'option_10',
-        12.0: 'option_12',
-        15.0: 'option_15',
-        16.0: 'option_16',
+        1.0: 'french',
+        2.0: 'english',
+        3.0: 'italian',
+        4.0: 'spanish',
+        6.0: 'arabic',
+        7.0: 'german',
+        8.0: 'portuguese',
+        10.0: 'polish',
+        12.0: 'chinese',
+        15.0: 'creole',
+        16.0: 'other',
         96.0: np.nan,
         98.0: np.nan,
         99.0: np.nan,
     })
     CODEBOOK_VARIABLES['behav_response_q66'] = {
         'original_variable': 'Q66',
-        'question_label': "Response to question Q66",
+        'question_label': "Quelle est la langue principale que vous avez apprise en premier lieu à la maison dans votre enfance et que vous comprenez toujours?",
         'type': 'categorical',
-        'value_labels': {'option_1': "Code 1", 'option_2': "Code 2", 'option_3': "Code 3", 'option_4': "Code 4", 'option_6': "Code 6", 'option_7': "Code 7", 'option_8': "Code 8", 'option_10': "Code 10", 'option_12': "Code 12", 'option_15': "Code 15", 'option_16': "Code 16"},
+        'value_labels': {
+            'french': "Français",
+            'english': "Anglais",
+            'italian': "Italien",
+            'spanish': "Espagnol",
+            'arabic': "Arabe",
+            'german': "Allemand",
+            'portuguese': "Portugais",
+            'polish': "Polonais",
+            'chinese': "Chinois",
+            'creole': "Créole",
+            'other': "Autre",
+        },
     }
 
     # --- Q67 ---
