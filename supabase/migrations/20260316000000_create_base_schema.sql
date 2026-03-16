@@ -1,13 +1,16 @@
 -- Enable pgvector extension
-create extension if not exists vector;
+create extension if not exists vector with schema extensions;
+
+-- Make vector type accessible
+set search_path to public, extensions;
 
 -- Create surveys table
 create table surveys (
   id bigint primary key generated always as identity,
-  titre text not null,
-  année integer not null,
+  title text not null,
+  year integer not null,
   source text not null,
-  n_répondants integer not null,
+  n_respondents integer not null,
   created_at timestamp with time zone default now(),
   updated_at timestamp with time zone default now()
 );
@@ -16,8 +19,8 @@ create table surveys (
 create table questions (
   id bigint primary key generated always as identity,
   survey_id bigint not null references surveys(id) on delete cascade,
-  texte text not null,
-  type_échelle text,
+  text text not null,
+  scale_type text,
   embedding vector(768),
   created_at timestamp with time zone default now(),
   updated_at timestamp with time zone default now()
@@ -30,8 +33,8 @@ create index on questions using hnsw (embedding vector_cosine_ops);
 create table respondents (
   id bigint primary key generated always as identity,
   survey_id bigint not null references surveys(id) on delete cascade,
-  strate_canonique jsonb,
-  réponses jsonb,
+  strate_canonical jsonb,
+  responses jsonb,
   created_at timestamp with time zone default now(),
   updated_at timestamp with time zone default now()
 );
@@ -40,25 +43,25 @@ create table respondents (
 create table strate_predictions (
   question_id bigint not null references questions(id) on delete cascade,
   age_group text not null,
-  langue text not null,
+  language text not null,
   region text not null,
   genre text not null,
   distribution jsonb not null,
   created_at timestamp with time zone default now(),
   updated_at timestamp with time zone default now(),
-  primary key (question_id, age_group, langue, region, genre)
+  primary key (question_id, age_group, language, region, genre)
 );
 
 -- Create strate_weights table
 create table strate_weights (
   age_group text not null,
-  langue text not null,
+  language text not null,
   region text not null,
   genre text not null,
   weight_pct numeric(5, 2) not null,
   created_at timestamp with time zone default now(),
   updated_at timestamp with time zone default now(),
-  primary key (age_group, langue, region, genre)
+  primary key (age_group, language, region, genre)
 );
 
 -- Create indexes for common queries
