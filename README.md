@@ -102,7 +102,7 @@ cd opubliq-simulator
 1. Go to [supabase.com](https://supabase.com) and create a new **free tier** project
 2. Once project is created, go to **Settings → API** and copy:
    - **SUPABASE_URL** (starts with `https://...supabase.co`)
-   - **SUPABASE_ANON_KEY** (public key for client-side use)
+   - **SUPABASE_PUBLISHABLE_KEY** (public key for client-side use)
 3. Enable `pgvector` extension:
    - In Supabase dashboard, go to **SQL Editor**
    - Run this query:
@@ -120,11 +120,10 @@ cp .env.example .env.local
 Then edit `.env.local` and fill in:
 ```env
 VITE_SUPABASE_URL=https://your-project.supabase.co
-VITE_SUPABASE_ANON_KEY=your-anon-key-from-settings
-VITE_GEMINI_API_KEY=your-gemini-api-key
+VITE_SUPABASE_PUBLISHABLE_KEY=your-publishable-key-from-settings
 ```
 
-Get Gemini API key: [ai.google.dev](https://ai.google.dev)
+Note: The Gemini API key is entered by the user directly in the UI — it's not a project config variable.
 
 #### 4. **Frontend**
 ```bash
