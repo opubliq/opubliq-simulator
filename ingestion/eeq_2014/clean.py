@@ -2726,25 +2726,25 @@ def clean_data(raw_path: str) -> pd.DataFrame:
     }
 
     # --- Q9 ---
-    # op_vote_intention — Inferred vote intention
+    # op_worst_campaign — Parti ayant mené la moins bonne campagne
     # Source: Q9
-    # Assumption: Based on common structure for Quebec election studies; 1-6 are party choices, 96/98/99 are missing codes.
-    df_clean['op_vote_intention'] = df['Q9'].map({
-        1.0: 'pc',
-        2.0: 'lib',
-        3.0: 'pqc',
-        4.0: 'caq',
-        5.0: 'ops',
-        6.0: 'none',
-        96.0: 'refused',
+    # Q9: "Et quel parti a selon vous mené la moins bonne campagne?"
+    df_clean['op_worst_campaign'] = df['Q9'].map({
+        1.0: 'lib',
+        2.0: 'pqc',
+        3.0: 'caq',
+        4.0: 'qs',
+        5.0: 'pvq',
+        6.0: 'on',
+        96.0: 'other',
         98.0: 'dont_know',
-        99.0: 'missing',
+        99.0: 'refused',
     })
-    CODEBOOK_VARIABLES['op_vote_intention'] = {
+    CODEBOOK_VARIABLES['op_worst_campaign'] = {
         'original_variable': 'Q9',
-        'question_label': "Vote intention (Inferred from 1-6 codes)",
+        'question_label': "Parti ayant mené la moins bonne campagne",
         'type': 'categorical',
-        'value_labels': {'pc': "Parti Conservateur", 'lib': "Parti Libéral", 'pqc': "Parti Québécois", 'caq': "CAQ", 'ops': "Other party", 'none': "None", 'refused': "Refused", 'dont_know': "Don't know", 'missing': "Missing"},
+        'value_labels': {'lib': "Parti libéral du Québec", 'pqc': "Parti québécois", 'caq': "Coalition avenir Québec", 'qs': "Québec solidaire", 'pvq': "Parti vert du Québec", 'on': "Option nationale", 'other': "Autre parti", 'dont_know': "Je ne sais pas", 'refused': "Refused"},
     }
 
     # --- QAGE ---
