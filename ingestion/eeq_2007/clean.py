@@ -224,32 +224,46 @@ def clean_data(raw_path: str) -> pd.DataFrame:
     }
 
     # --- ethn1 ---
-    # ses_ethnicity — Ethnicity/Origin
+    # ses_ethnicity — Origine ethnique
     # Source: ethn1
-    # Assumption: Codes 01-13 synthesized as common categories; 96, 98, 99 treated as missing based on data exploration (25 total missing)
     df_clean['ses_ethnicity'] = df['ethn1'].map({
-        '01': 'white',
-        '02': 'aboriginal',
-        '03': 'east_asian',
-        '04': 'south_asian',
-        '05': 'black',
-        '06': 'latin_american',
-        '07': 'west_asian_north_african',
-        '08': 'southeast_asian',
-        '09': 'other_non_european',
-        '10': 'european',
-        '11': 'mixed',
-        '12': 'refused',
-        '13': 'dont_know',
-        '96': np.nan,
+        '01': 'canadienne_quebecoise',
+        '02': 'afrique_nord',
+        '03': 'afrique_subsaharienne',
+        '04': 'amerindienne',
+        '05': 'americaine_usa',
+        '06': 'amerique_centrale_sud',
+        '07': 'mexique',
+        '08': 'antillaise',
+        '09': 'asiatique',
+        '10': 'europe_ouest',
+        '11': 'europe_est',
+        '12': 'moyen_orient',
+        '13': 'turquie_armenie_iran',
+        '96': 'autre',
         '98': np.nan,
         '99': np.nan,
     })
     CODEBOOK_VARIABLES['ses_ethnicity'] = {
         'original_variable': 'ethn1',
-        'question_label': "Ethnicity/Origin (Synthesized Mapping)",
+        'question_label': "De quelle origine ethnique êtes-vous?",
         'type': 'categorical',
-        'value_labels': {'white': "White", 'aboriginal': "Aboriginal", 'east_asian': "East Asian", 'south_asian': "South Asian", 'black': "Black", 'latin_american': "Latin American", 'west_asian_north_african': "West Asian/North African", 'southeast_asian': "Southeast Asian", 'other_non_european': "Other Non-European", 'european': "European", 'mixed': "Mixed Origin", 'refused': "Refused", 'dont_know': "Don't Know"},
+        'value_labels': {
+            'canadienne_quebecoise': "Canadienne-québécoise",
+            'afrique_nord': "Afrique du Nord",
+            'afrique_subsaharienne': "Afrique subsaharienne",
+            'amerindienne': "Amérindienne",
+            'americaine_usa': "Américaine (USA)",
+            'amerique_centrale_sud': "Amérique Centrale et du Sud",
+            'mexique': "Mexique",
+            'antillaise': "Antillaise / Haïti / Jamaïque",
+            'asiatique': "Asiatique",
+            'europe_ouest': "Europe de l'Ouest",
+            'europe_est': "Europe de l'Est",
+            'moyen_orient': "Moyen-Orient",
+            'turquie_armenie_iran': "Turquie / Arménie / Iran / Kurde",
+            'autre': "Autre",
+        },
     }
 
     # --- langu ---
@@ -1772,136 +1786,100 @@ def clean_data(raw_path: str) -> pd.DataFrame:
     }
 
     # --- q64 ---
-    # op_q64 — Unlabeled categorical variable from question 64
+    # --- q64 ---
+    # op_rating_syndicats — Évaluation des syndicats (0-100 → 0-1)
     # Source: q64
-    # Assumption: Missing codebook entry. Codes mapped to their string equivalent.
-    df_clean['op_q64'] = df['q64'].map({
-        0.0: '0',
-        1.0: '1',
-        2.0: '2',
-        3.0: '3',
-        4.0: '4',
-        5.0: '5',
-        6.0: '6',
-        7.0: '7',
-        9.0: '9',
-        10.0: '10',
-        12.0: '12',
-        15.0: '15',
-        20.0: '20',
-        25.0: '25',
-        29.0: '29',
-        30.0: '30',
-        33.0: '33',
-        35.0: '35',
-        39.0: '39',
-        40.0: '40',
-        45.0: '45',
-        49.0: '49',
-        50.0: '50',
-        51.0: '51',
-        55.0: '55',
-    })
-    CODEBOOK_VARIABLES['op_q64'] = {
+    df_clean['op_rating_syndicats'] = np.nan
+    mask = (df['q64'] >= 0) & (df['q64'] <= 100)
+    df_clean.loc[mask, 'op_rating_syndicats'] = df.loc[mask, 'q64'] / 100.0
+    CODEBOOK_VARIABLES['op_rating_syndicats'] = {
         'original_variable': 'q64',
-        'question_label': "Unlabeled/Missing Codebook: q64",
-        'type': 'categorical',
-        'value_labels': {'0': "Code 0", '1': "Code 1", '2': "Code 2", '3': "Code 3", '4': "Code 4", '5': "Code 5", '6': "Code 6", '7': "Code 7", '9': "Code 9", '10': "Code 10", '12': "Code 12", '15': "Code 15", '20': "Code 20", '25': "Code 25", '29': "Code 29", '30': "Code 30", '33': "Code 33", '35': "Code 35", '39': "Code 39", '40': "Code 40", '45': "Code 45", '49': "Code 49", '50': "Code 50", '51': "Code 51", '55': "Code 55"},
+        'question_label': "Sur une échelle qui va de 0 à 100, où 0 veut dire que vous n'aimez vraiment pas du tout les syndicats, et 100 veut dire que vous les aimez vraiment beaucoup. En général, aimez-vous les syndicats?",
+        'type': 'numeric',
+        'value_labels': {},
     }
 
     # --- q65 ---
-    # behav_q65 — Response category for Q65
+    # op_rating_entreprises — Évaluation des entreprises (0-100 → 0-1)
     # Source: q65
-    # Assumption: No codebook available. Mapping speculative based on value_counts().
-    # Codes 50.0, 60.0, 70.0, 40.0, 30.0 mapped to distinct categories. All others (including 0.0) are treated as missing.
-    df_clean['behav_q65'] = df['q65'].map({
-        50.0: 'cat_50',
-        60.0: 'cat_60',
-        70.0: 'cat_70',
-        40.0: 'cat_40',
-        30.0: 'cat_30',
-    })
-    CODEBOOK_VARIABLES['behav_q65'] = {
+    df_clean['op_rating_entreprises'] = np.nan
+    mask = (df['q65'] >= 0) & (df['q65'] <= 100)
+    df_clean.loc[mask, 'op_rating_entreprises'] = df.loc[mask, 'q65'] / 100.0
+    CODEBOOK_VARIABLES['op_rating_entreprises'] = {
         'original_variable': 'q65',
-        'question_label': "Q65 (Label unknown - speculative cleaning based on data exploration)",
-        'type': 'categorical',
-        'value_labels': {'cat_50': "Category 50", 'cat_60': "Category 60", 'cat_70': "Category 70", 'cat_40': "Category 40", 'cat_30': "Category 30"},
+        'question_label': "Sur une échelle qui va de 0 à 100, où 0 veut dire que vous n'aimez vraiment pas du tout les entreprises, et 100 veut dire que vous les aimez vraiment beaucoup. En général, aimez-vous les entreprises?",
+        'type': 'numeric',
+        'value_labels': {},
     }
 
     # --- q66 ---
-    # op_vote_intention — Intention de vote
+    # op_same_sex_marriage — Pour ou contre le mariage entre personnes de même sexe
     # Source: q66
-    # Assumption: 1 and 2 are valid choices, 8 and 9 are missing codes based on typical survey structure when codebook is missing.
-    df_clean['op_vote_intention'] = df['q66'].map({
-        '1': 'intention_a',
-        '2': 'intention_b',
+    df_clean['op_same_sex_marriage'] = df['q66'].map({
+        '1': 1.0,   # Pour
+        '2': 0.0,   # Contre
         '8': np.nan,
         '9': np.nan,
     })
-    CODEBOOK_VARIABLES['op_vote_intention'] = {
+    CODEBOOK_VARIABLES['op_same_sex_marriage'] = {
         'original_variable': 'q66',
-        'question_label': "Intention de vote (inferred)",
-        'type': 'categorical',
+        'question_label': "Êtes-vous pour ou contre le mariage entre personnes de même sexe?",
+        'type': 'likert',
         'value_labels': {'intention_a': "Intention Parti A", 'intention_b': "Intention Parti B"},
     }
 
     # --- q67 ---
-    # op_party_support_67 — Assumed Likert scale for variable q67
+    # op_statement_q67 — Accord/désaccord énoncé q67 (4-point Likert)
     # Source: q67
-    # Assumption: Variable is a 5-point Likert scale from -2 (Strongly Disagree) to 2 (Strongly Agree).
-    # Assumption: Missing code 99 maps to np.nan.
-    # TODO: Verify exact question label, raw codes, and missing codes for q67 from the actual codebook.
-    df_clean['op_party_support_67'] = df['q67'].map({
-        -2.0: 0.0,
-        -1.0: 0.25,
-        0.0: 0.5,
-        1.0: 0.75,
-        2.0: 1.0,
-        99.0: np.nan,
-    })
-    CODEBOOK_VARIABLES['op_party_support_67'] = {
-        'original_variable': 'q67',
-        'question_label': "Assumed Likert scale for Q67 on [TOPIC].",
-        'type': 'likert',
-        'value_labels': {0.0: 'strongly disagree', 0.25: 'disagree', 0.5: 'neutral', 0.75: 'agree', 1.0: 'strongly agree'},
-    }
-
-    # --- q68 ---
-    # op_attitude_q68 — General attitude question 68
-    # Source: q68
-    # Assumption: Treat values 1-4 as a 4-point scale and 8/9 as missing, as no labels were provided.
-    df_clean['op_attitude_q68'] = df['q68'].map({
-        1.0: 'low',
-        2.0: 'medium_low',
-        3.0: 'medium_high',
-        4.0: 'high',
-        8.0: np.nan,
-        9.0: np.nan,
-    })
-    CODEBOOK_VARIABLES['op_attitude_q68'] = {
-        'original_variable': 'q68',
-        'question_label': "Attitude question 68 (No labels provided in context)",
-        'type': 'categorical',
-        'value_labels': {'low': "Low", 'medium_low': "Medium Low", 'medium_high': "Medium High", 'high': "High"},
-    }
-
-    # --- q69 ---
-    # op_vote_intent — Voter intention at time of survey
-    # Source: q69
-    # Assumption: Codes 4, 8, 9 treated as missing (inferred from common survey practice, as no codebook was provided)
-    df_clean['op_vote_intent'] = df['q69'].map({
-        '1': 'party_a',
-        '2': 'party_b',
-        '3': 'party_c',
-        '4': np.nan,
+    df_clean['op_statement_q67'] = df['q67'].map({
+        '1': 1.0,
+        '2': 0.667,
+        '3': 0.333,
+        '4': 0.0,
         '8': np.nan,
         '9': np.nan,
     })
-    CODEBOOK_VARIABLES['op_vote_intent'] = {
+    CODEBOOK_VARIABLES['op_statement_q67'] = {
+        'original_variable': 'q67',
+        'question_label': "Veuillez indiquer si vous êtes fortement d'accord, plutôt d'accord, plutôt en désaccord ou fortement en désaccord.",
+        'type': 'likert',
+        'value_labels': {1.0: "Fortement d'accord", 0.667: "Plutôt d'accord", 0.333: "Plutôt en désaccord", 0.0: "Fortement en désaccord"},
+    }
+
+    # --- q68 ---
+    # op_statement_q68 — Accord/désaccord énoncé q68 (4-point Likert)
+    # Source: q68
+    df_clean['op_statement_q68'] = df['q68'].map({
+        '1': 1.0,
+        '2': 0.667,
+        '3': 0.333,
+        '4': 0.0,
+        '8': np.nan,
+        '9': np.nan,
+    })
+    CODEBOOK_VARIABLES['op_statement_q68'] = {
+        'original_variable': 'q68',
+        'question_label': "Veuillez indiquer si vous êtes fortement d'accord, plutôt d'accord, plutôt en désaccord ou fortement en désaccord.",
+        'type': 'likert',
+        'value_labels': {1.0: "Fortement d'accord", 0.667: "Plutôt d'accord", 0.333: "Plutôt en désaccord", 0.0: "Fortement en désaccord"},
+    }
+
+    # --- q69 ---
+    # op_statement_q69 — Accord/désaccord énoncé q69 (4-point Likert)
+    # Source: q69
+    df_clean['op_statement_q69'] = df['q69'].map({
+        '1': 1.0,
+        '2': 0.667,
+        '3': 0.333,
+        '4': 0.0,
+        '8': np.nan,
+        '9': np.nan,
+    })
+    CODEBOOK_VARIABLES['op_statement_q69'] = {
         'original_variable': 'q69',
-        'question_label': "Voter intention (Inferred)",
-        'type': 'categorical',
-        'value_labels': {'party_a': "Party A", 'party_b': "Party B", 'party_c': "Party C"},
+        'question_label': "Veuillez indiquer si vous êtes fortement d'accord, plutôt d'accord, plutôt en désaccord ou fortement en désaccord.",
+        'type': 'likert',
+        'value_labels': {1.0: "Fortement d'accord", 0.667: "Plutôt d'accord", 0.333: "Plutôt en désaccord", 0.0: "Fortement en désaccord"},
     }
 
     # --- q7 ---
@@ -1924,44 +1902,41 @@ def clean_data(raw_path: str) -> pd.DataFrame:
     }
 
     # --- q70 ---
-    # op_vote_intent — Expressed voting intention (inferred from codes)
+    # op_party_identification — Identification partisane (parti QC)
     # Source: q70
-    # Note: No codebook provided for q70. Codes 96, 97, 98, 99 assumed missing.
-    df_clean['op_vote_intent'] = df['q70'].map({
-        '01': 'support_party_a',
-        '02': 'support_party_b',
-        '03': 'support_party_c',
-        '04': 'support_party_d',
-        '05': 'support_party_e',
-        '96': np.nan,
-        '97': np.nan,
+    df_clean['op_party_identification'] = df['q70'].map({
+        '01': 'liberal',
+        '02': 'pq',
+        '03': 'adq',
+        '04': 'quebec_solidaire',
+        '05': 'parti_vert',
+        '96': 'autre',
+        '97': 'aucun',
         '98': np.nan,
         '99': np.nan,
     })
-    CODEBOOK_VARIABLES['op_vote_intent'] = {
+    CODEBOOK_VARIABLES['op_party_identification'] = {
         'original_variable': 'q70',
-        'question_label': "Expressed voting intention (inferred from codes)",
+        'question_label': "En politique provinciale, habituellement est-ce que vous vous identifiez à un parti?",
         'type': 'categorical',
-        'value_labels': {'support_party_a': "Party A", 'support_party_b': "Party B", 'support_party_c': "Party C", 'support_party_d': "Party D", 'support_party_e': "Party E"},
+        'value_labels': {'liberal': "Parti Libéral", 'pq': "Parti Québécois", 'adq': "ADQ", 'quebec_solidaire': "Québec Solidaire", 'parti_vert': "Parti Vert", 'autre': "Autre parti", 'aucun': "À aucun parti"},
     }
 
     # --- q71 ---
-    # op_voter_intention — Assumed to be voter intention: Party 1, 2, 3, or 4
+    # op_party_closeness — Proximité au parti identifié (très/assez/pas très proche)
     # Source: q71
-    # Assumption: Codes 8 and 9 are treated as missing (not present in codebook)
-    df_clean['op_voter_intention'] = df['q71'].map({
-        '1': 'vote_party_1',
-        '2': 'vote_party_2',
-        '3': 'vote_party_3',
-        '4': 'vote_party_4',
+    df_clean['op_party_closeness'] = df['q71'].map({
+        '1': 1.0,    # Très proche
+        '2': 0.5,    # Assez proche
+        '3': 0.0,    # Pas très proche
         '8': np.nan,
         '9': np.nan,
     })
-    CODEBOOK_VARIABLES['op_voter_intention'] = {
+    CODEBOOK_VARIABLES['op_party_closeness'] = {
         'original_variable': 'q71',
-        'question_label': "Assumed Voter Intention (Based on codes 1-4)",
-        'type': 'categorical',
-        'value_labels': {'vote_party_1': "Vote Party 1", 'vote_party_2': "Vote Party 2", 'vote_party_3': "Vote Party 3", 'vote_party_4': "Vote Party 4"},
+        'question_label': "Vous sentez-vous très proche du parti, assez proche, ou pas très proche?",
+        'type': 'likert',
+        'value_labels': {1.0: "Très proche", 0.5: "Assez proche", 0.0: "Pas très proche"},
     }
 
     # --- q72 ---
@@ -1976,55 +1951,52 @@ def clean_data(raw_path: str) -> pd.DataFrame:
     })
     CODEBOOK_VARIABLES['op_q72'] = {
         'original_variable': 'q72',
-        'question_label': "Question 72 (Unknown Text)",
-        'type': 'categorical',
-        'value_labels': {'yes': "Yes", 'no': "No"},
+        'question_label': "Vous sentez-vous UN PEU plus proche de l'un ou l'autre des partis provinciaux?",
+        'type': 'binary',
+        'value_labels': {'yes': "Oui", 'no': "Non"},
     }
 
     # --- q73 ---
-    # op_response_q73 — Response to question 73
+    # op_party_closest — Parti provincial le plus proche de vous
     # Source: q73
-    # Assumption: Codes 96, 97, 98, 99, and 2036 are treated as missing due to unlabelled data.
-    df_clean['op_response_q73'] = df['q73'].map({
-        '01': 'option_1',
-        '02': 'option_2',
-        '03': 'option_3',
-        '04': 'option_4',
-        '05': 'option_5',
-        '96': np.nan,
-        '97': np.nan,
+    df_clean['op_party_closest'] = df['q73'].map({
+        '01': 'liberal',
+        '02': 'pq',
+        '03': 'adq',
+        '04': 'quebec_solidaire',
+        '05': 'parti_vert',
+        '96': 'autre',
+        '97': 'aucun',
         '98': np.nan,
         '99': np.nan,
-        '2036': np.nan,
     })
-    CODEBOOK_VARIABLES['op_response_q73'] = {
+    CODEBOOK_VARIABLES['op_party_closest'] = {
         'original_variable': 'q73',
-        'question_label': "Response to question 73 (inferred from data exploration)",
+        'question_label': "De quel parti vous sentez-vous le plus proche?",
         'type': 'categorical',
-        'value_labels': {'option_1': "Option 1", 'option_2': "Option 2", 'option_3': "Option 3", 'option_4': "Option 4", 'option_5': "Option 5"},
+        'value_labels': {'liberal': "Libéral", 'pq': "Parti québécois", 'adq': "ADQ", 'quebec_solidaire': "Québec Solidaire", 'parti_vert': "Parti Vert", 'autre': "Autre", 'aucun': "Aucun"},
     }
 
     # --- q74 ---
-    # op_response_q74 — Response to question 74
+    # behav_vote_federal_2006 — Vote fédéral 2006 (élection de janvier 2006)
     # Source: q74
-    # Assumption: Codes 96, 98, 99 treated as missing (not labelled in data exploration)
-    df_clean['op_response_q74'] = df['q74'].map({
-        '01': 'response one',
-        '02': 'response two',
-        '03': 'response three',
-        '04': 'response four',
-        '05': 'response five',
-        '06': 'response six',
-        '07': 'response seven',
-        '96': np.nan,
+    df_clean['behav_vote_federal_2006'] = df['q74'].map({
+        '01': 'liberal',
+        '02': 'conservateur',
+        '03': 'npd',
+        '04': 'bloc_quebecois',
+        '05': 'parti_vert',
+        '06': 'na_pas_vote',
+        '07': 'annule',
+        '96': 'autre',
         '98': np.nan,
         '99': np.nan,
     })
-    CODEBOOK_VARIABLES['op_response_q74'] = {
+    CODEBOOK_VARIABLES['behav_vote_federal_2006'] = {
         'original_variable': 'q74',
-        'question_label': "Response to question 74",
+        'question_label': "Lors de la dernière élection fédérale en janvier 2006, pour quel parti avez-vous voté?",
         'type': 'categorical',
-        'value_labels': {'response one': "Response 1", 'response two': "Response 2", 'response three': "Response 3", 'response four': "Response 4", 'response five': "Response 5", 'response six': "Response 6", 'response seven': "Response 7"},
+        'value_labels': {'liberal': "Libéral", 'conservateur': "Conservateur", 'npd': "NPD", 'bloc_quebecois': "Bloc Québécois", 'parti_vert': "Parti Vert", 'na_pas_vote': "N'a pas voté", 'annule': "A annulé son vote", 'autre': "Autre"},
     }
 
     # --- q75 ---
@@ -2054,70 +2026,113 @@ def clean_data(raw_path: str) -> pd.DataFrame:
     }
 
     # --- q77 ---
-    # op_q77 — Unknown question from q77
+    # ses_education — Niveau d'éducation
     # Source: q77
-    # Assumption: Codes 98 and 99 are treated as missing (np.nan) due to lack of codebook information.
-    df_clean['op_q77'] = df['q77'].map({
-        '02': 'cat_02',
-        '03': 'cat_03',
-        '04': 'cat_04',
-        '05': 'cat_05',
-        '06': 'cat_06',
-        '07': 'cat_07',
-        '08': 'cat_08',
-        '09': 'cat_09',
-        '10': 'cat_10',
-        '11': 'cat_11',
+    df_clean['ses_education'] = df['q77'].map({
+        '01': 'aucune_scolarite',
+        '02': 'primaire_sans_diplome',
+        '03': 'primaire_avec_diplome',
+        '04': 'secondaire_sans_diplome',
+        '05': 'secondaire_avec_diplome',
+        '06': 'technique_cegep_sans_diplome',
+        '07': 'technique_cegep_avec_diplome',
+        '08': 'universite_non_complete',
+        '09': 'baccalaureat',
+        '10': 'maitrise',
+        '11': 'doctorat_professionnel',
         '98': np.nan,
         '99': np.nan,
     })
-    CODEBOOK_VARIABLES['op_q77'] = {
+    CODEBOOK_VARIABLES['ses_education'] = {
         'original_variable': 'q77',
-        'question_label': "Unknown categorical variable mapped from q77",
+        'question_label': "Quel est votre niveau d'éducation?",
         'type': 'categorical',
-        'value_labels': {'cat_02': "Category 02", 'cat_03': "Category 03", 'cat_04': "Category 04", 'cat_05': "Category 05", 'cat_06': "Category 06", 'cat_07': "Category 07", 'cat_08': "Category 08", 'cat_09': "Category 09", 'cat_10': "Category 10", 'cat_11': "Category 11"},
+        'value_labels': {
+            'aucune_scolarite': "Aucune scolarité",
+            'primaire_sans_diplome': "Cours primaire (sans diplôme)",
+            'primaire_avec_diplome': "Cours primaire (avec diplôme)",
+            'secondaire_sans_diplome': "Cours secondaire (sans diplôme)",
+            'secondaire_avec_diplome': "Cours secondaire (avec diplôme)",
+            'technique_cegep_sans_diplome': "Technique/cégep (sans diplôme)",
+            'technique_cegep_avec_diplome': "Technique/cégep (avec diplôme)",
+            'universite_non_complete': "Université non complétée",
+            'baccalaureat': "Baccalauréat",
+            'maitrise': "Maîtrise",
+            'doctorat_professionnel': "Diplôme professionnel ou doctorat",
+        },
     }
 
     # --- q78 ---
-    # op_q78 — Response to question 78
+    # ses_income — Revenu total du ménage avant impôts
     # Source: q78
-    # Assumption: codes '98' and '99' treated as missing (unlabelled in context)
-    df_clean['op_q78'] = df['q78'].map({
-        '01': 'option_one',
-        '02': 'option_two',
-        '03': 'option_three',
-        '04': 'option_four',
-        '05': 'option_five',
-        '06': 'option_six',
-        '07': 'option_seven',
-        '08': 'option_eight',
-        '09': 'option_nine',
-        '10': 'option_ten',
+    df_clean['ses_income'] = df['q78'].map({
+        '01': 'moins_20k',
+        '02': '20k_30k',
+        '03': '30k_40k',
+        '04': '40k_50k',
+        '05': '50k_60k',
+        '06': '60k_70k',
+        '07': '70k_80k',
+        '08': '80k_90k',
+        '09': '90k_100k',
+        '10': 'plus_100k',
         '98': np.nan,
         '99': np.nan,
     })
-    CODEBOOK_VARIABLES['op_q78'] = {
+    CODEBOOK_VARIABLES['ses_income'] = {
         'original_variable': 'q78',
-        'question_label': "Unknown question text for Q78",
+        'question_label': "Le revenu total de votre ménage avant impôts en 2006?",
         'type': 'categorical',
-        'value_labels': {'option_one': 'Value 01', 'option_two': 'Value 02', 'option_three': 'Value 03', 'option_four': 'Value 04', 'option_five': 'Value 05', 'option_six': 'Value 06', 'option_seven': 'Value 07', 'option_eight': 'Value 08', 'option_nine': 'Value 09', 'option_ten': 'Value 10'},
+        'value_labels': {
+            'moins_20k': "Moins de $20,000",
+            '20k_30k': "Entre $20,000 et $29,999",
+            '30k_40k': "Entre $30,000 et $39,999",
+            '40k_50k': "Entre $40,000 et $49,999",
+            '50k_60k': "Entre $50,000 et $59,999",
+            '60k_70k': "Entre $60,000 et $69,999",
+            '70k_80k': "Entre $70,000 et $79,999",
+            '80k_90k': "Entre $80,000 et $89,999",
+            '90k_100k': "Entre $90,000 et $99,999",
+            'plus_100k': "Plus de $100,000",
+        },
     }
 
     # --- q79 ---
-    # op_vote_pref_party — Preference for PQ or ADQ
+    # ses_employment — Statut d'emploi
     # Source: q79
-    # Assumption: Data codes are prefixed with '0' (e.g., '01' vs codebook '1').
-    # Assumption: Codes '03' through '11' and '96' are unlisted options treated as missing.
-    df_clean['op_vote_pref_party'] = df['q79'].map({
-        '01': 'prefere_le_pq',
-        '02': 'prefere_ladq',
+    df_clean['ses_employment'] = df['q79'].map({
+        '01': 'travailleur_autonome',
+        '02': 'salarie',
+        '03': 'retraite',
+        '04': 'chomage',
+        '05': 'etudiant',
+        '06': 'menagere',
+        '07': 'handicape',
+        '08': 'deux_emplois_plus',
+        '09': 'etudiant_et_salarie',
+        '10': 'famille_et_salarie',
+        '11': 'retraite_et_salarie',
+        '96': 'autre',
         '99': np.nan,
     })
-    CODEBOOK_VARIABLES['op_vote_pref_party'] = {
+    CODEBOOK_VARIABLES['ses_employment'] = {
         'original_variable': 'q79',
-        'question_label': "Préfère le PQ ou l'ADQ?",
+        'question_label': "Travaillez-vous actuellement à votre compte, êtes-vous salarié, avez-vous pris votre retraite, êtes-vous au chômage, étudiant(e), ménagère?",
         'type': 'categorical',
-        'value_labels': {'prefere_le_pq': "Préfère le PQ", 'prefere_ladq': "Préfère l'ADQ"},
+        'value_labels': {
+            'travailleur_autonome': "Travaille à son compte",
+            'salarie': "Salarié(e)",
+            'retraite': "Retraité(e)",
+            'chomage': "Au chômage / cherche du travail",
+            'etudiant': "Étudiant(e)",
+            'menagere': "Ménagère",
+            'handicape': "Handicapé(e)",
+            'deux_emplois_plus': "Deux emplois ou plus",
+            'etudiant_et_salarie': "Étudiant(e) et salarié(e)",
+            'famille_et_salarie': "En charge d'une famille et salarié(e)",
+            'retraite_et_salarie': "Retraité(e) et salarié(e)",
+            'autre': "Autre",
+        },
     }
 
     # --- q8 ---
@@ -2140,49 +2155,58 @@ def clean_data(raw_path: str) -> pd.DataFrame:
     }
 
     # --- q80 ---
-    # op_vote_choice — Inferred vote choice from Q80
+    # ses_language_home — Langue parlée le plus souvent à la maison
     # Source: q80
-    # Assumption: Codebook missing. Mapping inferred from value counts. Codes other than 01/02 are treated as missing.
-    df_clean['op_vote_choice'] = df['q80'].map({
-        '01': 'response_a',
-        '02': 'response_b',
-        '04': np.nan,
-        '05': np.nan,
-        '06': np.nan,
-        '08': np.nan,
-        '09': np.nan,
-        '10': np.nan,
-        '12': np.nan,
-        '15': np.nan,
-        '96': np.nan,
+    df_clean['ses_language_home'] = df['q80'].map({
+        '01': 'anglais',
+        '02': 'francais',
+        '03': 'chinois',
+        '04': 'italien',
+        '05': 'portugais',
+        '06': 'espagnol',
+        '07': 'allemand',
+        '08': 'polonais',
+        '09': 'punjabi',
+        '10': 'grec',
+        '11': 'vietnamien',
+        '12': 'arabe',
+        '13': 'cri',
+        '14': 'tagal',
+        '15': 'ukrainien_russe',
+        '96': 'autre',
         '99': np.nan,
     })
-    CODEBOOK_VARIABLES['op_vote_choice'] = {
+    CODEBOOK_VARIABLES['ses_language_home'] = {
         'original_variable': 'q80',
-        'question_label': "Inferred: Vote choice (Codebook missing)",
+        'question_label': "Quelle langue parlez-vous le plus souvent à la maison?",
         'type': 'categorical',
-        'value_labels': {'response_a': "Response A (Code 01)", 'response_b': "Response B (Code 02)"},
+        'value_labels': {
+            'anglais': "Anglais", 'francais': "Français", 'chinois': "Chinois",
+            'italien': "Italien", 'portugais': "Portugais", 'espagnol': "Espagnol",
+            'allemand': "Allemand", 'polonais': "Polonais", 'punjabi': "Punjabi",
+            'grec': "Grec", 'vietnamien': "Vietnamien", 'arabe': "Arabe",
+            'cri': "Cri", 'tagal': "Tagal (philippin)", 'ukrainien_russe': "Ukrainien / Russe",
+            'autre': "Autre",
+        },
     }
 
     # --- q81 ---
-    # op_q81 — Unknown question, codes 01-05 observed
+    # ses_religiosity — Fréquence de pratique religieuse (messe)
     # Source: q81
-    # CRITICAL: Codebook entry was missing. Mapping codes based on observed string values (01-05) and treating 98/99 as missing.
-    # TODO: Verify question label, standard name, and value_labels against the full codebook.
-    df_clean['op_q81'] = df['q81'].map({
-        '01': 'response_1',
-        '02': 'response_2',
-        '03': 'response_3',
-        '04': 'response_4',
-        '05': 'response_5',
+    df_clean['ses_religiosity'] = df['q81'].map({
+        '01': 1.0,    # Chaque semaine ou plus souvent
+        '02': 0.75,   # Deux fois par mois
+        '03': 0.5,    # Une fois par mois
+        '04': 0.25,   # Une ou deux fois par an
+        '05': 0.0,    # Presque jamais ou jamais
         '98': np.nan,
         '99': np.nan,
     })
-    CODEBOOK_VARIABLES['op_q81'] = {
+    CODEBOOK_VARIABLES['ses_religiosity'] = {
         'original_variable': 'q81',
-        'question_label': "Unknown question - codebook missing",
-        'type': 'categorical',
-        'value_labels': {'response_1': "Response 1 (Unknown)", 'response_2': "Response 2 (Unknown)", 'response_3': "Response 3 (Unknown)", 'response_4': "Response 4 (Unknown)", 'response_5': "Response 5 (Unknown)"},
+        'question_label': "Sans compter les mariages et les funérailles, combien de fois assistez-vous aux messes à votre lieu de culte?",
+        'type': 'likert',
+        'value_labels': {1.0: "Chaque semaine (ou plus souvent)", 0.75: "Deux fois par mois", 0.5: "Une fois par mois", 0.25: "Une ou deux fois par an", 0.0: "Presque jamais (ou jamais)"},
     }
 
     # --- q9 ---
@@ -2230,6 +2254,46 @@ def clean_data(raw_path: str) -> pd.DataFrame:
         'value_labels': {'one': "Type One", 'two': "Type Two"},
     }
 
+
+    # ========================================================================
+    # STRATES CANONIQUES
+    # ========================================================================
+    df_clean = map_strates_canoniques(df_clean)
+
+    return df_clean
+
+
+def map_strates_canoniques(df_clean: pd.DataFrame) -> pd.DataFrame:
+    """Ajoute les 4 colonnes de strates canoniques standardisées.
+
+    Sources:
+        - age_group: ses_age_year (q75) → année naissance → groupe d'âge (2007 comme référence)
+        - langue: ses_language (langu) → francophone / anglo_autre
+        - region: ses_region (nomx) → déjà en format canonique (montreal/quebec/couronne/regions)
+        - genre: ses_gender (q76) → homme / femme
+
+    Returns:
+        pd.DataFrame: df_clean avec colonnes strate_age_group, strate_langue, strate_region, strate_genre ajoutées
+    """
+    # --- strate_age_group (depuis année de naissance, enquête 2007) ---
+    ANNEE_ENQUETE = 2007
+    age = ANNEE_ENQUETE - df_clean['ses_age_year']
+    df_clean['strate_age_group'] = pd.Series(dtype='object', index=df_clean.index)
+    df_clean.loc[(age >= 18) & (age <= 34), 'strate_age_group'] = '18-34'
+    df_clean.loc[(age >= 35) & (age <= 54), 'strate_age_group'] = '35-54'
+    df_clean.loc[age >= 55, 'strate_age_group'] = '55+'
+
+    # --- strate_langue (depuis langue maternelle) ---
+    df_clean['strate_langue'] = df_clean['ses_language'].map({
+        'french': 'francophone',
+        'english': 'anglo_autre',
+    })
+
+    # --- strate_region (déjà canonique depuis nomx) ---
+    df_clean['strate_region'] = df_clean['ses_region']
+
+    # --- strate_genre ---
+    df_clean['strate_genre'] = df_clean['ses_gender']
 
     return df_clean
 
