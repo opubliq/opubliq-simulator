@@ -133,7 +133,28 @@ npm run dev
 ```
 Visit http://localhost:5173
 
-#### 5. **Ingestion** (Load Survey Data)
+#### 5. **Google Drive mount (rclone)**
+
+Les scripts d'ingestion lisent les fichiers raw depuis un dossier partagé Google Drive monté localement via rclone.
+
+**Prérequis :** rclone configuré avec un remote nommé `gdrive`.
+
+```bash
+# Monter le drive (une fois, en arrière-plan)
+rclone mount gdrive: ~/opubliq/gdrive --daemon
+```
+
+Ajouter dans `.env.local` :
+```env
+SHARED_FOLDER_PATH=/home/your-user/opubliq/gdrive/_SharedFolder_data_produit
+```
+
+Le mount doit être actif avant de lancer les scripts d'ingestion. Vérifier avec :
+```bash
+ls $SHARED_FOLDER_PATH
+```
+
+#### 6. **Ingestion** (Load Survey Data)
 ```bash
 cd ingestion
 python -m venv venv
