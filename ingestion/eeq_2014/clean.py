@@ -1812,30 +1812,27 @@ def clean_data(raw_path: str) -> pd.DataFrame:
         'value_labels': {'option_one': 'Option 1', 'option_two': 'Option 2', 'option_three': 'Option 3'},
     }
 
-    # --- Q46 ---
-    # op_indep_econ_impact — Economic impact of independence on Quebec's situation
-    # Source: Q46 - "Si le Québec devenait un pays indépendant, croyez-vous que la
-    #          situation économique au Québec s'améliorerait, se détériorerait ou
-    #          resterait à peu près la même?"
-    # Codes: 1=S'améliorerait, 2=Se détériorerait, 3=Resterait à peu près la même,
-    #        8=Je ne sais pas, 9=Je préfère ne pas répondre
-    df_clean['op_indep_econ_impact'] = df['Q46'].map({
-        1.0: 'would_improve',
-        2.0: 'would_worsen',
-        3.0: 'would_stay_same',
-        8.0: np.nan,
-        9.0: np.nan,
-    })
-    CODEBOOK_VARIABLES['op_indep_econ_impact'] = {
-        'original_variable': 'Q46',
-        'question_label': "Economic impact of independence on Quebec's situation",
-        'type': 'categorical',
-        'value_labels': {
-            'would_improve': "Would improve",
-            'would_worsen': "Would worsen",
-            'would_stay_same': "Would stay the same"
-        },
-    }
+     # --- Q46 ---
+     # op_independence_economic_comparison — Comparaison économique suite à l'indépendance
+     # Source: Q46
+     # TODO: Valider le mapping exact de la comparaison à partir du codebook
+     df_clean['op_independence_economic_comparison'] = df['Q46'].map({
+         # 1.0: 'better_off',
+         # 2.0: 'worse_off',
+         # 3.0: 'no_difference',
+         # 98.0: np.nan,
+         # 99.0: np.nan,
+     })
+     CODEBOOK_VARIABLES['op_independence_economic_comparison'] = {
+         'original_variable': 'Q46',
+         'question_label': "Si le Québec devenait indépendant, pensez-vous que nous serions économiquement mieux ou plus mal?", # TODO: Confirmer dans le codebook
+         'type': 'categorical',
+         'value_labels': {
+             # 'better_off': "Mieux",
+             # 'worse_off': "Plus mal",
+             # 'no_difference': "Pas de différence",
+         }
+     }
 
     # --- Q47 ---
     # op_opinion_q47 — Hypothetical opinion variable based on codes observed
@@ -2146,124 +2143,136 @@ def clean_data(raw_path: str) -> pd.DataFrame:
     }
 
     # --- Q59A ---
-    # op_attitude_q59a — Inferred response to question 59A
+    # fin_savings_bank — Compte épargne dans une banque
     # Source: Q59A
-    # Assumption: Codes 8.0 and 9.0 treated as missing based on observed data and missing codebook.
-    df_clean['op_attitude_q59a'] = df['Q59A'].map({
-        1.0: 'response_a',
-        2.0: 'response_b',
-        8.0: np.nan,
-        9.0: np.nan,
-    })
-    CODEBOOK_VARIABLES['op_attitude_q59a'] = {
-        'original_variable': 'Q59A',
-        'question_label': "Inferred response to question 59A (Codebook Missing)",
-        'type': 'categorical',
-        'value_labels': {'response_a': 'Response A', 'response_b': 'Response B'},
-    }
-
-    # --- Q59B ---
-    # ses_vote_intention_b — Intention de vote (Parti B)
-    # Source: Q59B
-    # Assumption: codes 8 and 9 treated as missing (unlabelled in codebook, likely 'don't know/refused')
-    # Note: data suggests integer codes were read as float64 due to nature of .sav file. Mapping uses float keys.
-    df_clean['ses_vote_intention_b'] = df['Q59B'].map({
-        1.0: 'parti_a',
-        2.0: 'parti_b',
-        8.0: np.nan,
-        9.0: np.nan,
-    })
-    CODEBOOK_VARIABLES['ses_vote_intention_b'] = {
-        'original_variable': 'Q59B',
-        'question_label': "Votez-vous pour le parti A ou le parti B?",
-        'type': 'categorical',
-        'value_labels': {'parti_a': "Parti A", 'parti_b': "Parti B"},
-    }
-
-    # --- Q59C ---
-    # op_attitude_q59c — Attitude related to Q59 part C
-    # Source: Q59C
-    # Assumption: codes 8.0 and 9.0 treated as missing (unlabelled in provided context)
-    df_clean['op_attitude_q59c'] = df['Q59C'].map({
-        1.0: 'option_a',
-        2.0: 'option_b',
-        8.0: np.nan,
-        9.0: np.nan,
-    })
-    CODEBOOK_VARIABLES['op_attitude_q59c'] = {
-        'original_variable': 'Q59C',
-        'question_label': "Inferred attitude related to Q59 part C",
-        'type': 'categorical',
-        'value_labels': {'option_a': "Option A", 'option_b': "Option B"},
-    }
-
-    # --- Q59D ---
-    # op_vote_choice — Imputed vote choice for Q59D
-    # Source: Q59D
-    # Assumption: Codes 8.0 and 9.0 treated as missing (Not in codebook)
-    df_clean['op_vote_choice'] = df['Q59D'].map({
-        1.0: 'party_a',
-        2.0: 'party_b',
-        8.0: np.nan,
-        9.0: np.nan,
-    })
-    CODEBOOK_VARIABLES['op_vote_choice'] = {
-        'original_variable': 'Q59D',
-        'question_label': "Vote choice (Inferred)",
-        'type': 'categorical',
-        'value_labels': {'party_a': "Party A", 'party_b': "Party B"},
-    }
-
-    # --- Q59E ---
-    # op_vote_intention — Vote intention
-    # Source: Q59E
-    # Assumption: Codes 8.0 and 9.0 are unlabelled and treated as missing (np.nan)
-    df_clean['op_vote_intention'] = df['Q59E'].map({
+    # Question: Parmi les types de placements financiers suivants, quels sont ceux que vous détenez
+    #           ou que détient l'un des membres de votre foyer? (A. Compte épargne dans une banque)
+    # Possible answers: 1=Yes, 2=No, 8=Don't know, 9=Prefer not to answer
+    df_clean['fin_savings_bank'] = df['Q59A'].map({
         1.0: 'yes',
         2.0: 'no',
         8.0: np.nan,
         9.0: np.nan,
     })
-    CODEBOOK_VARIABLES['op_vote_intention'] = {
-        'original_variable': 'Q59E',
-        'question_label': "Vote intention (Assumed from context)",
+    CODEBOOK_VARIABLES['fin_savings_bank'] = {
+        'original_variable': 'Q59A',
+        'question_label': "Financial holdings: Savings account in a bank (Compte épargne dans une banque)",
         'type': 'categorical',
-        'value_labels': {'yes': "Yes", 'no': "No"},
+        'value_labels': {'yes': 'Yes', 'no': 'No'},
+    }
+
+    # --- Q59B ---
+    # fin_trust_account — Compte dans une société de fiducie
+    # Source: Q59B
+    # Question: Parmi les types de placements financiers suivants, quels sont ceux que vous détenez
+    #           ou que détient l'un des membres de votre foyer? (B. Compte dans une société de fiducie)
+    # Possible answers: 1=Yes, 2=No, 8=Don't know, 9=Prefer not to answer
+    df_clean['fin_trust_account'] = df['Q59B'].map({
+        1.0: 'yes',
+        2.0: 'no',
+        8.0: np.nan,
+        9.0: np.nan,
+    })
+    CODEBOOK_VARIABLES['fin_trust_account'] = {
+        'original_variable': 'Q59B',
+        'question_label': "Financial holdings: Account in a trust company (Compte dans une société de fiducie)",
+        'type': 'categorical',
+        'value_labels': {'yes': 'Yes', 'no': 'No'},
+    }
+
+    # --- Q59C ---
+    # fin_rrsp_tfsa — REER ou CELI
+    # Source: Q59C
+    # Question: Parmi les types de placements financiers suivants, quels sont ceux que vous détenez
+    #           ou que détient l'un des membres de votre foyer? (C. REER ou CELI)
+    # Possible answers: 1=Yes, 2=No, 8=Don't know, 9=Prefer not to answer
+    df_clean['fin_rrsp_tfsa'] = df['Q59C'].map({
+        1.0: 'yes',
+        2.0: 'no',
+        8.0: np.nan,
+        9.0: np.nan,
+    })
+    CODEBOOK_VARIABLES['fin_rrsp_tfsa'] = {
+        'original_variable': 'Q59C',
+        'question_label': "Financial holdings: RRSP or TFSA (REER ou CELI)",
+        'type': 'categorical',
+        'value_labels': {'yes': 'Yes', 'no': 'No'},
+    }
+
+    # --- Q59D ---
+    # fin_stocks_shares — Actions ou parts d'entreprise
+    # Source: Q59D
+    # Question: Parmi les types de placements financiers suivants, quels sont ceux que vous détenez
+    #           ou que détient l'un des membres de votre foyer? (D. Actions ou parts d'entreprise)
+    # Possible answers: 1=Yes, 2=No, 8=Don't know, 9=Prefer not to answer
+    df_clean['fin_stocks_shares'] = df['Q59D'].map({
+        1.0: 'yes',
+        2.0: 'no',
+        8.0: np.nan,
+        9.0: np.nan,
+    })
+    CODEBOOK_VARIABLES['fin_stocks_shares'] = {
+        'original_variable': 'Q59D',
+        'question_label': "Financial holdings: Stocks or shares (Actions ou parts d'entreprise)",
+        'type': 'categorical',
+        'value_labels': {'yes': 'Yes', 'no': 'No'},
+    }
+
+    # --- Q59E ---
+    # fin_bonds — Obligations
+    # Source: Q59E
+    # Question: Parmi les types de placements financiers suivants, quels sont ceux que vous détenez
+    #           ou que détient l'un des membres de votre foyer? (E. Obligations)
+    # Possible answers: 1=Yes, 2=No, 8=Don't know, 9=Prefer not to answer
+    df_clean['fin_bonds'] = df['Q59E'].map({
+        1.0: 'yes',
+        2.0: 'no',
+        8.0: np.nan,
+        9.0: np.nan,
+    })
+    CODEBOOK_VARIABLES['fin_bonds'] = {
+        'original_variable': 'Q59E',
+        'question_label': "Financial holdings: Bonds (Obligations)",
+        'type': 'categorical',
+        'value_labels': {'yes': 'Yes', 'no': 'No'},
     }
 
     # --- Q59F ---
-    # ses_region — Région de résidence
+    # fin_financial_assets_portfolio — Portefeuille d'actifs financiers
     # Source: Q59F
-    # Assumption: codes 8 and 9 are not in codebook and treated as missing
-    df_clean['ses_region'] = df['Q59F'].map({
-        1.0: 'quebec',
-        2.0: 'ontario',
+    # Question: Parmi les types de placements financiers suivants, quels sont ceux que vous détenez
+    #           ou que détient l'un des membres de votre foyer? (F. Portefeuille d'actifs financiers - CPG, fonds mutuels, etc.)
+    # Possible answers: 1=Yes, 2=No, 8=Don't know, 9=Prefer not to answer
+    df_clean['fin_financial_assets_portfolio'] = df['Q59F'].map({
+        1.0: 'yes',
+        2.0: 'no',
         8.0: np.nan,
         9.0: np.nan,
     })
-    CODEBOOK_VARIABLES['ses_region'] = {
+    CODEBOOK_VARIABLES['fin_financial_assets_portfolio'] = {
         'original_variable': 'Q59F',
-        'question_label': "Région de résidence",
+        'question_label': "Financial holdings: Financial assets portfolio (GIC, mutual funds, etc.) (Portefeuille d'actifs financiers - CPG, fonds mutuels, etc.)",
         'type': 'categorical',
-        'value_labels': {'quebec': "Québec", 'ontario': "Ontario"},
+        'value_labels': {'yes': 'Yes', 'no': 'No'},
     }
 
     # --- Q59G ---
-    # ses_age_group — Grouped age category
+    # fin_retirement_savings_plan — Régime d'épargne-retraite
     # Source: Q59G
-    # Assumption: codes 8/9 treated as missing (unlabelled in codebook)
-    # Note: data is float, so mapping keys must be floats (1.0, 2.0, etc.)
-    df_clean['ses_age_group'] = df['Q59G'].map({
-        1.0: '18-29',
-        2.0: '30-49',
+    # Question: Parmi les types de placements financiers suivants, quels sont ceux que vous détenez
+    #           ou que détient l'un des membres de votre foyer? (G. Régime d'épargne-retraite)
+    # Possible answers: 1=Yes, 2=No, 8=Don't know, 9=Prefer not to answer
+    df_clean['fin_retirement_savings_plan'] = df['Q59G'].map({
+        1.0: 'yes',
+        2.0: 'no',
         8.0: np.nan,
         9.0: np.nan,
     })
-    CODEBOOK_VARIABLES['ses_age_group'] = {
+    CODEBOOK_VARIABLES['fin_retirement_savings_plan'] = {
         'original_variable': 'Q59G',
-        'question_label': "Groupe d'âge",
+        'question_label': "Financial holdings: Retirement savings plan (Régime d'épargne-retraite)",
         'type': 'categorical',
-        'value_labels': {'18-29': "18-29 ans", '30-49': "30-49 ans"},
+        'value_labels': {'yes': 'Yes', 'no': 'No'},
     }
 
     # --- Q6 ---
