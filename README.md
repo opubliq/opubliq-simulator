@@ -92,38 +92,56 @@ Schéma SQL :
 
 ### Setup
 
-1. **Cloner et install dépendances**
-   ```bash
-   git clone <repo>
-   cd opubliq-simulator
-   ```
+#### 1. **Cloner et install dépendances**
+```bash
+git clone <repo>
+cd opubliq-simulator
+```
 
-2. **Frontend**
-   ```bash
-   cd frontend
-   npm install
-   npm run dev
-   ```
+#### 2. **Supabase Setup** 🔧
+1. Go to [supabase.com](https://supabase.com) and create a new **free tier** project
+2. Once project is created, go to **Settings → API** and copy:
+   - **SUPABASE_URL** (starts with `https://...supabase.co`)
+   - **SUPABASE_ANON_KEY** (public key for client-side use)
+3. Enable `pgvector` extension:
+   - In Supabase dashboard, go to **SQL Editor**
+   - Run this query:
+     ```sql
+     CREATE EXTENSION IF NOT EXISTS vector;
+     ```
+4. Load the database schema:
+   - Copy migrations from `/supabase/migrations` and run them in **SQL Editor**
+   - Or use Supabase CLI: `supabase db push` (if using local Supabase)
 
-3. **Supabase**
-   - Créer projet Supabase
-   - Activer extension `pgvector`
-   - Exécuter migrations dans `/supabase/migrations`
+#### 3. **Environment Variables**
+```bash
+cp .env.example .env.local
+```
+Then edit `.env.local` and fill in:
+```env
+VITE_SUPABASE_URL=https://your-project.supabase.co
+VITE_SUPABASE_ANON_KEY=your-anon-key-from-settings
+VITE_GEMINI_API_KEY=your-gemini-api-key
+```
 
-4. **Ingestion**
-   ```bash
-   cd ingestion
-   python -m venv venv
-   source venv/bin/activate
-   pip install -r requirements.txt
-   python load_surveys.py
-   ```
+Get Gemini API key: [ai.google.dev](https://ai.google.dev)
 
-5. **Environnement**
-   ```bash
-   cp .env.example .env.local
-   # Remplir : SUPABASE_URL, SUPABASE_ANON_KEY, VITE_GEMINI_API_KEY
-   ```
+#### 4. **Frontend**
+```bash
+cd frontend
+npm install
+npm run dev
+```
+Visit http://localhost:5173
+
+#### 5. **Ingestion** (Load Survey Data)
+```bash
+cd ingestion
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+pip install -r requirements.txt
+python load_surveys.py
+```
 
 ---
 

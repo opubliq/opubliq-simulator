@@ -2,7 +2,7 @@
 .env
 .env.local
 .env.*.local
-.env.example
+# Note: .env.example IS tracked in git (it's a template)
 
 # Python
 __pycache__/
