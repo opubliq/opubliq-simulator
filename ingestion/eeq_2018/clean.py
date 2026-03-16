@@ -822,14 +822,40 @@ def clean_data(df):
             'qs': "Québec solidaire",
             'spoiled_ballot': "A annulé son vote",
             'other': "Autre parti",
-            'did_not_vote': "N'a pas voté",
-            'dont_remember': "Ne se rappelle plus"
+             'did_not_vote': "N'a pas voté",
+             'dont_remember': "Ne se rappelle plus"
+         }
+    }
+
+    # --- Q47 ---
+    # op_gov_employment_role — Rôle du gouvernement dans l'emploi et la qualité de vie
+    # Source: Q47
+    # 5-point scale: 1 = government should ensure employment/quality of life, 5 = people should fend for themselves
+    df_clean['op_gov_employment_role'] = df['q47'].map({
+        1.0: 'gov_should_ensure',
+        2.0: 'gov_lean_ensure',
+        3.0: 'neutral',
+        4.0: 'people_lean_self_reliant',
+        5.0: 'people_should_fend_for_themselves',
+        98.0: np.nan,
+        99.0: np.nan
+    })
+    CODEBOOK_VARIABLES['op_gov_employment_role'] = {
+        'original_variable': 'q47',
+        'question_label': "Certaines personnes disent que les gouvernements devraient s'assurer que chaque personne ait un emploi et une bonne qualité de vie. D'autres personnes disent que les gouvernements devraient plutôt laisser chaque personne se débrouiller par elle-même. Où vous situez-vous sur l'échelle ci-dessous?",
+        'type': 'ordinal',
+        'value_labels': {
+             'gov_should_ensure': "Les gouvernements devraient s'assurer que chaque personne a un emploi et une bonne qualité de vie",
+             'gov_lean_ensure': "Penche vers le gouvernement devrait assurer",
+             'neutral': "Position neutre",
+             'people_lean_self_reliant': "Penche vers les gens devraient se débrouiller",
+             'people_should_fend_for_themselves': "Les gens devraient se débrouiller par eux-mêmes"
         }
     }
 
-    # --- Q50x1 ---
-    # behav_vote_at_16_control — Vote à 16 ans (control)
-    # Source: Q50x1
+     # --- Q50x1 ---
+     # behav_vote_at_16_control — Vote à 16 ans (control)
+     # Source: Q50x1
     df_clean['behav_vote_at_16_control'] = df['q50x1'].map({
         1.0: 'strongly_agree',
         2.0: 'somewhat_agree',
@@ -3244,10 +3270,10 @@ def clean_data(df):
     # BEHAVIORAL - Party best for issues/groups (Q51A, Q52)
     # ========================================================================
 
-    # --- Q51A_1 ---
-    # behav_issue_party_best_quebec_interests — Quel parti est meilleur pour défendre les intérêts du Québec
+    # --- Q51_1 ---
+    # behav_party_best_quebec_interests — Quel parti est meilleur pour défendre les intérêts du Québec
     # Source: Q51A_1
-    df_clean['behav_issue_party_best_quebec_interests'] = df['q51a_1'].map({
+    df_clean['behav_party_best_quebec_interests'] = df['q51a_1'].map({
         1.0: 'plq',
         2.0: 'pq',
         3.0: 'caq',
@@ -3257,7 +3283,7 @@ def clean_data(df):
         98.0: np.nan,
         99.0: np.nan
     })
-    CODEBOOK_VARIABLES['behav_issue_party_best_quebec_interests'] = {
+    CODEBOOK_VARIABLES['behav_party_best_quebec_interests'] = {
         'original_variable': 'q51a_1',
         'question_label': "Selon vous, quel parti est le meilleur pour défendre les intérêts du Québec?",
         'type': 'categorical',
@@ -3272,9 +3298,9 @@ def clean_data(df):
     }
 
     # --- Q51A_2 ---
-    # behav_issue_party_best_cultural_identity — Quel parti est meilleur pour défendre l'identité et la culture québécoise
+    # behav_party_best_cultural_identity — Quel parti est meilleur pour défendre l'identité et la culture québécoise
     # Source: Q51A_2
-    df_clean['behav_issue_party_best_cultural_identity'] = df['q51a_2'].map({
+    df_clean['behav_party_best_cultural_identity'] = df['q51a_2'].map({
         1.0: 'plq',
         2.0: 'pq',
         3.0: 'caq',
@@ -3284,7 +3310,7 @@ def clean_data(df):
         98.0: np.nan,
         99.0: np.nan
     })
-    CODEBOOK_VARIABLES['behav_issue_party_best_cultural_identity'] = {
+    CODEBOOK_VARIABLES['behav_party_best_cultural_identity'] = {
         'original_variable': 'q51a_2',
         'question_label': "Selon vous, quel parti est le meilleur pour défendre l'identité et la culture québécoise?",
         'type': 'categorical',
@@ -3299,9 +3325,9 @@ def clean_data(df):
     }
 
     # --- Q51A_3 ---
-    # behav_issue_party_best_economy — Quel parti est meilleur pour gérer l'économie
+    # behav_party_best_economy — Quel parti est meilleur pour gérer l'économie
     # Source: Q51A_3
-    df_clean['behav_issue_party_best_economy'] = df['q51a_3'].map({
+    df_clean['behav_party_best_economy'] = df['q51a_3'].map({
         1.0: 'plq',
         2.0: 'pq',
         3.0: 'caq',
@@ -3311,7 +3337,7 @@ def clean_data(df):
         98.0: np.nan,
         99.0: np.nan
     })
-    CODEBOOK_VARIABLES['behav_issue_party_best_economy'] = {
+    CODEBOOK_VARIABLES['behav_party_best_economy'] = {
         'original_variable': 'q51a_3',
         'question_label': "Selon vous, quel parti est le meilleur pour gérer l'économie?",
         'type': 'categorical',
@@ -3326,9 +3352,9 @@ def clean_data(df):
     }
 
     # --- Q51A_4 ---
-    # behav_issue_party_best_education — Quel parti est meilleur pour améliorer l'éducation
+    # behav_party_best_education — Quel parti est meilleur pour améliorer l'éducation
     # Source: Q51A_4
-    df_clean['behav_issue_party_best_education'] = df['q51a_4'].map({
+    df_clean['behav_party_best_education'] = df['q51a_4'].map({
         1.0: 'plq',
         2.0: 'pq',
         3.0: 'caq',
@@ -3338,7 +3364,7 @@ def clean_data(df):
         98.0: np.nan,
         99.0: np.nan
     })
-    CODEBOOK_VARIABLES['behav_issue_party_best_education'] = {
+    CODEBOOK_VARIABLES['behav_party_best_education'] = {
         'original_variable': 'q51a_4',
         'question_label': "Selon vous, quel parti est le meilleur pour améliorer l'éducation?",
         'type': 'categorical',
@@ -3353,9 +3379,9 @@ def clean_data(df):
     }
 
     # --- Q51A_5 ---
-    # behav_issue_party_best_environment — Quel parti est meilleur pour protéger l'environnement
+    # behav_party_best_environment — Quel parti est meilleur pour protéger l'environnement
     # Source: Q51A_5
-    df_clean['behav_issue_party_best_environment'] = df['q51a_5'].map({
+    df_clean['behav_party_best_environment'] = df['q51a_5'].map({
         1.0: 'plq',
         2.0: 'pq',
         3.0: 'caq',
@@ -3365,7 +3391,7 @@ def clean_data(df):
         98.0: np.nan,
         99.0: np.nan
     })
-    CODEBOOK_VARIABLES['behav_issue_party_best_environment'] = {
+    CODEBOOK_VARIABLES['behav_party_best_environment'] = {
         'original_variable': 'q51a_5',
         'question_label': "Selon vous, quel parti est le meilleur pour protéger l'environnement?",
         'type': 'categorical',
@@ -3380,9 +3406,9 @@ def clean_data(df):
     }
 
     # --- Q51A_6 ---
-    # behav_issue_party_best_health — Quel parti est meilleur pour gérer le système de santé
+    # behav_party_best_health — Quel parti est meilleur pour gérer le système de santé
     # Source: Q51A_6
-    df_clean['behav_issue_party_best_health'] = df['q51a_6'].map({
+    df_clean['behav_party_best_health'] = df['q51a_6'].map({
         1.0: 'plq',
         2.0: 'pq',
         3.0: 'caq',
@@ -3392,7 +3418,7 @@ def clean_data(df):
         98.0: np.nan,
         99.0: np.nan
     })
-    CODEBOOK_VARIABLES['behav_issue_party_best_health'] = {
+    CODEBOOK_VARIABLES['behav_party_best_health'] = {
         'original_variable': 'q51a_6',
         'question_label': "Selon vous, quel parti est le meilleur pour gérer le système de santé?",
         'type': 'categorical',
@@ -3407,9 +3433,9 @@ def clean_data(df):
     }
 
     # --- Q51A_7 ---
-    # behav_issue_party_best_poverty — Quel parti est meilleur pour combattre la pauvreté
+    # behav_party_best_poverty — Quel parti est meilleur pour combattre la pauvreté
     # Source: Q51A_7
-    df_clean['behav_issue_party_best_poverty'] = df['q51a_7'].map({
+    df_clean['behav_party_best_poverty'] = df['q51a_7'].map({
         1.0: 'plq',
         2.0: 'pq',
         3.0: 'caq',
@@ -3419,7 +3445,7 @@ def clean_data(df):
         98.0: np.nan,
         99.0: np.nan
     })
-    CODEBOOK_VARIABLES['behav_issue_party_best_poverty'] = {
+    CODEBOOK_VARIABLES['behav_party_best_poverty'] = {
         'original_variable': 'q51a_7',
         'question_label': "Selon vous, quel parti est le meilleur pour combattre la pauvreté?",
         'type': 'categorical',
@@ -3434,9 +3460,9 @@ def clean_data(df):
     }
 
     # --- Q51A_8 ---
-    # behav_issue_party_best_immigration — Quel parti est meilleur pour gérer l'intégration des immigrants
+    # behav_party_best_immigration — Quel parti est meilleur pour gérer l'intégration des immigrants
     # Source: Q51A_8
-    df_clean['behav_issue_party_best_immigration'] = df['q51a_8'].map({
+    df_clean['behav_party_best_immigration'] = df['q51a_8'].map({
         1.0: 'plq',
         2.0: 'pq',
         3.0: 'caq',
@@ -3446,7 +3472,7 @@ def clean_data(df):
         98.0: np.nan,
         99.0: np.nan
     })
-    CODEBOOK_VARIABLES['behav_issue_party_best_immigration'] = {
+    CODEBOOK_VARIABLES['behav_party_best_immigration'] = {
         'original_variable': 'q51a_8',
         'question_label': "Selon vous, quel parti est le meilleur pour gérer l'intégration des immigrants au Québec?",
         'type': 'categorical',
@@ -3461,9 +3487,9 @@ def clean_data(df):
     }
 
     # --- Q52_1 ---
-    # behav_age_group_best_party_18_34 — Quel parti est meilleur pour les 18-34 ans
+    # behav_party_best_age_group_18_34 — Quel parti est meilleur pour les 18-34 ans
     # Source: Q52_1
-    df_clean['behav_age_group_best_party_18_34'] = df['q52_1'].map({
+    df_clean['behav_party_best_age_group_18_34'] = df['q52_1'].map({
         1.0: 'plq',
         2.0: 'pq',
         3.0: 'caq',
@@ -3473,7 +3499,7 @@ def clean_data(df):
         98.0: np.nan,
         99.0: np.nan
     })
-    CODEBOOK_VARIABLES['behav_age_group_best_party_18_34'] = {
+    CODEBOOK_VARIABLES['behav_party_best_age_group_18_34'] = {
         'original_variable': 'q52_1',
         'question_label': "Selon vous, quel parti est le meilleur pour défendre les intérêts des gens âgés de 18 à 34 ans?",
         'type': 'categorical',
@@ -3488,9 +3514,9 @@ def clean_data(df):
     }
 
     # --- Q52_2 ---
-    # behav_age_group_best_party_35_54 — Quel parti est meilleur pour les 35-54 ans
+    # behav_party_best_age_group_35_54 — Quel parti est meilleur pour les 35-54 ans
     # Source: Q52_2
-    df_clean['behav_age_group_best_party_35_54'] = df['q52_2'].map({
+    df_clean['behav_party_best_age_group_35_54'] = df['q52_2'].map({
         1.0: 'plq',
         2.0: 'pq',
         3.0: 'caq',
@@ -3500,24 +3526,24 @@ def clean_data(df):
         98.0: np.nan,
         99.0: np.nan
     })
-    CODEBOOK_VARIABLES['behav_age_group_best_party_35_54'] = {
+    CODEBOOK_VARIABLES['behav_party_best_age_group_35_54'] = {
         'original_variable': 'q52_2',
-        'question_label': "Selon vous, quel parti est le meilleur pour defender les interets des gens ages de 35 a 54 ans?",
+        'question_label': "Selon vous, quel parti est le meilleur pour défendre les intérêts des gens âgés de 35 à 54 ans?",
         'type': 'categorical',
         'value_labels': {
-            'plq': "Parti liberal du Quebec",
-            'pq': "Parti quebecois",
-            'caq': "Coalition avenir Quebec",
-            'qs': "Quebec solidaire",
+            'plq': "Parti libéral du Québec",
+            'pq': "Parti québécois",
+            'caq': "Coalition avenir Québec",
+            'qs': "Québec solidaire",
             'other_party': "Un autre parti",
             'no_party': "Aucun de ces partis"
         }
     }
 
     # --- Q52_3 ---
-    # behav_age_group_best_party_55_plus — Quel parti est meilleur pour les 55+ ans
+    # behav_party_best_age_group_55_plus — Quel parti est meilleur pour les 55+ ans
     # Source: Q52_3
-    df_clean['behav_age_group_best_party_55_plus'] = df['q52_3'].map({
+    df_clean['behav_party_best_age_group_55_plus'] = df['q52_3'].map({
         1.0: 'plq',
         2.0: 'pq',
         3.0: 'caq',
@@ -3527,7 +3553,7 @@ def clean_data(df):
         98.0: np.nan,
         99.0: np.nan
     })
-    CODEBOOK_VARIABLES['behav_age_group_best_party_55_plus'] = {
+    CODEBOOK_VARIABLES['behav_party_best_age_group_55_plus'] = {
         'original_variable': 'q52_3',
         'question_label': "Selon vous, quel parti est le meilleur pour defender les interets des gens ages de 55 ans et plus?",
         'type': 'categorical',
