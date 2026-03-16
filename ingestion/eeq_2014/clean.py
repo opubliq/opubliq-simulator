@@ -498,9 +498,9 @@ def clean_data(raw_path: str) -> pd.DataFrame:
     }
 
     # --- Q16 ---
-    # ses_region — Province de résidence (non-standard: uses all provinces)
+    # ses_region — Province de résidence
     # Source: Q16
-    # Assumption: code 9 treated as missing (unlabelled in codebook)
+    # Note: Codes 1=Québec, 2=Ontario, 9=Refused/Ne sait pas
     df_clean['ses_region'] = df['Q16'].map({
         1.0: 'quebec',
         2.0: 'ontario',
