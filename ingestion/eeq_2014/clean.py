@@ -1719,80 +1719,31 @@ def clean_data(raw_path: str) -> pd.DataFrame:
     }
 
     # --- Q43A ---
-    # op_q43a — Inferred categorical variable
+    # op_q43a — Évaluation des syndicats sur échelle 0-100
     # Source: Q43A
-    # CRITICAL: Codebook entry was missing. Mapping labels are generic placeholders derived from observed values in data exploration.
-    df_clean['op_q43a'] = df['Q43A'].map({
-        0.0: 'no_response',
-        1.0: 'cat_1',
-        2.0: 'cat_2',
-        3.0: 'cat_3',
-        4.0: 'cat_4',
-        5.0: 'cat_5',
-        6.0: 'cat_6',
-        8.0: 'cat_8',
-        10.0: 'cat_10',
-        15.0: 'cat_15',
-        19.0: 'cat_19',
-        20.0: 'cat_20',
-        25.0: 'cat_25',
-        30.0: 'cat_30',
-        33.0: 'cat_33',
-        35.0: 'cat_35',
-        37.0: 'cat_37',
-        40.0: 'cat_40',
-        42.0: 'cat_42',
-        45.0: 'cat_45',
-        49.0: 'cat_49',
-        50.0: 'cat_50',
-        51.0: 'cat_51',
-        55.0: 'cat_55',
-        60.0: 'cat_60',
-    })
+    # Codebook: "Sur une échelle de ZERO à CENT, où zéro veut dire que vous N'AIMEZ
+    # VRAIMENT PAS DU TOUT les syndicats, et cent veut dire que vous les AIMEZ
+    # VRAIMENT BEAUCOUP, que pensez-vous des SYNDICATS en général?"
+    df_clean['op_q43a'] = df['Q43A'].astype(float) / 100.0
+    df_clean.loc[df['Q43A'].isin([98, 99]), 'op_q43a'] = np.nan
     CODEBOOK_VARIABLES['op_q43a'] = {
         'original_variable': 'Q43A',
-        'question_label': "Q43A (Label missing in context)",
-        'type': 'categorical',
-        'value_labels': {'no_response': "No Response (Inferred)", 'cat_1': "Category 1 (Inferred)", 'cat_2': "Category 2 (Inferred)", 'cat_3': "Category 3 (Inferred)", 'cat_4': "Category 4 (Inferred)", 'cat_5': "Category 5 (Inferred)", 'cat_6': "Category 6 (Inferred)", 'cat_8': "Category 8 (Inferred)", 'cat_10': "Category 10 (Inferred)", 'cat_15': "Category 15 (Inferred)", 'cat_19': "Category 19 (Inferred)", 'cat_20': "Category 20 (Inferred)", 'cat_25': "Category 25 (Inferred)", 'cat_30': "Category 30 (Inferred)", 'cat_33': "Category 33 (Inferred)", 'cat_35': "Category 35 (Inferred)", 'cat_37': "Category 37 (Inferred)", 'cat_40': "Category 40 (Inferred)", 'cat_42': "Category 42 (Inferred)", 'cat_45': "Category 45 (Inferred)", 'cat_49': "Category 49 (Inferred)", 'cat_50': "Category 50 (Inferred)", 'cat_51': "Category 51 (Inferred)", 'cat_55': "Category 55 (Inferred)", 'cat_60': "Category 60 (Inferred)"}
+        'question_label': "Évaluation des syndicats (0=Aime pas du tout, 100=Aime beaucoup)",
+        'type': 'continuous',
+        'value_labels': {'0.0': "N'aime pas du tout", '1.0': "Aime beaucoup", 'np.nan': "Ne sait pas / Refus"}
     }
 
     # --- Q43B ---
-    # op_q43b — Unknown categorical response variable
+    # op_q43b — Évaluation des entreprises sur échelle 0-100
     # Source: Q43B
-    # Assumption: Codes mapped arbitrarily due to missing codebook entry.
-    # TODO: verify mapping for all codes observed in data.
-    df_clean['op_q43b'] = df['Q43B'].map({
-        0.0: 'none',
-        2.0: 'response_a',
-        3.0: 'response_b',
-        4.0: 'response_c',
-        5.0: 'response_d',
-        6.0: 'response_e',
-        10.0: 'response_f',
-        15.0: 'response_g',
-        20.0: 'response_h',
-        25.0: 'response_i',
-        30.0: 'response_j',
-        33.0: 'response_k',
-        35.0: 'response_l',
-        36.0: 'response_m',
-        40.0: 'response_n',
-        44.0: 'response_o',
-        45.0: 'response_p',
-        46.0: 'response_q',
-        48.0: 'response_r',
-        49.0: 'response_s',
-        50.0: 'majority_response',
-        55.0: 'response_u',
-        56.0: 'response_v',
-        60.0: 'response_w',
-        99.0: np.nan,
-    })
+    # Codebook: "Et sur la même échelle, que pensez-vous des ENTREPRISES en général?"
+    df_clean['op_q43b'] = df['Q43B'].astype(float) / 100.0
+    df_clean.loc[df['Q43B'].isin([98, 99]), 'op_q43b'] = np.nan
     CODEBOOK_VARIABLES['op_q43b'] = {
         'original_variable': 'Q43B',
-        'question_label': "Placeholder for Q43B question text",
-        'type': 'categorical',
-        'value_labels': {'none': "None/Baseline", 'majority_response': "Most frequent response"}
+        'question_label': "Évaluation des entreprises (0=Aime pas du tout, 100=Aime beaucoup)",
+        'type': 'continuous',
+        'value_labels': {'0.0': "N'aime pas du tout", '1.0': "Aime beaucoup", 'np.nan': "Ne sait pas / Refus"}
     }
 
     # --- Q44A ---
@@ -2574,23 +2525,34 @@ def clean_data(raw_path: str) -> pd.DataFrame:
     }
 
     # --- Q68 ---
-    # op_response_q68 — Response to question 68
+    # ses_marital_status — Statut civil
     # Source: Q68
-    # Assumption: Codes 3-6 are specific responses, code 9 is treated as missing as it was unlabelled.
-    df_clean['op_response_q68'] = df['Q68'].map({
-        1.0: 'yes',
-        2.0: 'no',
-        3.0: 'dont_know',
-        4.0: 'refused',
-        5.0: 'not_applicable',
-        6.0: 'other',
-        9.0: np.nan,
+    # TODO: Valider le mapping exact des statuts civils à partir du codebook (Quebec Election Study 2014 FR.doc)
+    # Le mapping ci-dessous est une hypothèse.
+    df_clean['ses_marital_status'] = df['Q68'].map({
+        # 1.0: 'single',
+        # 2.0: 'married',
+        # 3.0: 'separated',
+        # 4.0: 'divorced',
+        # 5.0: 'widowed',
+        # 6.0: 'common_law',
+        # 7.0: 'refused',
+        # 98.0: np.nan, # Don't know
+        # 99.0: np.nan, # Refused
     })
-    CODEBOOK_VARIABLES['op_response_q68'] = {
+    CODEBOOK_VARIABLES['ses_marital_status'] = {
         'original_variable': 'Q68',
-        'question_label': "Response to question 68 (Inferred from data exploration)",
+        'question_label': "Quel est votre état matrimonial actuel?", # TODO: Confirmer le libellé exact de la question dans le codebook
         'type': 'categorical',
-        'value_labels': {'yes': "Yes", 'no': "No", 'dont_know': "Don't Know", 'refused': "Refused", 'not_applicable': "Not Applicable", 'other': "Other"},
+        'value_labels': {
+            # 'single': "Célibataire",
+            # 'married': "Marié(e)",
+            # 'separated': "Séparé(e)",
+            # 'divorced': "Divorcé(e)",
+            # 'widowed': "Veuf/Veuve",
+            # 'common_law': "Union libre",
+            # 'refused': "Refusé",
+        } # TODO: Confirmer les labels de valeur exacts dans le codebook
     }
 
     # --- Q7A ---
