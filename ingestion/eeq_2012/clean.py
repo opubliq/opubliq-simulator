@@ -261,26 +261,27 @@ def clean_data(raw_path: str) -> pd.DataFrame:
         1951.0: '1951',
         1952.0: '1952',
         1953.0: '1953',
+        9999.0: np.nan,
     })
     CODEBOOK_VARIABLES['ses_year_of_birth'] = {
         'original_variable': 'AGEX',
-        'question_label': "Age (exact year)",
+        'question_label': "In what year were you born? / Enter year of birth",
         'type': 'categorical',
         'value_labels': {'1928': "1928", '1929': "1929", '1930': "1930", '1932': "1932", '1933': "1933", '1934': "1934", '1935': "1935", '1936': "1936", '1937': "1937", '1938': "1938", '1939': "1939", '1940': "1940", '1941': "1941", '1942': "1942", '1943': "1943", '1944': "1944", '1945': "1945", '1946': "1946", '1947': "1947", '1948': "1948", '1949': "1949", '1950': "1950", '1951': "1951", '1952': "1952", '1953': "1953"},
     }
 
     # --- LANGU ---
-    # ses_language — Language spoken
+    # ses_language — Language first learned at home in childhood
     # Source: LANGU
-    # Assumption: Codes 1, 2, 3 mapped to French, English, Other based on common survey language variables (no codebook provided).
     df_clean['ses_language'] = df['LANGU'].map({
         1.0: 'french',
         2.0: 'english',
         3.0: 'other',
+        9.0: np.nan,
     })
     CODEBOOK_VARIABLES['ses_language'] = {
         'original_variable': 'LANGU',
-        'question_label': "Language spoken (Assumed mapping)",
+        'question_label': "What is the language you first learned at home in your childhood and that you still understand?",
         'type': 'categorical',
         'value_labels': {'french': "French", 'english': "English", 'other': "Other"},
     }
@@ -324,71 +325,104 @@ def clean_data(raw_path: str) -> pd.DataFrame:
     }
 
     # --- Q0QC ---
-    # ses_region_code — Preliminary response code (1-17 observed)
+    # ses_region_qc — Region administrative du Québec
     # Source: Q0QC
-    # Assumption: Variable mapped to string representation of float codes 1.0-17.0 due to missing codebook labels.
-    # TODO: verify mapping for codes 1.0 through 17.0 against actual codebook.
-    df_clean['ses_region_code'] = df['Q0QC'].map({
-        1.0: '1',
-        2.0: '2',
-        3.0: '3',
-        4.0: '4',
-        5.0: '5',
-        6.0: '6',
-        7.0: '7',
-        8.0: '8',
-        9.0: '9',
-        10.0: '10',
-        11.0: '11',
-        12.0: '12',
-        13.0: '13',
-        14.0: '14',
-        15.0: '15',
-        16.0: '16',
-        17.0: '17',
+    df_clean['ses_region_qc'] = df['Q0QC'].map({
+        1.0: 'bas_saint_laurent',
+        2.0: 'saguenay_lac_saint_jean',
+        3.0: 'capitale_nationale',
+        4.0: 'mauricie',
+        5.0: 'estrie',
+        6.0: 'montreal',
+        7.0: 'outaouais',
+        8.0: 'abitibi_temiscamingue',
+        9.0: 'cote_nord',
+        10.0: 'nord_du_quebec',
+        11.0: 'gaspesie_iles_de_la_madeleine',
+        12.0: 'chaudiere_appalaches',
+        13.0: 'laval',
+        14.0: 'lanaudiere',
+        15.0: 'laurentides',
+        16.0: 'monteregie',
+        17.0: 'centre_du_quebec',
     })
-    CODEBOOK_VARIABLES['ses_region_code'] = {
+    CODEBOOK_VARIABLES['ses_region_qc'] = {
         'original_variable': 'Q0QC',
-        'question_label': "Preliminary response code (1-17 observed)",
+        'question_label': "In what region in Quebec do you live?",
         'type': 'categorical',
-        'value_labels': {'1': "Code 1", '2': "Code 2", '3': "Code 3", '4': "Code 4", '5': "Code 5", '6': "Code 6", '7': "Code 7", '8': "Code 8", '9': "Code 9", '10': "Code 10", '11': "Code 11", '12': "Code 12", '13': "Code 13", '14': "Code 14", '15': "Code 15", '16': "Code 16", '17': "Code 17"},
+        'value_labels': {
+            'bas_saint_laurent': "Bas-Saint-Laurent",
+            'saguenay_lac_saint_jean': "Saguenay-Lac-Saint-Jean",
+            'capitale_nationale': "Capitale-Nationale",
+            'mauricie': "Mauricie",
+            'estrie': "Estrie",
+            'montreal': "Montréal",
+            'outaouais': "Outaouais",
+            'abitibi_temiscamingue': "Abitibi-Témiscamingue",
+            'cote_nord': "Côte-Nord",
+            'nord_du_quebec': "Nord-du-Québec",
+            'gaspesie_iles_de_la_madeleine': "Gaspésie-Îles-de-la-Madeleine",
+            'chaudiere_appalaches': "Chaudière-Appalaches",
+            'laval': "Laval",
+            'lanaudiere': "Lanaudière",
+            'laurentides': "Laurentides",
+            'monteregie': "Montérégie",
+            'centre_du_quebec': "Centre-du-Québec",
+        },
+    }
+
+    # --- REGIO ---
+    # ses_region_rmr — Région métropolitaine de recensement
+    # Source: REGIO
+    df_clean['ses_region_rmr'] = df['REGIO'].map({
+        1.0: 'mtl_rmr',
+        2.0: 'qc_rmr',
+        3.0: 'autres_regions',
+    })
+    CODEBOOK_VARIABLES['ses_region_rmr'] = {
+        'original_variable': 'REGIO',
+        'question_label': "Census metropolitan area region",
+        'type': 'categorical',
+        'value_labels': {
+            'mtl_rmr': "Montréal RMR",
+            'qc_rmr': "Québec RMR",
+            'autres_regions': "Autres régions",
+        },
     }
 
     # --- Q1 ---
-    # op_vote_intent — Vote intention
+    # op_attachment_quebec — Attachement au Québec
     # Source: Q1
-    # Assumption: Codes 1-4 are parties, 8/9 are missing (unlabelled in initial context)
-    df_clean['op_vote_intent'] = df['Q1'].map({
-        1.0: 'liberal',
-        2.0: 'caq',
-        3.0: 'pq',
-        4.0: 'adq',
+    df_clean['op_attachment_quebec'] = df['Q1'].map({
+        1.0: 0.0,
+        2.0: 1/3,
+        3.0: 2/3,
+        4.0: 1.0,
         8.0: np.nan,
         9.0: np.nan,
     })
-    CODEBOOK_VARIABLES['op_vote_intent'] = {
+    CODEBOOK_VARIABLES['op_attachment_quebec'] = {
         'original_variable': 'Q1',
-        'question_label': "Vote intention",
-        'type': 'categorical',
-        'value_labels': {'liberal': "Liberal", 'caq': "CAQ", 'pq': "PQ", 'adq': "ADQ"},
+        'question_label': "How attached do you feel to Quebec?",
+        'type': 'likert',
+        'value_labels': {0.0: "Very attached", 1/3: "Fairly attached", 2/3: "Not very attached", 1.0: "Not attached at all"},
     }
 
     # --- Q10 ---
-    # op_intent_Q10 — Vote intention for Q10
+    # op_most_important_gov_level — Niveau de gouvernement le plus important pour voter
     # Source: Q10
-    # Assumption: Codes 8 and 9 are converted to specific missing value labels based on typical survey practice.
-    df_clean['op_intent_Q10'] = df['Q10'].map({
-        1.0: 'party_a',
-        2.0: 'party_b',
-        3.0: 'other',
-        8.0: 'refused',
-        9.0: 'dont_know',
+    df_clean['op_most_important_gov_level'] = df['Q10'].map({
+        1.0: 'provincial',
+        2.0: 'federal',
+        3.0: 'municipal',
+        8.0: np.nan,
+        9.0: np.nan,
     })
-    CODEBOOK_VARIABLES['op_intent_Q10'] = {
+    CODEBOOK_VARIABLES['op_most_important_gov_level'] = {
         'original_variable': 'Q10',
-        'question_label': "Vote intention (Inferred from codes 1, 2, 3, 8, 9)",
+        'question_label': "If you had to choose, at which level is it most important to cast your ballot?",
         'type': 'categorical',
-        'value_labels': {'party_a': "Party A", 'party_b': "Party B", 'other': "Other/Other Party", 'refused': "Refused", 'dont_know': "Don't Know"},
+        'value_labels': {'provincial': "Provincial elections", 'federal': "Federal elections", 'municipal': "Municipal elections"},
     }
 
     # --- Q101A ---
@@ -665,22 +699,21 @@ def clean_data(raw_path: str) -> pd.DataFrame:
     }
 
     # --- Q11 ---
-    # op_q11 — Inferred opinion variable, label unknown
+    # op_importance_assemblee_nationale — Importance des décisions de l'Assemblée nationale
     # Source: Q11
-    # CRITICAL: Missing codebook entry. Labels are placeholders. Codes 8.0 and 9.0 assumed missing.
-    df_clean['op_q11'] = df['Q11'].map({
-        1.0: 'choice_a',
-        2.0: 'choice_b',
-        3.0: 'choice_c',
-        4.0: 'choice_d',
+    df_clean['op_importance_assemblee_nationale'] = df['Q11'].map({
+        1.0: 0.0,
+        2.0: 1/3,
+        3.0: 2/3,
+        4.0: 1.0,
         8.0: np.nan,
         9.0: np.nan,
     })
-    CODEBOOK_VARIABLES['op_q11'] = {
+    CODEBOOK_VARIABLES['op_importance_assemblee_nationale'] = {
         'original_variable': 'Q11',
-        'question_label': "Unknown Question Text (Codebook Missing)",
-        'type': 'categorical',
-        'value_labels': {'choice_a': "Label A (Placeholder)", 'choice_b': "Label B (Placeholder)", 'choice_c': "Label C (Placeholder)", 'choice_d': "Label D (Placeholder)"},
+        'question_label': "How important are the decisions made by the Quebec National Assembly for you personally?",
+        'type': 'likert',
+        'value_labels': {0.0: "Very important", 1/3: "Quite important", 2/3: "Not very important", 1.0: "Not at all important"},
     }
 
     # --- Q12 ---
@@ -702,351 +735,429 @@ def clean_data(raw_path: str) -> pd.DataFrame:
     }
 
     # --- Q13 ---
-    # op_q13 — Response to Question 13
+    # op_party_defends_qc_interests — Parti qui défend le mieux les intérêts du Québec
     # Source: Q13
-    # Note: Codebook entry missing, proceeding with inferred mapping based on observed data values (1-6 assumed to be categories, 96/98/99 assumed missing).
-    df_clean['op_q13'] = df['Q13'].map({
-        1.0: 'quebec',
-        2.0: 'ontario',
-        3.0: 'alberta',
-        4.0: 'manitoba',
-        5.0: 'saskatchewan',
-        6.0: 'other_province',
-        96.0: np.nan,
+    df_clean['op_party_defends_qc_interests'] = df['Q13'].map({
+        1.0: 'plq',
+        2.0: 'pq',
+        3.0: 'caq',
+        4.0: 'qs',
+        5.0: 'option_nationale',
+        6.0: 'pvq',
+        96.0: 'other',
         98.0: np.nan,
         99.0: np.nan,
     })
-    CODEBOOK_VARIABLES['op_q13'] = {
+    CODEBOOK_VARIABLES['op_party_defends_qc_interests'] = {
         'original_variable': 'Q13',
-        'question_label': "Response to Question 13 (Codebook Missing - Inferred Categories)",
+        'question_label': "Which party best stands up for the interests of Quebec?",
         'type': 'categorical',
-        'value_labels': {'quebec': "Québec", 'ontario': "Ontario", 'alberta': "Alberta", 'manitoba': "Manitoba", 'saskatchewan': "Saskatchewan", 'other_province': "Other Province"},
+        'value_labels': {
+            'plq': "Quebec Liberal Party",
+            'pq': "Parti Québécois",
+            'caq': "Coalition avenir Québec",
+            'qs': "Québec Solidaire",
+            'option_nationale': "Option Nationale",
+            'pvq': "Parti Vert du Québec",
+            'other': "Other",
+        },
     }
 
     # --- Q14 ---
-    # op_voting_intention — Intention de vote pour le parti (Inferred)
+    # op_party_defends_qc_culture — Parti qui défend le mieux l'identité et la culture du Québec
     # Source: Q14
-    # Assumption: Q14 is about voting intention for parties 1-6. Codes 96, 98, 99 are assumed to be missing codes.
-    # TODO: verify mapping for codes 1.0 to 6.0 against the actual codebook.
-    df_clean['op_voting_intention'] = df['Q14'].map({
-        1.0: 'parti_a',
-        2.0: 'parti_b',
-        3.0: 'parti_c',
-        4.0: 'parti_d',
-        5.0: 'parti_e',
-        6.0: 'other',
-        96.0: np.nan,
+    df_clean['op_party_defends_qc_culture'] = df['Q14'].map({
+        1.0: 'plq',
+        2.0: 'pq',
+        3.0: 'caq',
+        4.0: 'qs',
+        5.0: 'option_nationale',
+        6.0: 'pvq',
+        96.0: 'other',
         98.0: np.nan,
         99.0: np.nan,
     })
-    CODEBOOK_VARIABLES['op_voting_intention'] = {
+    CODEBOOK_VARIABLES['op_party_defends_qc_culture'] = {
         'original_variable': 'Q14',
-        'question_label': "Intention de vote pour le parti (Inferred)",
+        'question_label': "Which party best defends Quebec's identity and culture?",
         'type': 'categorical',
-        'value_labels': {'parti_a': "Party A", 'parti_b': "Party B", 'parti_c': "Party C", 'parti_d': "Party D", 'parti_e': "Party E", 'other': "Other Party"},
+        'value_labels': {
+            'plq': "Quebec Liberal Party",
+            'pq': "Parti Québécois",
+            'caq': "Coalition avenir Québec",
+            'qs': "Québec Solidaire",
+            'option_nationale': "Option Nationale",
+            'pvq': "Parti Vert du Québec",
+            'other': "Other",
+        },
     }
 
     # --- Q15 ---
-    # op_vote_intent — Inferred vote intention/opinion scale
+    # op_party_best_economy — Meilleur parti pour gérer l'économie
     # Source: Q15
-    # Assumption: 6-point scale where 1=0.0 and 6=1.0. Codes 96, 98, 99 treated as missing.
-    df_clean['op_vote_intent'] = df['Q15'].map({
-        1.0: 0.0,
-        2.0: 0.2,
-        3.0: 0.4,
-        4.0: 0.6,
-        5.0: 0.8,
-        6.0: 1.0,
+    df_clean['op_party_best_economy'] = df['Q15'].map({
+        1.0: 'plq',
+        2.0: 'pq',
+        3.0: 'caq',
+        4.0: 'qs',
+        5.0: 'option_nationale',
+        6.0: 'pvq',
+        96.0: 'other',
+        98.0: np.nan,
+        99.0: np.nan,
     })
-    CODEBOOK_VARIABLES['op_vote_intent'] = {
+    CODEBOOK_VARIABLES['op_party_best_economy'] = {
         'original_variable': 'Q15',
-        'question_label': "Inferred Vote Intention/Opinion Scale",
-        'type': 'likert',
-        'value_labels': {0.0: "Lowest Score (1)", 0.2: "Score 2", 0.4: "Score 3", 0.6: "Score 4", 0.8: "Score 5", 1.0: "Highest Score (6)"},
+        'question_label': "Which party is best at managing the economy?",
+        'type': 'categorical',
+        'value_labels': {
+            'plq': "Quebec Liberal Party",
+            'pq': "Parti Québécois",
+            'caq': "Coalition avenir Québec",
+            'qs': "Québec Solidaire",
+            'option_nationale': "Option Nationale",
+            'pvq': "Parti Vert du Québec",
+            'other': "Other",
+        },
     }
 
     # --- Q16 ---
-    # op_q16 — Unknown question for Q16 - Inferred Categorical
+    # op_party_best_education — Meilleur parti pour l'éducation
     # Source: Q16
-    # Assumption: Codes 1.0-6.0 mapped to generic string labels. Codes 96.0, 98.0, 99.0 treated as missing (np.nan).
-    df_clean['op_q16'] = df['Q16'].map({
-        1.0: 'response_one',
-        2.0: 'response_two',
-        3.0: 'response_three',
-        4.0: 'response_four',
-        5.0: 'response_five',
-        6.0: 'response_six',
-        96.0: np.nan,
+    df_clean['op_party_best_education'] = df['Q16'].map({
+        1.0: 'plq',
+        2.0: 'pq',
+        3.0: 'caq',
+        4.0: 'qs',
+        5.0: 'option_nationale',
+        6.0: 'pvq',
+        96.0: 'other',
         98.0: np.nan,
         99.0: np.nan,
     })
-    CODEBOOK_VARIABLES['op_q16'] = {
+    CODEBOOK_VARIABLES['op_party_best_education'] = {
         'original_variable': 'Q16',
-        'question_label': "Unknown question for Q16 - Inferred Categorical",
+        'question_label': "Which party is best at improving education?",
         'type': 'categorical',
-        'value_labels': {'response_one': "Response 1", 'response_two': "Response 2", 'response_three': "Response 3", 'response_four': "Response 4", 'response_five': "Response 5", 'response_six': "Response 6"},
+        'value_labels': {
+            'plq': "Quebec Liberal Party",
+            'pq': "Parti Québécois",
+            'caq': "Coalition avenir Québec",
+            'qs': "Québec Solidaire",
+            'option_nationale': "Option Nationale",
+            'pvq': "Parti Vert du Québec",
+            'other': "Other",
+        },
     }
 
     # --- Q17 ---
-    # op_q17 — Opinion/Attitude variable Q17
+    # op_party_best_environment — Meilleur parti pour l'environnement
     # Source: Q17
-    # Assumption: Codes 96, 98, 99 treated as missing. Labels are based on observed value counts.
-    df_clean['op_q17'] = df['Q17'].map({
-        1.0: 'one',
-        2.0: 'two',
-        3.0: 'three',
-        4.0: 'four',
-        5.0: 'five',
-        6.0: 'six',
-        96.0: np.nan,
+    df_clean['op_party_best_environment'] = df['Q17'].map({
+        1.0: 'plq',
+        2.0: 'pq',
+        3.0: 'caq',
+        4.0: 'qs',
+        5.0: 'option_nationale',
+        6.0: 'pvq',
+        96.0: 'other',
         98.0: np.nan,
         99.0: np.nan,
     })
-    CODEBOOK_VARIABLES['op_q17'] = {
+    CODEBOOK_VARIABLES['op_party_best_environment'] = {
         'original_variable': 'Q17',
-        'question_label': "Unknown - derived from Q17 data exploration",
+        'question_label': "Which party is best at protecting the environment?",
         'type': 'categorical',
-        'value_labels': {'one': '1.0', 'two': '2.0', 'three': '3.0', 'four': '4.0', 'five': '5.0', 'six': '6.0'},
+        'value_labels': {
+            'plq': "Quebec Liberal Party",
+            'pq': "Parti Québécois",
+            'caq': "Coalition avenir Québec",
+            'qs': "Québec Solidaire",
+            'option_nationale': "Option Nationale",
+            'pvq': "Parti Vert du Québec",
+            'other': "Other",
+        },
     }
 
     # --- Q18 ---
-    # op_q18_response — Response to Q18 (Assumed behavior/opinion)
+    # op_party_best_health — Meilleur parti pour le système de santé
     # Source: Q18
-    # Assumption: Codes 96, 98, 99 treated as missing (unlabelled in provided context)
-    df_clean['op_q18_response'] = df['Q18'].map({
-        1.0: 'party_a',
-        2.0: 'party_b',
-        3.0: 'party_c',
-        4.0: 'party_d',
-        5.0: 'party_e',
-        6.0: 'party_f',
-        96.0: np.nan,
+    df_clean['op_party_best_health'] = df['Q18'].map({
+        1.0: 'plq',
+        2.0: 'pq',
+        3.0: 'caq',
+        4.0: 'qs',
+        5.0: 'option_nationale',
+        6.0: 'pvq',
+        96.0: 'other',
         98.0: np.nan,
         99.0: np.nan,
     })
-    CODEBOOK_VARIABLES['op_q18_response'] = {
+    CODEBOOK_VARIABLES['op_party_best_health'] = {
         'original_variable': 'Q18',
-        'question_label': "Response to Q18 (Assumed election behavior/opinion)",
+        'question_label': "Which party is best at managing the health care system?",
         'type': 'categorical',
-        'value_labels': {'party_a': "Party A", 'party_b': "Party B", 'party_c': "Party C", 'party_d': "Party D", 'party_e': "Party E", 'party_f': "Party F"},
+        'value_labels': {
+            'plq': "Quebec Liberal Party",
+            'pq': "Parti Québécois",
+            'caq': "Coalition avenir Québec",
+            'qs': "Québec Solidaire",
+            'option_nationale': "Option Nationale",
+            'pvq': "Parti Vert du Québec",
+            'other': "Other",
+        },
     }
 
     # --- Q19 ---
-    # ses_q19_response — Inferred response to Question 19
+    # op_party_best_federal_relations — Meilleur parti pour traiter avec Ottawa
     # Source: Q19
-    # WARNING: Codebook entry was missing. Mapping based on data exploration (values 1.0-5.0 mapped, 96/98/99 treated as missing).
-    # TODO: Verify mapping and question label for ses_q19_response
-    df_clean['ses_q19_response'] = df['Q19'].map({
-        1.0: 'response_1',
-        2.0: 'response_2',
-        3.0: 'response_3',
-        4.0: 'response_4',
-        5.0: 'response_5',
-        96.0: np.nan,
+    df_clean['op_party_best_federal_relations'] = df['Q19'].map({
+        1.0: 'plq',
+        2.0: 'pq',
+        3.0: 'caq',
+        4.0: 'qs',
+        5.0: 'option_nationale',
+        6.0: 'pvq',
+        96.0: 'other',
         98.0: np.nan,
         99.0: np.nan,
     })
-    CODEBOOK_VARIABLES['ses_q19_response'] = {
+    CODEBOOK_VARIABLES['op_party_best_federal_relations'] = {
         'original_variable': 'Q19',
-        'question_label': "Inferred: Response to Question 19",
+        'question_label': "Which party is best at dealing with the Parliament of Canada?",
         'type': 'categorical',
-        'value_labels': {'response_1': 'Code 1', 'response_2': 'Code 2', 'response_3': 'Code 3', 'response_4': 'Code 4', 'response_5': 'Code 5'},
+        'value_labels': {
+            'plq': "Quebec Liberal Party",
+            'pq': "Parti Québécois",
+            'caq': "Coalition avenir Québec",
+            'qs': "Québec Solidaire",
+            'option_nationale': "Option Nationale",
+            'pvq': "Parti Vert du Québec",
+            'other': "Other",
+        },
     }
 
     # --- Q2 ---
     # ses_province — Province/Territory of residence
     # Source: Q2
-    # Assumption: Codes 8 and 9 are unlabelled missing values.
-    df_clean['ses_province'] = df['Q2'].map({
-        1.0: 'quebec',
-        2.0: 'ontario',
-        3.0: 'alberta',
-        4.0: 'bc', # Best guess for 4th province
+    df_clean['op_attachment_canada'] = df['Q2'].map({
+        1.0: 0.0,
+        2.0: 1/3,
+        3.0: 2/3,
+        4.0: 1.0,
         8.0: np.nan,
         9.0: np.nan,
     })
-    CODEBOOK_VARIABLES['ses_province'] = {
+    CODEBOOK_VARIABLES['op_attachment_canada'] = {
         'original_variable': 'Q2',
-        'question_label': "Province/Territory of residence",
-        'type': 'categorical',
-        'value_labels': {'quebec': "Québec", 'ontario': "Ontario", 'alberta': "Alberta", 'bc': "British Columbia"},
+        'question_label': "And how attached do you feel to Canada?",
+        'type': 'likert',
+        'value_labels': {0.0: "Very attached", 1/3: "Fairly attached", 2/3: "Not very attached", 1.0: "Not attached at all"},
     }
 
     # --- Q20 ---
-    # op_party_vote_intent — Likely party choice
+    # op_party_best_poverty — Meilleur parti pour lutter contre la pauvreté
     # Source: Q20
-    # Assumption: No codebook provided. Codes 6, 96, 98, 99 treated as missing/refused.
-    df_clean['op_party_vote_intent'] = df['Q20'].map({
-        1.0: 'party_a',
-        2.0: 'party_b',
-        3.0: 'party_c',
-        4.0: 'party_d',
-        5.0: 'other_party',
-        6.0: np.nan,
-        96.0: np.nan,
+    df_clean['op_party_best_poverty'] = df['Q20'].map({
+        1.0: 'plq',
+        2.0: 'pq',
+        3.0: 'caq',
+        4.0: 'qs',
+        5.0: 'option_nationale',
+        6.0: 'pvq',
+        96.0: 'other',
         98.0: np.nan,
         99.0: np.nan,
     })
-    CODEBOOK_VARIABLES['op_party_vote_intent'] = {
+    CODEBOOK_VARIABLES['op_party_best_poverty'] = {
         'original_variable': 'Q20',
-        'question_label': "Likely party choice",
+        'question_label': "Which party is best at fighting poverty?",
         'type': 'categorical',
-        'value_labels': {'party_a': "Party A", 'party_b': "Party B", 'party_c': "Party C", 'party_d': "Party D", 'other_party': "Other Party"},
+        'value_labels': {
+            'plq': "Quebec Liberal Party",
+            'pq': "Parti Québécois",
+            'caq': "Coalition avenir Québec",
+            'qs': "Québec Solidaire",
+            'option_nationale': "Option Nationale",
+            'pvq': "Parti Vert du Québec",
+            'other': "Other",
+        },
     }
 
     # --- Q20B ---
-    # op_attitude_q20b — Inferred attitude/opinion related to question 20B
+    # op_party_best_corruption — Meilleur parti pour lutter contre la corruption
     # Source: Q20B
-    # Assumption: Scale 1 (most negative) to 6 (most positive). Codes 96, 98, 99 treated as missing.
-    df_clean['op_attitude_q20b'] = df['Q20B'].map({
-        1.0: 0.0,
-        2.0: 0.2,
-        3.0: 0.4,
-        4.0: 0.6,
-        5.0: 0.8,
-        6.0: 1.0,
-        96.0: np.nan,
+    df_clean['op_party_best_corruption'] = df['Q20B'].map({
+        1.0: 'plq',
+        2.0: 'pq',
+        3.0: 'caq',
+        4.0: 'qs',
+        5.0: 'option_nationale',
+        6.0: 'pvq',
+        96.0: 'other',
         98.0: np.nan,
         99.0: np.nan,
     })
-    CODEBOOK_VARIABLES['op_attitude_q20b'] = {
+    CODEBOOK_VARIABLES['op_party_best_corruption'] = {
         'original_variable': 'Q20B',
-        'question_label': "Inferred attitude/opinion related to question 20B",
-        'type': 'likert',
-        'value_labels': {0.0: "Most Negative", 0.2: "Negative", 0.4: "Neutral/Slightly Negative", 0.6: "Neutral/Slightly Positive", 0.8: "Positive", 1.0: "Most Positive"},
+        'question_label': "And which party is best at fighting corruption?",
+        'type': 'categorical',
+        'value_labels': {
+            'plq': "Quebec Liberal Party",
+            'pq': "Parti Québécois",
+            'caq': "Coalition avenir Québec",
+            'qs': "Québec Solidaire",
+            'option_nationale': "Option Nationale",
+            'pvq': "Parti Vert du Québec",
+            'other': "Other",
+        },
     }
 
     # --- Q21 ---
-    # op_q21 — Question 21 (Unknown meaning)
+    # behav_voted_provincial_2012 — A voté aux élections provinciales du 4 septembre 2012
     # Source: Q21
-    # Assumption: Based on exploration, codes 1.0, 2.0, and 9.0 are present.
-    # Assumption: This is a categorical variable. Mapped values are invented due to missing codebook.
-    df_clean['op_q21'] = df['Q21'].map({
+    df_clean['behav_voted_provincial_2012'] = df['Q21'].map({
         1.0: 'yes',
         2.0: 'no',
-        9.0: np.nan, # Treating 9.0 as explicit missing/refused
+        8.0: np.nan,
+        9.0: np.nan,
     })
-    CODEBOOK_VARIABLES['op_q21'] = {
+    CODEBOOK_VARIABLES['behav_voted_provincial_2012'] = {
         'original_variable': 'Q21',
-        'question_label': "Unknown question for Q21",
-        'type': 'categorical',
+        'question_label': "Did you vote in the last Quebec provincial election of September 4th, 2012?",
+        'type': 'binary',
         'value_labels': {'yes': "Yes", 'no': "No"},
     }
 
     # --- Q22 ---
-    # ses_province — Province de résidence
-    # Source: Q2_province
-    # Assumption: Codes 8.0 and 9.0 from data map to missing values, as they are unlabelled in the provided codebook excerpt.
-    df_clean['ses_province'] = df['Q22'].map({
-        1.0: 'quebec',
-        2.0: 'ontario',
+    # behav_voted_federal_2011 — A voté aux élections fédérales de mai 2011
+    # Source: Q22
+    df_clean['behav_voted_federal_2011'] = df['Q22'].map({
+        1.0: 'yes',
+        2.0: 'no',
         8.0: np.nan,
         9.0: np.nan,
     })
-    CODEBOOK_VARIABLES['ses_province'] = {
+    CODEBOOK_VARIABLES['behav_voted_federal_2011'] = {
         'original_variable': 'Q22',
-        'question_label': "Province de résidence",
-        'type': 'categorical',
-        'value_labels': {'quebec': "Québec", 'ontario': "Ontario"},
+        'question_label': "And did you vote in the last Canadian federal election in May 2011?",
+        'type': 'binary',
+        'value_labels': {'yes': "Yes", 'no': "No"},
     }
 
     # --- Q23 ---
-    # op_q23 — Unlabelled categorical opinion question
+    # op_federal_vote_frame — Vote fédéral selon enjeux québécois ou canadiens
     # Source: Q23
-    # Assumption: codes 8.0 and 9.0 treated as missing (unlabelled in provided context)
-    df_clean['op_q23'] = df['Q23'].map({
-        1.0: 'option_1',
-        2.0: 'option_2',
-        3.0: 'option_3',
+    df_clean['op_federal_vote_frame'] = df['Q23'].map({
+        1.0: 'quebec',
+        2.0: 'canada',
+        3.0: 'both_equally',
         8.0: np.nan,
         9.0: np.nan,
     })
-    CODEBOOK_VARIABLES['op_q23'] = {
+    CODEBOOK_VARIABLES['op_federal_vote_frame'] = {
         'original_variable': 'Q23',
-        'question_label': "Question 23 (Label missing)",
+        'question_label': "When you were deciding how to vote in the Canadian federal election, did you vote mostly according to what was going on in Quebec or mostly according to what was going on in Canada as a whole?",
         'type': 'categorical',
-        'value_labels': {'option_1': "Option 1", 'option_2': "Option 2", 'option_3': "Option 3"},
+        'value_labels': {'quebec': "Quebec", 'canada': "Canada", 'both_equally': "Both equally"},
     }
 
     # --- Q24 ---
-    # op_q24 — Response to question 24 (Inferred from data exploration)
+    # op_provincial_vote_frame — Vote provincial selon enjeux québécois ou canadiens
     # Source: Q24
-    # NOTE: Codebook entry was missing. Mapping, type ('categorical'), and value labels are inferred from data exploration (codes 1, 2, 3 present). Codes 8, 9 treated as missing.
-    df_clean['op_q24'] = df['Q24'].map({
-        1.0: 'choice_one',
-        2.0: 'choice_two',
-        3.0: 'choice_three',
+    df_clean['op_provincial_vote_frame'] = df['Q24'].map({
+        1.0: 'quebec',
+        2.0: 'canada',
+        3.0: 'both_equally',
         8.0: np.nan,
         9.0: np.nan,
     })
-    CODEBOOK_VARIABLES['op_q24'] = {
+    CODEBOOK_VARIABLES['op_provincial_vote_frame'] = {
         'original_variable': 'Q24',
-        'question_label': "Response to question 24 (Placeholder due to missing codebook)",
+        'question_label': "When you were deciding how to vote in the Quebec provincial election, did you vote mostly according to what was going on in Quebec or mostly according to what was going on in Canada as a whole?",
         'type': 'categorical',
-        'value_labels': {'choice_one': "Choice One (inferred)", 'choice_two': "Choice Two (inferred)", 'choice_three': "Choice Three (inferred)"},
+        'value_labels': {'quebec': "Quebec", 'canada': "Canada", 'both_equally': "Both equally"},
     }
 
     # --- Q25 ---
-    # op_response_q25 — Response to question Q25
+    # behav_vote_provincial_2012 — Vote aux élections provinciales du 4 septembre 2012
     # Source: Q25
-    # Assumption: Codes 96.0 and 99.0 are treated as missing. Categories 1.0-6.0 mapped to generic labels due to missing codebook.
-    df_clean['op_response_q25'] = df['Q25'].map({
-        1.0: 'category_a',
-        2.0: 'category_b',
-        3.0: 'category_c',
-        4.0: 'category_d',
-        5.0: 'category_e',
-        6.0: 'category_f',
-        96.0: np.nan,
-        99.0: np.nan,
-    })
-    CODEBOOK_VARIABLES['op_response_q25'] = {
-        'original_variable': 'Q25',
-        'question_label': "Response to Q25 (Label unknown)",
-        'type': 'categorical',
-        'value_labels': {'category_a': "Category A", 'category_b': "Category B", 'category_c': "Category C", 'category_d': "Category D", 'category_e': "Category E", 'category_f': "Category F"},
-    }
-
-    # --- Q27 ---
-    # op_q27 — Variable Q27 - Mapping is based on observed values only, as no codebook was provided.
-    # Source: Q27
-    # Assumption: Codes 96.0, 98.0, 99.0 are treated as missing.
-    # TODO: verify mapping for codes 1.0-5.0 and labels, as no codebook was provided.
-    df_clean['op_q27'] = df['Q27'].map({
-        1.0: 'cat1',
-        2.0: 'cat2',
-        3.0: 'cat3',
-        4.0: 'cat4',
-        5.0: 'cat5',
-        96.0: np.nan,
+    df_clean['behav_vote_provincial_2012'] = df['Q25'].map({
+        1.0: 'plq',
+        2.0: 'pq',
+        3.0: 'caq',
+        4.0: 'qs',
+        5.0: 'pvq',
+        6.0: 'option_nationale',
+        96.0: 'other',
         98.0: np.nan,
         99.0: np.nan,
     })
-    CODEBOOK_VARIABLES['op_q27'] = {
-        'original_variable': 'Q27',
-        'question_label': "Variable Q27 - Mapping is based on observed values only, as no codebook was provided.",
+    CODEBOOK_VARIABLES['behav_vote_provincial_2012'] = {
+        'original_variable': 'Q25',
+        'question_label': "How did you vote in the last Quebec provincial election of September 4th, 2012?",
         'type': 'categorical',
-        'value_labels': {'cat1': 'Category 1', 'cat2': 'Category 2', 'cat3': 'Category 3', 'cat4': 'Category 4', 'cat5': 'Category 5'},
+        'value_labels': {
+            'plq': "Quebec Liberal Party",
+            'pq': "Parti Québécois",
+            'caq': "Coalition avenir Québec",
+            'qs': "Québec Solidaire",
+            'pvq': "Parti Vert du Québec",
+            'option_nationale': "Option Nationale",
+            'other': "Another party",
+        },
+    }
+
+    # --- Q27 ---
+    # behav_vote_federal_2011 — Vote aux élections fédérales de mai 2011
+    # Source: Q27
+    df_clean['behav_vote_federal_2011'] = df['Q27'].map({
+        1.0: 'conservative',
+        2.0: 'liberal',
+        3.0: 'ndp',
+        4.0: 'bloc_quebecois',
+        5.0: 'green',
+        96.0: 'other',
+        98.0: np.nan,
+        99.0: np.nan,
+    })
+    CODEBOOK_VARIABLES['behav_vote_federal_2011'] = {
+        'original_variable': 'Q27',
+        'question_label': "And in the last Canadian federal election in May 2011? Did you vote for the:",
+        'type': 'categorical',
+        'value_labels': {
+            'conservative': "Conservative Party of Canada",
+            'liberal': "Liberal Party of Canada",
+            'ndp': "New Democratic Party (NDP)",
+            'bloc_quebecois': "Bloc Québécois",
+            'green': "Green Party of Canada",
+            'other': "Another party",
+        },
     }
 
     # --- Q3 ---
-    # op_q3 — General opinion question 3
+    # op_identity_quebecois — Identité québécoise vs canadienne
     # Source: Q3
-    # Assumption: Codes 1.0-5.0 are distinct options. Codes 8.0 and 9.0 treated as missing (unlabelled in codebook).
-    df_clean['op_q3'] = df['Q3'].map({
-        1.0: 'option_one',
-        2.0: 'option_two',
-        3.0: 'option_three',
-        4.0: 'option_four',
-        5.0: 'option_five',
+    df_clean['op_identity_quebecois'] = df['Q3'].map({
+        1.0: 'quebecois_not_canadian',
+        2.0: 'more_quebecois',
+        3.0: 'equally_quebecois_canadian',
+        4.0: 'more_canadian',
+        5.0: 'canadian_not_quebecois',
         8.0: np.nan,
         9.0: np.nan,
     })
-    CODEBOOK_VARIABLES['op_q3'] = {
+    CODEBOOK_VARIABLES['op_identity_quebecois'] = {
         'original_variable': 'Q3',
-        'question_label': "Unknown question text for Q3 - Mapped based on observed data.",
+        'question_label': "Which if any of the following best describes the way you think of yourself?",
         'type': 'categorical',
-        'value_labels': {'option_one': "Option 1", 'option_two': "Option 2", 'option_three': "Option 3", 'option_four': "Option 4", 'option_five': "Option 5"},
+        'value_labels': {
+            'quebecois_not_canadian': "Québécois not Canadian",
+            'more_quebecois': "More Québécois than Canadian",
+            'equally_quebecois_canadian': "Equally Québécois and Canadian",
+            'more_canadian': "More Canadian than Québécois",
+            'canadian_not_quebecois': "Canadian not Québécois",
+        },
     }
 
     # --- Q31 ---
@@ -1664,21 +1775,21 @@ def clean_data(raw_path: str) -> pd.DataFrame:
     }
 
     # --- Q5 ---
-    # op_q5 — Question 5 (Placeholder label)
+    # op_french_importance — Importance du français pour l'identité québécoise
     # Source: Q5
-    # Assumption: Codes 1.0-4.0 mapped to generic strings, code 8.0 treated as missing.
-    df_clean['op_q5'] = df['Q5'].map({
-        1.0: 'one',
-        2.0: 'two',
-        3.0: 'three',
-        4.0: 'four',
+    df_clean['op_french_importance'] = df['Q5'].map({
+        1.0: 0.0,
+        2.0: 1/3,
+        3.0: 2/3,
+        4.0: 1.0,
         8.0: np.nan,
+        9.0: np.nan,
     })
-    CODEBOOK_VARIABLES['op_q5'] = {
+    CODEBOOK_VARIABLES['op_french_importance'] = {
         'original_variable': 'Q5',
-        'question_label': "Question 5 (Placeholder)",
-        'type': 'categorical',
-        'value_labels': {'one': "Category One", 'two': "Category Two", 'three': "Category Three", 'four': "Category Four"},
+        'question_label': "How important is the French language to Québécois identity?",
+        'type': 'likert',
+        'value_labels': {0.0: "Very important", 1/3: "Fairly important", 2/3: "Not very important", 1.0: "Not important at all"},
     }
 
     # --- Q50 ---
@@ -3899,7 +4010,52 @@ def clean_data(raw_path: str) -> pd.DataFrame:
     }
 
 
+    # Add canonical strata
+    df_strata = map_strates_canoniques(df)
+    df_clean = pd.concat([df_clean, df_strata], axis=1)
+
     return df_clean
+
+
+def map_strates_canoniques(df: pd.DataFrame) -> pd.DataFrame:
+    """Crée les strates canoniques pour l'analyse.
+
+    Args:
+        df (pd.DataFrame): DataFrame brut du sondage
+
+    Returns:
+        pd.DataFrame: DataFrame avec les 4 colonnes standardisées
+    """
+    df_strata = pd.DataFrame(index=df.index)
+
+    # Genre
+    df_strata['genre'] = df['SEXE'].map({
+        1.0: 'homme',
+        2.0: 'femme',
+    })
+
+    # Langue
+    df_strata['langue'] = df['LANGU'].map({
+        1.0: 'francophone',
+        2.0: 'anglo-autre',
+        3.0: 'anglo-autre',
+    })
+
+    # Age group
+    age = pd.to_numeric(df['AGE'], errors='coerce')
+    df_strata['age_group'] = pd.cut(
+        age,
+        bins=[17, 34, 54, np.inf],
+        labels=['18-34', '35-54', '55+']
+    )
+
+    # Région
+    # TODO: Le mapping pour la région (Q0QC) n'est pas disponible.
+    # Il est nécessaire de trouver le codebook pour mapper les codes
+    # de région (1-17) aux régions canoniques (MTL, QC, Couronne, Régions).
+    df_strata['region'] = np.nan
+
+    return df_strata
 
 
 def get_metadata():

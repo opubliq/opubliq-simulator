@@ -95,19 +95,24 @@ find_col <- function(df, vec_id) {
 
 col_fr <- find_col(raw, lang_vec_fr)
 col_en <- find_col(raw, lang_vec_en)
+age_cols <- sapply(age_spec$v, find_col, df = raw)  # named vector: id → col name
+
+# Verify no NAs
+stopifnot(!any(is.na(age_cols)), !is.na(col_fr), !is.na(col_en))
 
 # ---------------------------------------------------------------------------
-# 4. Agréger par strate_region
+# 4. Agréger par strate_region (somme de chaque vecteur par région)
 # ---------------------------------------------------------------------------
-# Pour chaque région, on a la somme de chaque vecteur sur tous les CDs
-age_cols <- sapply(age_spec$v, find_col, df = raw)
-
-agg <- raw %>%
-  group_by(strate_region) %>%
-  summarise(
-    across(all_of(c(age_cols, col_fr, col_en)), \(x) sum(x, na.rm = TRUE)),
-    .groups = "drop"
-  )
+# On fait l'agrégation manuellement pour éviter les problèmes de noms de col
+agg_list <- lapply(names(region_mapping), function(rname) {
+  sub <- raw %>% filter(strate_region == rname)
+  result <- list(strate_region = rname)
+  for (cname in c(age_cols, col_fr, col_en)) {
+    result[[cname]] <- sum(sub[[cname]], na.rm = TRUE)
+  }
+  as.data.frame(result, check.names = FALSE)
+})
+agg <- bind_rows(agg_list)
 
 # ---------------------------------------------------------------------------
 # 5. Construire les lignes strate_weights
