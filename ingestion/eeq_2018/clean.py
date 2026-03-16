@@ -925,12 +925,24 @@ def clean_data(df):
     # --- Q13 ---
     # op_knowledge_mnas — Connaissance du nombre de députés
     # Source: Q13
-    df_clean['op_knowledge_mnas'] = pd.to_numeric(df['q13'], errors='coerce')
+    df_clean['op_knowledge_mnas'] = df['q13'].map({
+        1.0: 'seventy_five',
+        2.0: 'one_hundred',
+        3.0: 'one_hundred_twenty_five',
+        4.0: 'one_hundred_fifty',
+        98.0: np.nan,
+        99.0: np.nan
+    })
     CODEBOOK_VARIABLES['op_knowledge_mnas'] = {
         'original_variable': 'q13',
         'question_label': "Combien y a-t-il de député(e)s à l'Assemblée nationale du Québec?",
-        'type': 'numeric',
-        'value_labels': {}
+        'type': 'categorical',
+        'value_labels': {
+            'seventy_five': "75",
+            'one_hundred': "100",
+            'one_hundred_twenty_five': "125",
+            'one_hundred_fifty': "150"
+        }
     }
 
     # --- Q14_1 ---
@@ -1981,16 +1993,16 @@ def clean_data(df):
         9.0: np.nan
     })
     CODEBOOK_VARIABLES['op_gov_satisfaction'] = {
-        'original_variable': 'q10',
-        'question_label': "Quel est votre niveau global de satisfaction envers la performance du gouvernement libéral de Philippe Couillard?",
-        'type': 'ordinal',
-        'value_labels': {
-            'very_satisfied': "Très satisfait(e)",
-            'somewhat_satisfied': "Assez satisfait(e)",
-            'not_very_satisfied': "Pas satisfait(e)",
-            'not_at_all_satisfied': "Pas du tout satisfait(e)"
-        }
-    }
+         'original_variable': 'q10',
+         'question_label': "Quel est votre niveau global de satisfaction envers la performance du gouvernement libéral de Philippe Couillard?",
+         'type': 'ordinal',
+         'value_labels': {
+             'very_satisfied': "Très satisfait(e)",
+             'somewhat_satisfied': "Assez satisfait(e)",
+             'not_very_satisfied': "Peu satisfait(e)",
+             'not_at_all_satisfied': "Pas du tout satisfait(e)"
+         }
+     }
 
     # --- Q11_1 ---
     # op_responsibility_education — Palier de gouvernement responsable de l'éducation
