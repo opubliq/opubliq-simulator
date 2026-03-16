@@ -2034,29 +2034,43 @@ def clean_data(raw_path: str) -> pd.DataFrame:
     }
 
     # --- Q54 ---
-    # op_voting_choice — Inferred voting choice or preference
-    # Source: Q54
-    # Assumption: Codes 0-10 inferred as party choices 1-10, 98 as refused, 99 as not applicable/missing.
-    df_clean['op_voting_choice'] = df['Q54'].map({
-        0.0: 'no choice',
-        1.0: 'party 1',
-        2.0: 'party 2',
-        3.0: 'party 3',
-        4.0: 'party 4',
-        5.0: 'party 5',
-        6.0: 'party 6',
-        7.0: 'party 7',
-        8.0: 'party 8',
-        9.0: 'party 9',
-        10.0: 'party 10',
-        98.0: 'refused',
-        99.0: np.nan, # Treating 99 as true missing since 98 covers refused
+    # op_charter_importance — Importance of adopting a charter of secularism
+    # Source: Q54 (Codebook: "Et sur la même échelle, quelle est l'importance d'adopter une charte de la laïcité?")
+    # Scale: 0 = "pas du tout important" to 10 = "très important"
+    # Codes 98 = "Je ne sais pas", 99 = "Je préfère ne pas répondre"
+    df_clean['op_charter_importance'] = df['Q54'].map({
+        0.0: 'not_important_at_all',
+        1.0: 'importance_1',
+        2.0: 'importance_2',
+        3.0: 'importance_3',
+        4.0: 'importance_4',
+        5.0: 'importance_5',
+        6.0: 'importance_6',
+        7.0: 'importance_7',
+        8.0: 'importance_8',
+        9.0: 'importance_9',
+        10.0: 'very_important',
+        98.0: np.nan,  # Je ne sais pas - treated as missing
+        99.0: 'refused',  # Je préfère ne pas répondre
     })
-    CODEBOOK_VARIABLES['op_voting_choice'] = {
+    CODEBOOK_VARIABLES['op_charter_importance'] = {
         'original_variable': 'Q54',
-        'question_label': "Inferred Voting Choice/Preference (0-10)",
+        'question_label': "Importance of adopting a charter of secularism (0-10)",
         'type': 'categorical',
-        'value_labels': {'no choice': "No choice recorded", 'party 1': "Party 1", 'party 2': "Party 2", 'party 3': "Party 3", 'party 4': "Party 4", 'party 5': "Party 5", 'party 6': "Party 6", 'party 7': "Party 7", 'party 8': "Party 8", 'party 9': "Party 9", 'party 10': "Party 10", 'refused': "Refused"},
+        'value_labels': {
+            'not_important_at_all': "Pas du tout important (0)",
+            'importance_1': "Importance 1",
+            'importance_2': "Importance 2",
+            'importance_3': "Importance 3",
+            'importance_4': "Importance 4",
+            'importance_5': "Importance 5",
+            'importance_6': "Importance 6",
+            'importance_7': "Importance 7",
+            'importance_8': "Importance 8",
+            'importance_9': "Importance 9",
+            'very_important': "Très important (10)",
+            'refused': "Refused",
+        },
     }
 
     # --- Q55 ---
