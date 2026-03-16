@@ -817,215 +817,94 @@ def clean_data(raw_path: str) -> pd.DataFrame:
     }
 
     # --- Q29A ---
-    # op_opinion_29a — Unknown: Inferring from many numeric codes (0-44+)
+    # op_politician_rating_philippe_couillard — Évaluation de Philippe Couillard (0-100 → 0-1)
     # Source: Q29A
-    # Assumption: Codes 0-10 mapped to generic categories due to missing codebook. All other observed codes (11, 12, 15, 17, 20, 25, 30, 32, 34, 35, 40, 41, 42, 44, etc.) are treated as missing/unmappable.
-    df_clean['op_opinion_29a'] = df['Q29A'].map({
-        0.0: 'none',
-        1.0: 'low_1',
-        2.0: 'low_2',
-        3.0: 'low_3',
-        4.0: 'low_4',
-        5.0: 'low_5',
-        6.0: 'low_6',
-        7.0: 'low_7',
-        8.0: 'low_8',
-        9.0: 'low_9',
-        10.0: 'low_10',
-    })
-    CODEBOOK_VARIABLES['op_opinion_29a'] = {
+    # Mapping validé à partir du codebook: échelle 0-100, special values → NaN
+    df_clean['op_politician_rating_philippe_couillard'] = np.nan
+    mask = (~df['Q29A'].isin(['Je ne le/la connais pas', "Je ne sais pas / Je ne sais pas comment l'évaluer", 'Je préfère ne pas répondre'])) & (pd.to_numeric(df['Q29A'], errors='coerce').notna())
+    df_clean.loc[mask, 'op_politician_rating_philippe_couillard'] = pd.to_numeric(df.loc[mask, 'Q29A'], errors='coerce') / 100.0
+    CODEBOOK_VARIABLES['op_politician_rating_philippe_couillard'] = {
         'original_variable': 'Q29A',
-        'question_label': "Unknown: Inferring from many numeric codes (0-44+)",
-        'type': 'categorical',
-        'value_labels': {'none': "None/Missing", 'low_1': "Category 1", 'low_2': "Category 2", 'low_3': "Category 3", 'low_4': "Category 4", 'low_5': "Category 5", 'low_6': "Category 6", 'low_7': "Category 7", 'low_8': "Category 8", 'low_9': "Category 9", 'low_10': "Category 10"},
+        'question_label': "Sur une échelle de ZERO à CENT, où zéro veut dire que vous N'AIMEZ VRAIMENT PAS DU TOUT un politicien, et cent veut dire que vous L'AIMEZ VRAIMENT BEAUCOUP, que pensez-vous de PHILIPPE COUILLARD?",
+        'type': 'numeric',
     }
 
     # --- Q29B ---
-    # op_q29b — Unknown categorical response for Q29B
+    # op_politician_rating_pauline_marois — Évaluation de Pauline Marois (0-100 → 0-1)
     # Source: Q29B
-    # Assumption: No codebook values provided for Q29B. Mapping observed float codes to generic strings.
-    df_clean['op_q29b'] = df['Q29B'].map({
-        0.0: 'none',
-        1.0: 'level_1',
-        2.0: 'level_2',
-        3.0: 'level_3',
-        4.0: 'level_4',
-        5.0: 'level_5',
-        6.0: 'level_6',
-        7.0: 'level_7',
-        8.0: 'level_8',
-        9.0: 'level_9',
-        10.0: 'level_10',
-        13.0: 'level_13',
-        15.0: 'level_15',
-        16.0: 'level_16',
-        20.0: 'level_20',
-        25.0: 'level_25',
-        30.0: 'level_30',
-        32.0: 'level_32',
-        33.0: 'level_33',
-        35.0: 'level_35',
-        37.0: 'level_37',
-        40.0: 'level_40',
-        45.0: 'level_45',
-        47.0: 'level_47',
-        49.0: 'level_49',
-    })
-    CODEBOOK_VARIABLES['op_q29b'] = {
+    # Mapping validé à partir du codebook: échelle 0-100, special values → NaN
+    df_clean['op_politician_rating_pauline_marois'] = np.nan
+    mask = (~df['Q29B'].isin(['Je ne le/la connais pas', "Je ne sais pas / Je ne sais pas comment l'évaluer", 'Je préfère ne pas répondre'])) & (pd.to_numeric(df['Q29B'], errors='coerce').notna())
+    df_clean.loc[mask, 'op_politician_rating_pauline_marois'] = pd.to_numeric(df.loc[mask, 'Q29B'], errors='coerce') / 100.0
+    CODEBOOK_VARIABLES['op_politician_rating_pauline_marois'] = {
         'original_variable': 'Q29B',
-        'question_label': "Q29B - Unknown categorical response",
-        'type': 'categorical',
-        'value_labels': {'none': "None/Default", 'level_1': "Level 1", 'level_2': "Level 2", 'level_3': "Level 3", 'level_4': "Level 4", 'level_5': "Level 5", 'level_6': "Level 6", 'level_7': "Level 7", 'level_8': "Level 8", 'level_9': "Level 9", 'level_10': "Level 10", 'level_13': "Level 13", 'level_15': "Level 15", 'level_16': "Level 16", 'level_20': "Level 20", 'level_25': "Level 25", 'level_30': "Level 30", 'level_32': "Level 32", 'level_33': "Level 33", 'level_35': "Level 35", 'level_37': "Level 37", 'level_40': "Level 40", 'level_45': "Level 45", 'level_47': "Level 47", 'level_49': "Level 49"},
+        'question_label': "Sur une échelle de ZERO à CENT, où zéro veut dire que vous N'AIMEZ VRAIMENT PAS DU TOUT un politicien, et cent veut dire que vous L'AIMEZ VRAIMENT BEAUCOUP, que pensez-vous de PAULINE MAROIS?",
+        'type': 'numeric',
     }
 
     # --- Q29C ---
-    # behav_transit_frequency — Frequency of using public transit in your area (Inferred: No codebook provided)
+    # op_politician_rating_francois_legault — Évaluation de François Legault (0-100 → 0-1)
     # Source: Q29C
-    # Assumption: Codes are categorical/ordinal frequencies; mapping float keys to string labels derived from the code itself.
-    df_clean['behav_transit_frequency'] = df['Q29C'].map({
-        0.0: 'freq_0_none',
-        1.0: 'freq_1_rare',
-        2.0: 'freq_2_low',
-        3.0: 'freq_3_medium',
-        4.0: 'freq_4_high',
-        5.0: 'freq_5',
-        6.0: 'freq_6',
-        7.0: 'freq_7',
-        8.0: 'freq_8',
-        9.0: 'freq_9',
-        10.0: 'freq_10',
-        11.0: 'freq_11',
-        12.0: 'freq_12',
-        15.0: 'freq_15',
-        20.0: 'freq_20',
-        22.0: 'freq_22',
-        24.0: 'freq_24',
-        25.0: 'freq_25',
-        30.0: 'freq_30',
-        31.0: 'freq_31',
-        35.0: 'freq_35',
-        36.0: 'freq_36',
-        40.0: 'freq_40',
-        44.0: 'freq_44',
-        45.0: 'freq_45',
-    })
-    CODEBOOK_VARIABLES['behav_transit_frequency'] = {
+    # Mapping validé à partir du codebook: échelle 0-100, special values → NaN
+    df_clean['op_politician_rating_francois_legault'] = np.nan
+    mask = (~df['Q29C'].isin(['Je ne le/la connais pas', "Je ne sais pas / Je ne sais pas comment l'évaluer", 'Je préfère ne pas répondre'])) & (pd.to_numeric(df['Q29C'], errors='coerce').notna())
+    df_clean.loc[mask, 'op_politician_rating_francois_legault'] = pd.to_numeric(df.loc[mask, 'Q29C'], errors='coerce') / 100.0
+    CODEBOOK_VARIABLES['op_politician_rating_francois_legault'] = {
         'original_variable': 'Q29C',
-        'question_label': "Frequency of using public transit in your area (Inferred)",
-        'type': 'categorical',
-        'value_labels': {'freq_0_none': "Code 0 (None)", 'freq_1_rare': "Code 1 (Rarely)", 'freq_2_low': "Code 2 (Low)", 'freq_3_medium': "Code 3 (Medium)", 'freq_4_high': "Code 4 (High)", 'freq_5': "Code 5", 'freq_6': "Code 6", 'freq_7': "Code 7", 'freq_8': "Code 8", 'freq_9': "Code 9", 'freq_10': "Code 10", 'freq_11': "Code 11", 'freq_12': "Code 12", 'freq_15': "Code 15", 'freq_20': "Code 20", 'freq_22': "Code 22", 'freq_24': "Code 24", 'freq_25': "Code 25", 'freq_30': "Code 30", 'freq_31': "Code 31", 'freq_35': "Code 35", 'freq_36': "Code 36", 'freq_40': "Code 40", 'freq_44': "Code 44", 'freq_45': "Code 45"},
+        'question_label': "Sur une échelle de ZERO à CENT, où zéro veut dire que vous N'AIMEZ VRAIMENT PAS DU TOUT un politicien, et cent veut dire que vous L'AIMEZ VRAIMENT BEAUCOUP, que pensez-vous de FRANÇOIS LEGAULT?",
+        'type': 'numeric',
     }
 
     # --- Q29D ---
-    # op_fdavid_rating — Opinion rating for Françoise David (0-100 scale)
+    # op_politician_rating_francoise_david — Évaluation de Françoise David (0-100 → 0-1)
     # Source: Q29D
-    # Note: Variable is a 0-100 feeling thermometer disguised as categorical. Codes 997-999 are explicit missing values.
-    # Assumption: All other values found in the data are valid ratings (0-100) and are scaled by dividing by 100.0.
-    df_clean['op_fdavid_rating'] = df['Q29D'].map({
-        997.0: np.nan,
-        998.0: np.nan,
-        999.0: np.nan,
-    }).fillna(df['Q29D'] / 100.0)
-
-    CODEBOOK_VARIABLES['op_fdavid_rating'] = {
+    # Mapping validé à partir du codebook: échelle 0-100, special values → NaN
+    df_clean['op_politician_rating_francoise_david'] = np.nan
+    mask = (~df['Q29D'].isin(['Je ne le/la connais pas', "Je ne sais pas / Je ne sais pas comment l'évaluer", 'Je préfère ne pas répondre'])) & (pd.to_numeric(df['Q29D'], errors='coerce').notna())
+    df_clean.loc[mask, 'op_politician_rating_francoise_david'] = pd.to_numeric(df.loc[mask, 'Q29D'], errors='coerce') / 100.0
+    CODEBOOK_VARIABLES['op_politician_rating_francoise_david'] = {
         'original_variable': 'Q29D',
-        'question_label': "Sur une échelle de ZERO à CENT, où zéro veut dire que vous N'AIMEZ VRAIMENT PAS DU TOUT un politicien, et cent veut dire que vous L'AIMEZ VRAIMENT BEAUCOUP, que pensez-vous de FRANÇOISE DAVID? / Entrez une réponse (entre 0 et 100)",
+        'question_label': "Sur une échelle de ZERO à CENT, où zéro veut dire que vous N'AIMEZ VRAIMENT PAS DU TOUT un politicien, et cent veut dire que vous L'AIMEZ VRAIMENT BEAUCOUP, que pensez-vous de FRANÇOISE DAVID?",
         'type': 'numeric',
-        'value_labels': {'0.0': "N'aime vraiment pas du tout", '1.0': "Rating 1/100", '100.0': "Aime vraiment beaucoup"},
     }
 
     # --- Q29E ---
-    # ses_province — Province de résidence
+    # op_politician_rating_sol_zanetti — Évaluation de Sol Zanetti (0-100 → 0-1)
     # Source: Q29E
-    # WARNING: Data exploration showed many float values (0.0, 5.0, 10.0...) which contradicts the codebook's 3-value categorical definition.
-    # Assumption: The codebook values (1, 2, 3) for province are correct, and all other observed values map to missing.
-    df_clean['ses_province'] = df['Q29E'].map({
-        1.0: 'quebec',
-        2.0: 'ontario',
-        3.0: 'alberta',
-        99.0: np.nan,
-    })
-    CODEBOOK_VARIABLES['ses_province'] = {
+    # Mapping validé à partir du codebook: échelle 0-100, special values → NaN
+    df_clean['op_politician_rating_sol_zanetti'] = np.nan
+    mask = (~df['Q29E'].isin(['Je ne le/la connais pas', "Je ne sais pas / Je ne sais pas comment l'évaluer", 'Je préfère ne pas répondent'])) & (pd.to_numeric(df['Q29E'], errors='coerce').notna())
+    df_clean.loc[mask, 'op_politician_rating_sol_zanetti'] = pd.to_numeric(df.loc[mask, 'Q29E'], errors='coerce') / 100.0
+    CODEBOOK_VARIABLES['op_politician_rating_sol_zanetti'] = {
         'original_variable': 'Q29E',
-        'question_label': "Province de résidence",
-        'type': 'categorical',
-        'value_labels': {'quebec': "Québec", 'ontario': "Ontario", 'alberta': "Alberta"},
+        'question_label': "Sur une échelle de ZERO à CENT, où zéro veut dire que vous N'AIMEZ VRAIMENT PAS DU TOUT un politicien, et cent veut dire que vous L'AIMEZ VRAIMENT BEAUCOUP, que pensez-vous de SOL ZANETTI?",
+        'type': 'numeric',
     }
 
     # --- Q29F ---
-    # op_favorability_alex_tyrrell — Favorability rating for Alex Tyrrell (Normalized 0-1)
+    # op_politician_rating_alex_tyrrell — Évaluation d'Alex Tyrrell (0-100 → 0-1)
     # Source: Q29F
-    # Strategy: Likert scale 0-100, normalize to 0.0-1.0. Map explicit codes 997-999 to NaN.
-    mapping = {}
-    for i in range(101):
-        mapping[float(i)] = i / 100.0
-
-    # Explicit non-response codes from codebook
-    mapping[997.0] = np.nan
-    mapping[998.0] = np.nan
-    mapping[999.0] = np.nan
-
-    df_clean['op_favorability_alex_tyrrell'] = df['Q29F'].map(mapping)
-
-    CODEBOOK_VARIABLES['op_favorability_alex_tyrrell'] = {
+    # Mapping validé à partir du codebook: échelle 0-100, special values → NaN
+    df_clean['op_politician_rating_alex_tyrrell'] = np.nan
+    mask = (~df['Q29F'].isin(['Je ne le/la connais pas', "Je ne sais pas / Je ne sais pas comment l'évaluer", 'Je préfère ne pas répondre'])) & (pd.to_numeric(df['Q29F'], errors='coerce').notna())
+    df_clean.loc[mask, 'op_politician_rating_alex_tyrrell'] = pd.to_numeric(df.loc[mask, 'Q29F'], errors='coerce') / 100.0
+    CODEBOOK_VARIABLES['op_politician_rating_alex_tyrrell'] = {
         'original_variable': 'Q29F',
-        'question_label': "Sur une échelle de ZERO à CENT, où zéro veut dire que vous N'AIMEZ VRAIMENT PAS DU TOUT un politicien, et cent veut dire que vous L'AIMEZ VRAIMENT BEAUCOUP, que pensez-vous de: ALEX TYRRELL? (Normalized 0-1)",
-        'type': 'likert',
-        'value_labels': {
-            '0.00': "0/100 - Not at all favorable",
-            '1.00': "1/100",
-            '0.50': "50/100 - Neutral",
-            '1.00': "100/100 - Very favorable",
-            'NaN': "Missing/Refused"
-        }
+        'question_label': "Sur une échelle de ZERO à CENT, où zéro veut dire que vous N'AIMEZ VRAIMENT PAS DU TOUT un politicien, et cent veut dire que vous L'AIMEZ VRAIMENT BEAUCOUP, que pensez-vous de ALEX TYRRELL?",
+        'type': 'numeric',
     }
 
     # --- Q29G ---
-    # ses_region_g — Region G (Best guess due to missing codebook)
+    # op_politician_rating_pierre_karl_peladeau — Évaluation de Pierre Karl Péladeau (0-100 → 0-1)
     # Source: Q29G
-    # Assumption: All observed codes mapped to generic region labels as codebook is missing.
-    df_clean['ses_region_g'] = df['Q29G'].map({
-        0.0: 'region_0',
-        1.0: 'region_1',
-        2.0: 'region_2',
-        3.0: 'region_3',
-        4.0: 'region_4',
-        5.0: 'region_5',
-        6.0: 'region_6',
-        9.0: 'region_9',
-        10.0: 'region_10',
-        11.0: 'region_11',
-        13.0: 'region_13',
-        15.0: 'region_15',
-        16.0: 'region_16',
-        18.0: 'region_18',
-        20.0: 'region_20',
-        23.0: 'region_23',
-        25.0: 'region_25',
-        30.0: 'region_30',
-        32.0: 'region_32',
-        35.0: 'region_35',
-        39.0: 'region_39',
-        40.0: 'region_40',
-        44.0: 'region_44',
-        45.0: 'region_45',
-        49.0: 'region_49',
-    })
-    CODEBOOK_VARIABLES['ses_region_g'] = {
+    # Mapping validé à partir du codebook: échelle 0-100, special values → NaN
+    df_clean['op_politician_rating_pierre_karl_peladeau'] = np.nan
+    mask = (~df['Q29G'].isin(['Je ne le/la connais pas', "Je ne sais pas / Je ne sais pas comment l'évaluer", 'Je préfère ne pas répondre'])) & (pd.to_numeric(df['Q29G'], errors='coerce').notna())
+    df_clean.loc[mask, 'op_politician_rating_pierre_karl_peladeau'] = pd.to_numeric(df.loc[mask, 'Q29G'], errors='coerce') / 100.0
+    CODEBOOK_VARIABLES['op_politician_rating_pierre_karl_peladeau'] = {
         'original_variable': 'Q29G',
-        'question_label': "Q29G - Unknown Region/Category",
-        'type': 'categorical',
-        'value_labels': {
-            'region_0': 'Category 0', 'region_1': 'Category 1', 'region_2': 'Category 2', 
-            'region_3': 'Category 3', 'region_4': 'Category 4', 'region_5': 'Category 5', 
-            'region_6': 'Category 6', 'region_9': 'Category 9', 'region_10': 'Category 10', 
-            'region_11': 'Category 11', 'region_13': 'Category 13', 'region_15': 'Category 15', 
-            'region_16': 'Category 16', 'region_18': 'Category 18', 'region_20': 'Category 20', 
-            'region_23': 'Category 23', 'region_25': 'Category 25', 'region_30': 'Category 30', 
-            'region_32': 'Category 32', 'region_35': 'Category 35', 'region_39': 'Category 39', 
-            'region_40': 'Category 40', 'region_44': 'Category 44', 'region_45': 'Category 45', 
-            'region_49': 'Category 49'
-        }
+        'question_label': "Sur une échelle de ZERO à CENT, où zéro veut dire que vous N'AIMEZ VRAIMENT PAS DU TOUT un politicien, et cent veut dire que vous L'AIMEZ VRAIMENT BEAUCOUP, que pensez-vous de PIERRE KARL PÉLADEAU?",
+        'type': 'numeric',
     }
 
     # --- Q3 ---
