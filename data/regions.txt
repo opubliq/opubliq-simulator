@@ -1,0 +1,35 @@
+
+R version 4.5.1 (2025-06-13) -- "Great Square Root"
+Copyright (C) 2025 The R Foundation for Statistical Computing
+Platform: x86_64-pc-linux-gnu
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+  Natural language support but running in an English locale
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+> install.packages("cancensus", repos = "https://cloud.r-project.org", quiet=TRUE); library(cancensus); regions <- list_census_regions("CA21"); print(regions)
+# A tibble: 5,518 × 8
+   region name               level    pop municipal_status CMA_UID CD_UID PR_UID
+   <chr>  <chr>              <chr>  <int> <chr>            <chr>   <chr>  <chr> 
+ 1 01     Canada             C     3.70e7 <NA>             <NA>    <NA>   <NA>  
+ 2 35     Ontario            PR    1.42e7 Ont.             <NA>    <NA>   <NA>  
+ 3 24     Quebec             PR    8.50e6 Que.             <NA>    <NA>   <NA>  
+ 4 59     British Columbia   PR    5.00e6 B.C.             <NA>    <NA>   <NA>  
+ 5 48     Alberta            PR    4.26e6 Alta.            <NA>    <NA>   <NA>  
+ 6 46     Manitoba           PR    1.34e6 Man.             <NA>    <NA>   <NA>  
+ 7 47     Saskatchewan       PR    1.13e6 Sask.            <NA>    <NA>   <NA>  
+ 8 12     Nova Scotia        PR    9.69e5 N.S.             <NA>    <NA>   <NA>  
+ 9 13     New Brunswick      PR    7.76e5 N.B.             <NA>    <NA>   <NA>  
+10 10     Newfoundland and … PR    5.11e5 N.L.             <NA>    <NA>   <NA>  
+# ℹ 5,508 more rows
+> 

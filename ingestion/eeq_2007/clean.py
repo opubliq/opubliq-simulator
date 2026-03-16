@@ -193,24 +193,15 @@ def clean_data(raw_path: str) -> pd.DataFrame:
     #     }
     # }
 
-    # --- Q2_province ---
-    # ses_province — Province de résidence
-    # Source: Q2_province
-    # Note: Raw variable name in data is 'q2'. Codes 4, 8, 9 treated as missing (unlabelled in codebook).
-    df_clean['ses_province'] = df['q2'].map({
-        1.0: 'quebec',
-        2.0: 'ontario',
-        3.0: 'alberta',
-        4.0: np.nan,
-        8.0: np.nan,
-        9.0: np.nan,
-        99.0: np.nan,
-    })
+    # --- All respondents from Quebec ---
+    # ses_province — Province de résidence (tous au Québec dans cet échantillon)
+    # Source: (tous les répondants eeq_2007 sont QC)
+    df_clean['ses_province'] = 'quebec'
     CODEBOOK_VARIABLES['ses_province'] = {
-        'original_variable': 'Q2_province',
-        'question_label': "Province de résidence",
+        'original_variable': 'N/A',
+        'question_label': "Province de résidence (tous au Québec)",
         'type': 'categorical',
-        'value_labels': {'quebec': "Québec", 'ontario': "Ontario", 'alberta': "Alberta"},
+        'value_labels': {'quebec': "Québec"},
     }
 
     # --- codep ---
@@ -262,78 +253,55 @@ def clean_data(raw_path: str) -> pd.DataFrame:
     }
 
     # --- langu ---
-    # ses_language — Primary language spoken
+    # ses_language — Langue apprise en premier à la maison
     # Source: langu
-    # Assumption: Codes 4-9 are treated as unmapped/missing due to low frequency and lack of codebook.
     df_clean['ses_language'] = df['langu'].map({
         '1': 'french',
         '2': 'english',
-        '3': 'other',
-        '4': np.nan,
-        '5': np.nan,
-        '6': np.nan,
-        '7': np.nan,
-        '9': np.nan,
+        '9': np.nan,  # Nsp/Refus
     })
     CODEBOOK_VARIABLES['ses_language'] = {
         'original_variable': 'langu',
-        'question_label': "Primary language spoken",
+        'question_label': "Quelle est la langue que vous avez apprise en premier lieu à la maison dans votre enfance et que vous comprenez toujours?",
         'type': 'categorical',
-        'value_labels': {'french': "French", 'english': "English", 'other': "Other"},
+        'value_labels': {'french': "Français", 'english': "Anglais"},
     }
 
     # --- nomx ---
-    # ses_region — Région administrative du Québec
-    # Source: nomx
+    # ses_region — Région strate canonique (MTL/QC/Couronne/Régions)
+    # Source: nomx (21 régions administratives QC)
     df_clean['ses_region'] = df['nomx'].map({
-        '01': 'bas_saint_laurent',
-        '02': 'saguenay_lac_saint_jean',
-        '03': 'quebec_rmr',
-        '04': 'mauricie',
-        '05': 'estrie',
-        '06': 'montreal',
-        '07': 'outaouais',
-        '08': 'abitibi_temiscamingue',
-        '09': 'cote_nord',
-        '11': 'gaspesie',
-        '12': 'chaudiere_appalaches_rmr',
-        '13': 'laval',
-        '14': 'lanaudiere_rmr',
-        '15': 'laurentides_rmr',
-        '16': 'monteregie_rmr',
-        '17': 'centre_du_quebec',
-        '24': 'lanaudiere_autres',
-        '25': 'laurentides_autres',
-        '26': 'monteregie_autres',
-        '32': 'chaudiere_appalaches_autres',
-        '33': 'quebec_autres',
+        '06': 'montreal',           # MONTREAL
+        '13': 'montreal',           # LAVAL (couronne MTL)
+        '16': 'couronne',           # MONTEREGIE - RMR
+        '26': 'couronne',           # MONTEREGIE - AUTRES
+        '14': 'couronne',           # LANAUDIERE - RMR
+        '24': 'couronne',           # LANAUDIERE - AUTRES
+        '15': 'couronne',           # LAURENTIDES - RMR
+        '25': 'couronne',           # LAURENTIDES - AUTRES
+        '03': 'quebec',             # QUEBEC - RMR
+        '33': 'quebec',             # QUEBEC - AUTRES
+        '17': 'regions',            # CENTRE-DU-QUEBEC
+        '12': 'regions',            # CHAUDIERE-APPALACHES - RMR
+        '32': 'regions',            # CHAUDIERE-APPALACHES - AUTRES
+        '05': 'regions',            # ESTRIE
+        '01': 'regions',            # BAS-SAINT-LAURENT
+        '11': 'regions',            # GASPESIE
+        '02': 'regions',            # SAGUENAY/LAC-SAINT-JEAN
+        '04': 'regions',            # MAURICIE
+        '07': 'regions',            # OUTAOUAIS
+        '08': 'regions',            # ABITIBI/TEMISCAMINGUE
+        '09': 'regions',            # COTE-NORD
     })
     CODEBOOK_VARIABLES['ses_region'] = {
         'original_variable': 'nomx',
-        'question_label': "Régions administratives du Québec: 21 sous-groupes",
+        'question_label': "Région strate canonique (4 catégories)",
         'type': 'categorical',
         'value_labels': {
-            'bas_saint_laurent': "Bas-Saint-Laurent",
-            'saguenay_lac_saint_jean': "Saguenay/Lac-Saint-Jean",
-            'quebec_rmr': "Québec - RMR",
-            'mauricie': "Mauricie",
-            'estrie': "Estrie",
             'montreal': "Montréal",
-            'outaouais': "Outaouais",
-            'abitibi_temiscamingue': "Abitibi/Témiscamingue",
-            'cote_nord': "Côte-Nord",
-            'gaspesie': "Gaspésie",
-            'chaudiere_appalaches_rmr': "Chaudière-Appalaches - RMR",
-            'laval': "Laval",
-            'lanaudiere_rmr': "Lanaudière - RMR",
-            'laurentides_rmr': "Laurentides - RMR",
-            'monteregie_rmr': "Montérégie - RMR",
-            'centre_du_quebec': "Centre-du-Québec",
-            'lanaudiere_autres': "Lanaudière-Autres",
-            'laurentides_autres': "Laurentides-Autres",
-            'monteregie_autres': "Montérégie-Autres",
-            'chaudiere_appalaches_autres': "Chaudières-Appalaches Autres",
-            'quebec_autres': "Québec Autres",
+            'quebec': "Québec",
+            'couronne': "Couronne MTL",
+            'regions': "Autres régions",
         },
     }
 
@@ -879,39 +847,37 @@ def clean_data(raw_path: str) -> pd.DataFrame:
     }
 
     # --- q26 ---
-    # op_q26_behavior — Assumed Yes/No question (no codebook provided)
+    # op_government_directed — Gouvernements dirigés pour intérêts quelques personnes vs tous
     # Source: q26
-    # Assumption: codes 8/9 treated as missing (not documented)
-    df_clean['op_q26_behavior'] = df['q26'].map({
-        '1': 'yes',
-        '2': 'no',
+    df_clean['op_government_directed'] = df['q26'].map({
+        '1': 0.0,    # Dirigés pour intérêts de quelques personnes importantes
+        '2': 1.0,    # Dirigés pour bénéfice de tous
         '8': np.nan,
         '9': np.nan,
     })
-    CODEBOOK_VARIABLES['op_q26_behavior'] = {
+    CODEBOOK_VARIABLES['op_government_directed'] = {
         'original_variable': 'q26',
-        'question_label': "Unknown question for Q26 (No codebook entry provided)",
-        'type': 'categorical',
-        'value_labels': {'yes': "Yes", 'no': "No"},
+        'question_label': "En général, diriez-vous que les gouvernements sont dirigés pour le bénéfice des intérêts de quelques personnes ou pour le bénéfice de tous?",
+        'type': 'likert',
+        'value_labels': {0.0: "Intérêts de quelques personnes", 1.0: "Bénéfice de tous"},
     }
 
     # --- q27 ---
-    # op_q27 — Choice for question 27
+    # op_democracy_satisfaction — Satisfaction démocratie québécoise (Likert 0-1)
     # Source: q27
-    # Note: No codebook provided. Codes 8 and 9 treated as missing/unlabelled.
-    df_clean['op_q27'] = df['q27'].map({
-        '1': 'choice_1',
-        '2': 'choice_2',
-        '3': 'choice_3',
-        '4': 'choice_4',
+    df_clean['op_democracy_satisfaction'] = df['q27'].map({
+        '1': 1.0,    # Très satisfait
+        '2': 0.667,  # Assez satisfait
+        '3': 0.333,  # Pas très satisfait
+        '4': 0.0,    # Pas du tout satisfait
         '8': np.nan,
         '9': np.nan,
     })
-    CODEBOOK_VARIABLES['op_q27'] = {
+    CODEBOOK_VARIABLES['op_democracy_satisfaction'] = {
         'original_variable': 'q27',
-        'question_label': "Choice for Q27 (No label available)",
-        'type': 'categorical',
-        'value_labels': {'choice_1': "Code 1", 'choice_2': "Code 2", 'choice_3': "Code 3", 'choice_4': "Code 4"},
+        'question_label': "Dans l'ensemble, êtes-vous satisfait de la façon dont la démocratie fonctionne au Québec?",
+        'type': 'likert',
+        'value_labels': {1.0: "Très satisfait", 0.667: "Assez satisfait", 0.333: "Pas très satisfait", 0.0: "Pas du tout satisfait"},
     }
 
     # --- q28 ---
@@ -1128,50 +1094,35 @@ def clean_data(raw_path: str) -> pd.DataFrame:
     }
 
     # --- q33 ---
-    RAW_NAME = "q33"
-    standard_name = "ses_q33"
-    df_clean[standard_name] = df[RAW_NAME].astype(float)
-
-    # Mapping from raw values (1-5) to 0.0-1.0 for Likert scale
-    mapping = {
-        1.0: 0.2,  # très satisfait
-        2.0: 0.4,  # assez satisfait
-        3.0: 0.6,  # ni satisfait ni insatisfait
-        4.0: 0.8,  # assez insatisfait
-        5.0: 1.0,  # très insatisfait
+    # op_fixed_election_dates — Dates fixes pour élections provinciales
+    # Source: q33
+    df_clean['op_fixed_election_dates'] = df['q33'].map({
+        '1': 'yes',
+        '2': 'no',
+        '8': np.nan,
+        '9': np.nan,
+    })
+    CODEBOOK_VARIABLES['op_fixed_election_dates'] = {
+        'original_variable': 'q33',
+        'question_label': "Pensez-vous que les élections provinciales au Québec devraient avoir lieu à des dates fixes?",
+        'type': 'binary',
+        'value_labels': {'yes': "Oui", 'no': "Non"},
     }
-    df_clean[standard_name] = df_clean[standard_name].map(mapping)
-
-    # Set CODEBOOK_VARIABLES entry
-    CODEBOOK_VARIABLES[standard_name] = {
-        'original_variable': RAW_NAME,
-        'question_label': "Opinion sur la performance du gouvernement libéral",
-        'type': 'likert',
-        'value_labels': {
-            "0.2": "très satisfait",
-            "0.4": "assez satisfait",
-            "0.6": "ni satisfait ni insatisfait",
-            "0.8": "assez insatisfait",
-            "1.0": "très insatisfait"
-        }
-    }
-    # Missing codes (8, 9) will map to NaN by default when using .map() on floats
 
     # --- q34 ---
-    # op_q34 — Opinion question q34
+    # op_voting_system_acceptable — Système majoritaire sans majorité votes acceptable?
     # Source: q34
-    # Assumption: Codes 8 and 9 are treated as missing (not explicitly labelled in codebook)
-    df_clean['op_q34'] = df['q34'].map({
-        1.0: 'positive',
-        2.0: 'negative',
+    df_clean['op_voting_system_acceptable'] = df['q34'].map({
+        1.0: 'acceptable',
+        2.0: 'inacceptable',
         8.0: np.nan,
         9.0: np.nan,
     })
-    CODEBOOK_VARIABLES['op_q34'] = {
+    CODEBOOK_VARIABLES['op_voting_system_acceptable'] = {
         'original_variable': 'q34',
-        'question_label': "Opinion question q34 (Codebook label missing, inferred categorical)",
-        'type': 'categorical',
-        'value_labels': {'positive': "Positive response or agreement", 'negative': "Negative response or disagreement"},
+        'question_label': "Dans notre système actuel, un parti peut gagner une majorité de sièges sans obtenir une majorité de votes. Est-ce acceptable?",
+        'type': 'binary',
+        'value_labels': {'acceptable': "Acceptable", 'inacceptable': "Inacceptable"},
     }
 
     # --- q35 ---
@@ -1268,22 +1219,21 @@ def clean_data(raw_path: str) -> pd.DataFrame:
     }
 
     # --- q38 ---
-    # ses_province — Province de résidence (Inferred mapping due to missing codebook)
+    # op_mps_out_of_touch — Partis QC tous pareils (accord/désaccord 4-point)
     # Source: q38
-    # Assumption: Codes 8 and 9 are treated as missing (unlabelled in data exploration). Code 4 is mapped to 'other_province'.
-    df_clean['ses_province'] = df['q38'].map({
-        '1': 'quebec',
-        '2': 'ontario',
-        '3': 'alberta',
-        '4': 'other_province',
+    df_clean['op_mps_out_of_touch'] = df['q38'].map({
+        '1': 1.0,    # Fortement d'accord
+        '2': 0.667,  # Plutôt d'accord
+        '3': 0.333,  # Plutôt en désaccord
+        '4': 0.0,    # Fortement en désaccord
         '8': np.nan,
         '9': np.nan,
     })
-    CODEBOOK_VARIABLES['ses_province'] = {
+    CODEBOOK_VARIABLES['op_mps_out_of_touch'] = {
         'original_variable': 'q38',
-        'question_label': "Province de résidence (Requires label verification)",
-        'type': 'categorical',
-        'value_labels': {'quebec': "Québec", 'ontario': "Ontario", 'alberta': "Alberta", 'other_province': "Other Province (Unlabelled)"},
+        'question_label': "Tous les partis politiques provinciaux sont essentiellement pareils; on n'a pas vraiment de choix.",
+        'type': 'likert',
+        'value_labels': {1.0: "Fortement d'accord", 0.667: "Plutôt d'accord", 0.333: "Plutôt en désaccord", 0.0: "Fortement en désaccord"},
     }
 
     # --- q39 ---
@@ -1824,26 +1774,24 @@ def clean_data(raw_path: str) -> pd.DataFrame:
     }
 
     # --- q59 ---
-    # ses_region_code — Unknown region code
+    # op_best_party_environnement — Meilleur parti pour protéger l'environnement
     # Source: q59
-    # Assumption: Codes 96-99 are treated as missing due to lack of codebook.
-    # Assumption: Codes 01-05 mapped to generic placeholders.
-    df_clean['ses_region_code'] = df['q59'].map({
-        '01': 'code_01',
-        '02': 'code_02',
-        '03': 'code_03',
-        '04': 'code_04',
-        '05': 'code_05',
-        '96': np.nan,
-        '97': np.nan,
+    df_clean['op_best_party_environnement'] = df['q59'].map({
+        '01': 'liberal',
+        '02': 'pq',
+        '03': 'adq',
+        '04': 'quebec_solidaire',
+        '05': 'parti_vert',
+        '96': 'autre',
+        '97': 'aucun',
         '98': np.nan,
         '99': np.nan,
     })
-    CODEBOOK_VARIABLES['ses_region_code'] = {
+    CODEBOOK_VARIABLES['op_best_party_environnement'] = {
         'original_variable': 'q59',
-        'question_label': "Unknown - Based on exploration (q59)",
+        'question_label': "Quel parti est le meilleur pour protéger l'environnement?",
         'type': 'categorical',
-        'value_labels': {'code_01': "Code 01", 'code_02': "Code 02", 'code_03': "Code 03", 'code_04': "Code 04", 'code_05': "Code 05"},
+        'value_labels': {'liberal': "Libéral", 'pq': "Parti québécois", 'adq': "ADQ", 'quebec_solidaire': "Québec Solidaire", 'parti_vert': "Parti Vert", 'autre': "Autre", 'aucun': "Aucun"},
     }
 
     # --- q6 ---
@@ -2256,83 +2204,29 @@ def clean_data(raw_path: str) -> pd.DataFrame:
     }
 
     # --- q75 ---
-    # op_q75 — Unknown categorical variable from q75
-    # Source: q75
-    # WARNING: Codebook entry was missing. Treated as categorical based on float dtype and observed values.
-    # Assumption: Codes mapped to string representations of themselves.
-    df_clean['op_q75'] = df['q75'].map({
-        1919.0: '1919',
-        1921.0: '1921',
-        1922.0: '1922',
-        1923.0: '1923',
-        1924.0: '1924',
-        1925.0: '1925',
-        1926.0: '1926',
-        1927.0: '1927',
-        1928.0: '1928',
-        1929.0: '1929',
-        1930.0: '1930',
-        1931.0: '1931',
-        1932.0: '1932',
-        1933.0: '1933',
-        1934.0: '1934',
-        1935.0: '1935',
-        1936.0: '1936',
-        1937.0: '1937',
-        1938.0: '1938',
-        1939.0: '1939',
-        1940.0: '1940',
-        1941.0: '1941',
-        1942.0: '1942',
-        1943.0: '1943',
-        1944.0: '1944',
-    })
-    CODEBOOK_VARIABLES['op_q75'] = {
+    # ses_age_year — Année de naissance
+    # Source: q75 (Notez l'année de naissance)
+    df_clean['ses_age_year'] = df['q75'].copy()
+    df_clean.loc[df_clean['ses_age_year'] == 9999.0, 'ses_age_year'] = np.nan
+    CODEBOOK_VARIABLES['ses_age_year'] = {
         'original_variable': 'q75',
-        'question_label': "q75 - WARNING: Codebook missing. Treated as generic category.",
-        'type': 'categorical',
-        'value_labels': {
-            '1919': "Code 1919 (Unlabelled)",
-            '1921': "Code 1921 (Unlabelled)",
-            '1922': "Code 1922 (Unlabelled)",
-            '1923': "Code 1923 (Unlabelled)",
-            '1924': "Code 1924 (Unlabelled)",
-            '1925': "Code 1925 (Unlabelled)",
-            '1926': "Code 1926 (Unlabelled)",
-            '1927': "Code 1927 (Unlabelled)",
-            '1928': "Code 1928 (Unlabelled)",
-            '1929': "Code 1929 (Unlabelled)",
-            '1930': "Code 1930 (Unlabelled)",
-            '1931': "Code 1931 (Unlabelled)",
-            '1932': "Code 1932 (Unlabelled)",
-            '1933': "Code 1933 (Unlabelled)",
-            '1934': "Code 1934 (Unlabelled)",
-            '1935': "Code 1935 (Unlabelled)",
-            '1936': "Code 1936 (Unlabelled)",
-            '1937': "Code 1937 (Unlabelled)",
-            '1938': "Code 1938 (Unlabelled)",
-            '1939': "Code 1939 (Unlabelled)",
-            '1940': "Code 1940 (Unlabelled)",
-            '1941': "Code 1941 (Unlabelled)",
-            '1942': "Code 1942 (Unlabelled)",
-            '1943': "Code 1943 (Unlabelled)",
-            '1944': "Code 1944 (Unlabelled)",
-        }
+        'question_label': "Pour terminer l'entrevue, nous aimerions avoir quelques informations qui nous aideront à vérifier si notre échantillon représente bien l'ensemble de la population québécoise. D'abord, en quelle année êtes-vous né(e)?",
+        'type': 'numeric',
+        'value_labels': {},
     }
 
     # --- q76 ---
-    # behav_intent_vote — Intent to vote
-    # Source: q76
-    # Assumption: Based on observation of values '1' and '2', treating as binary intent (1=Yes, 2=No).
-    df_clean['behav_intent_vote'] = df['q76'].map({
-        '1': 1.0,
-        '2': 0.0,
+    # ses_gender — Genre du répondant
+    # Source: q76 (NE PAS LIRE - Indiquez le sexe du répondant)
+    df_clean['ses_gender'] = df['q76'].map({
+        '1': 'homme',
+        '2': 'femme',
     })
-    CODEBOOK_VARIABLES['behav_intent_vote'] = {
+    CODEBOOK_VARIABLES['ses_gender'] = {
         'original_variable': 'q76',
-        'question_label': "Intent to vote (Hypothetical Label)",
-        'type': 'binary',
-        'value_labels': {1.0: "Yes", 0.0: "No"},
+        'question_label': "(NE PAS LIRE) Indiquez le sexe du répondant",
+        'type': 'categorical',
+        'value_labels': {'homme': "Masculin", 'femme': "Féminin"},
     }
 
     # --- q77 ---
