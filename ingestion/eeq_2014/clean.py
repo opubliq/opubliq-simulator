@@ -2123,31 +2123,45 @@ def clean_data(raw_path: str) -> pd.DataFrame:
     }
 
     # --- Q58 ---
-    # op_q58 — Inferred variable from Q58
-    # Source: Q58
-    # Assumption: Variable type is categorical based on float64 dtype with discrete codes.
-    # Assumption: Codes 96 and 99 are not valid responses and will be mapped to np.nan.
-    # Assumption: Labels 1.0 through 11.0 are mapped to generic 'option_x' labels due to missing codebook.
+    # op_q58 — Situation professionnelle
+    # Source: Q58 - "Travaillez-vous actuellement à votre compte, êtes-vous salarié(e),
+    # avez-vous pris votre retraite, êtes-vous au chômage ou cherchez-vous du travail,
+    # êtes-vous étudiant(e), ménager(ère), ou quelque chose d'autre?"
     df_clean['op_q58'] = df['Q58'].map({
-        1.0: 'option_1',
-        2.0: 'option_2',
-        3.0: 'option_3',
-        4.0: 'option_4',
-        5.0: 'option_5',
-        6.0: 'option_6',
-        7.0: 'option_7',
-        8.0: 'option_8',
-        9.0: 'option_9',
-        10.0: 'option_10',
-        11.0: 'option_11',
+        1.0: 'self_employed',
+        2.0: 'salaried',
+        3.0: 'retired',
+        4.0: 'unemployed',
+        5.0: 'student',
+        6.0: 'homemaker',
+        7.0: 'disabled',
+        8.0: 'multiple_jobs',
+        9.0: 'student_employed',
+        10.0: 'homemaker_employed',
+        11.0: 'retired_employed',
+        12.0: 'other',
+        13.0: np.nan,
         96.0: np.nan,
         99.0: np.nan,
     })
     CODEBOOK_VARIABLES['op_q58'] = {
         'original_variable': 'Q58',
-        'question_label': "Inferred: Unknown question for Q58",
+        'question_label': "Situation professionnelle",
         'type': 'categorical',
-        'value_labels': {'option_1': "Option 1", 'option_2': "Option 2", 'option_3': "Option 3", 'option_4': "Option 4", 'option_5': "Option 5", 'option_6': "Option 6", 'option_7': "Option 7", 'option_8': "Option 8", 'option_9': "Option 9", 'option_10': "Option 10", 'option_11': "Option 11"},
+        'value_labels': {
+            'self_employed': "Travaille à son compte",
+            'salaried': "Travaille pour un salaire",
+            'retired': "Retraité(e)",
+            'unemployed': "Au chômage/cherche du travail",
+            'student': "Étudiant(e)",
+            'homemaker': "Ménager(ère)",
+            'disabled': "Handicapé(e)",
+            'multiple_jobs': "Occupe deux ou plus de deux emplois rémunérés",
+            'student_employed': "Étudiant(e) et salarié(e)",
+            'homemaker_employed': "Ménager(ère) et salarié(e)",
+            'retired_employed': "Retraité(e) et salarié(e)",
+            'other': "Autre",
+        },
     }
 
     # --- Q59A ---
