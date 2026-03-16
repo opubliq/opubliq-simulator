@@ -2015,14 +2015,14 @@ def clean_data(raw_path: str) -> pd.DataFrame:
     # ses_gender — Genre du répondant
     # Source: q76 (NE PAS LIRE - Indiquez le sexe du répondant)
     df_clean['ses_gender'] = df['q76'].map({
-        '1': 'homme',
-        '2': 'femme',
+        '1': 'un_homme',
+        '2': 'une_femme',
     })
     CODEBOOK_VARIABLES['ses_gender'] = {
         'original_variable': 'q76',
         'question_label': "(NE PAS LIRE) Indiquez le sexe du répondant",
         'type': 'categorical',
-        'value_labels': {'homme': "Masculin", 'femme': "Féminin"},
+        'value_labels': {'un_homme': "Un homme", 'une_femme': "Une femme"},
     }
 
     # --- q77 ---
