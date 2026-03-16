@@ -1126,96 +1126,73 @@ def clean_data(raw_path: str) -> pd.DataFrame:
     }
 
     # --- q35 ---
+    # op_electoral_reform_favorable — Modification mode scrutin favorable?
     # Source: q35
-    # Standard Name: op_q35
-
-    df_clean['op_q35'] = df['q35'].astype(str).replace({
-        "1": "0.0",  # Maps to 0.0, which is OK for 'likert' type check if data is actually numeric
-        "2": "0.0",
-        "3": "0.0",
-        "4": "0.0",
-        "8": np.nan, # Missing
-        "9": np.nan  # Missing
+    df_clean['op_electoral_reform_favorable'] = df['q35'].map({
+        '1': 1.0,   # Favorable
+        '2': 0.0,   # Défavorable
+        '8': np.nan,
+        '9': np.nan,
     })
-
-    # The mapping logic in the validation script expects strings OR numbers in the map keys.
-    # Since the raw data was read as string due to mixed types, I will adjust the map to use strings for keys.
-
-    df_clean['op_q35'] = df['q35'].astype(str).map({
-        "1": 0.0, # Très important -> 0.0 (Assuming likert scaling 0/1)
-        "2": 0.0, # Assez important -> 0.0
-        "3": 0.0, # Peu important -> 0.0
-        "4": 0.0, # Pas du tout important -> 0.0
-        # Missing codes 8 and 9 will become NaN
-    })
-
-    # Set CODEBOOK_VARIABLES for validation check 5 & 8
-    CODEBOOK_VARIABLES['op_q35'] = {
+    CODEBOOK_VARIABLES['op_electoral_reform_favorable'] = {
         'original_variable': 'q35',
-        'question_label': 'Importance de la santé comme enjeu électoral',
+        'question_label': "Récemment, le gouvernement du Québec a commencé à envisager la possibilité de modifier le mode de scrutin. Êtes-vous favorable ou défavorable?",
         'type': 'likert',
-        'value_labels': {
-            '0.0': "Important (Combined)",
-            'nan': "Missing"
-        }
+        'value_labels': {1.0: "Favorable", 0.0: "Défavorable"},
     }
 
     # --- q35a ---
-    # op_q35a — Response to question 35a (Deducted from data exploration)
+    # op_pq_referendum_favorable — Référendum PQ favorable (4-point Likert)
     # Source: q35a
-    # Assumption: Codes '8' and '9' are unlabelled and treated as missing.
-    df_clean['op_q35a'] = df['q35a'].map({
-        '1': 'option_one',
-        '2': 'option_two',
-        '3': 'option_three',
-        '4': 'option_four',
+    df_clean['op_pq_referendum_favorable'] = df['q35a'].map({
+        '1': 1.0,    # Très favorable
+        '2': 0.667,  # Assez favorable
+        '3': 0.333,  # Assez défavorable
+        '4': 0.0,    # Très défavorable
         '8': np.nan,
         '9': np.nan,
     })
-    CODEBOOK_VARIABLES['op_q35a'] = {
+    CODEBOOK_VARIABLES['op_pq_referendum_favorable'] = {
         'original_variable': 'q35a',
-        'question_label': "Response to question 35a (Deducted from data exploration, values 1-4 present)",
-        'type': 'categorical',
-        'value_labels': {'option_one': 'Option 1', 'option_two': 'Option 2', 'option_three': 'Option 3', 'option_four': 'Option 4'},
+        'question_label': "Le Parti québécois s'est engagé durant la campagne à tenir un référendum le plus tôt possible après son élection. Êtes-vous très favorable, assez favorable, assez défavorable, ou très défavorable?",
+        'type': 'likert',
+        'value_labels': {1.0: "Très favorable", 0.667: "Assez favorable", 0.333: "Assez défavorable", 0.0: "Très défavorable"},
     }
 
     # --- q36 ---
-    # op_q36 — Inferred attitude question (Q36)
+    # op_effective_change — Moyen efficace de changer les choses
     # Source: q36
-    # Assumption: Codes '8' and '9' treated as missing as they are unlabelled in the data.
-    # Note: Value labels are placeholders as no codebook entry was provided.
-    df_clean['op_q36'] = df['q36'].map({
-        '1': 'très important',
-        '2': 'assez important',
-        '3': 'peu important',
-        '4': 'pas du tout important',
+    df_clean['op_effective_change'] = df['q36'].map({
+        '1': 'parti_politique',
+        '2': 'groupe_interets',
+        '3': 'les_deux',
+        '4': 'ni_lun_ni_lautre',
         '8': np.nan,
         '9': np.nan,
     })
-    CODEBOOK_VARIABLES['op_q36'] = {
+    CODEBOOK_VARIABLES['op_effective_change'] = {
         'original_variable': 'q36',
-        'question_label': "Inferred attitude question Q36 (Missing labels)",
+        'question_label': "À votre avis, quel est le moyen le plus efficace de changer les choses: être membre d'un parti politique ou un groupe d'intérêts?",
         'type': 'categorical',
-        'value_labels': {'option_1': "Option 1", 'option_2': "Option 2", 'option_3': "Option 3", 'option_4': "Option 4"},
+        'value_labels': {'parti_politique': "Parti politique", 'groupe_interets': "Groupe d'intérêts", 'les_deux': "Les deux", 'ni_lun_ni_lautre': "Ni l'un ni l'autre"},
     }
 
     # --- q37 ---
-    # op_voter_intention — Assumed voter intention based on data codes
+    # op_statement_q37 — Accord/désaccord énoncé (4-point Likert)
     # Source: q37
-    # Assumption: Missing codebook. Codes '1','2','3' mapped to provincial labels (1=QC, 2=ON, 3=AB). Code '4' is 'other'. Codes '8', '9' treated as missing (unlabelled).
-    df_clean['op_voter_intention'] = df['q37'].map({
-        '1': 'quebec',
-        '2': 'ontario',
-        '3': 'alberta',
-        '4': 'other',
+    df_clean['op_statement_q37'] = df['q37'].map({
+        '1': 1.0,    # Fortement d'accord
+        '2': 0.667,  # Plutôt d'accord
+        '3': 0.333,  # Plutôt en désaccord
+        '4': 0.0,    # Fortement en désaccord
         '8': np.nan,
         '9': np.nan,
     })
-    CODEBOOK_VARIABLES['op_voter_intention'] = {
+    CODEBOOK_VARIABLES['op_statement_q37'] = {
         'original_variable': 'q37',
-        'question_label': "Unknown: Assumed voter intention based on data codes",
-        'type': 'categorical',
-        'value_labels': {'quebec': "Québec", 'ontario': "Ontario", 'alberta': "Alberta", 'other': "Other/Unlabelled Response"},
+        'question_label': "Veuillez indiquer si vous êtes fortement d'accord, plutôt d'accord, plutôt en désaccord, ou fortement en désaccord avec les énoncés suivants.",
+        'type': 'likert',
+        'value_labels': {1.0: "Fortement d'accord", 0.667: "Plutôt d'accord", 0.333: "Plutôt en désaccord", 0.0: "Fortement en désaccord"},
     }
 
     # --- q38 ---
