@@ -1319,104 +1319,99 @@ def clean_data(raw_path: str) -> pd.DataFrame:
     }
 
     # --- q45 ---
-    # op_q45 — Cleaning inferred from codes (Codebook Missing)
+    # op_best_leader_honest — Quel chef est le plus honnête?
     # Source: q45
-    # Assumption: Codes 98/99 treated as missing (unlabelled in codebook)
-    df_clean['op_q45'] = df['q45'].map({
-        '01': 'response_1',
-        '02': 'response_2',
-        '03': 'response_3',
-        '04': 'response_4',
-        '05': 'response_5',
-        '06': 'response_6',
-        '07': 'response_7',
+    df_clean['op_best_leader_honest'] = df['q45'].map({
+        '01': 'charest',
+        '02': 'boisclair',
+        '03': 'dumont',
+        '04': 'david',
+        '05': 'mckay',
+        '06': 'aucun',
+        '07': 'tous',
         '98': np.nan,
         '99': np.nan,
     })
-    CODEBOOK_VARIABLES['op_q45'] = {
+    CODEBOOK_VARIABLES['op_best_leader_honest'] = {
         'original_variable': 'q45',
-        'question_label': "Cleaning inferred from codes (Codebook Missing)",
+        'question_label': "Selon vous, lequel des chefs de parti est le plus honnête?",
         'type': 'categorical',
-        'value_labels': {'response_1': "Option 1", 'response_2': "Option 2", 'response_3': "Option 3", 'response_4': "Option 4", 'response_5': "Option 5", 'response_6': "Option 6", 'response_7': "Option 7"},
+        'value_labels': {'charest': "Jean Charest", 'boisclair': "André Boisclair", 'dumont': "Mario Dumont", 'david': "Françoise David", 'mckay': "Scott McKay", 'aucun': "Aucun", 'tous': "Tous"},
     }
 
     # --- q46 ---
-    # ses_q46 — Generic categorical variable based on q46
+    # op_best_leader_close — Quel chef est le plus proche des gens?
     # Source: q46
-    # Assumption: Codes 98 and 99 treated as missing (unlabelled in data exploration)
-    # Assumption: Codes 01-07 mapped to generic labels as codebook was unavailable
-    df_clean['ses_q46'] = df['q46'].map({
-        '01': 'val_01',
-        '02': 'val_02',
-        '03': 'val_03',
-        '04': 'val_04',
-        '05': 'val_05',
-        '06': 'val_06',
-        '07': 'val_07',
+    df_clean['op_best_leader_close'] = df['q46'].map({
+        '01': 'charest',
+        '02': 'boisclair',
+        '03': 'dumont',
+        '04': 'david',
+        '05': 'mckay',
+        '06': 'aucun',
+        '07': 'tous',
         '98': np.nan,
         '99': np.nan,
     })
-    CODEBOOK_VARIABLES['ses_q46'] = {
+    CODEBOOK_VARIABLES['op_best_leader_close'] = {
         'original_variable': 'q46',
-        'question_label': "Unlabelled categorical question from q46",
+        'question_label': "Selon vous, lequel des chefs de parti est le plus proche des gens?",
         'type': 'categorical',
-        'value_labels': {'val_01': "Category 01", 'val_02': "Category 02", 'val_03': "Category 03", 'val_04': "Category 04", 'val_05': "Category 05", 'val_06': "Category 06", 'val_07': "Category 07"},
+        'value_labels': {'charest': "Jean Charest", 'boisclair': "André Boisclair", 'dumont': "Mario Dumont", 'david': "Françoise David", 'mckay': "Scott McKay", 'aucun': "Aucun", 'tous': "Tous"},
     }
 
     # --- q47 ---
-    # op_unknown_q47 — Unknown categorical variable from Q47
+    # op_economy_assessment — Évaluation économie québécoise
     # Source: q47
-    # Assumption: Codes 8 and 9 are treated as missing (unlabelled in codebook)
-    df_clean['op_unknown_q47'] = df['q47'].map({
-        '1': 'cat_1',
-        '2': 'cat_2',
-        '3': 'cat_3',
+    df_clean['op_economy_assessment'] = df['q47'].map({
+        '1': 'amelioree',
+        '2': 'deterioree',
+        '3': 'meme',
         '8': np.nan,
         '9': np.nan,
     })
-    CODEBOOK_VARIABLES['op_unknown_q47'] = {
+    CODEBOOK_VARIABLES['op_economy_assessment'] = {
         'original_variable': 'q47',
-        'question_label': "Unknown variable Q47 (No codebook provided)",
+        'question_label': "Selon vous, l'économie québécoise s'est-elle améliorée, détériorée, ou est-elle restée à peu près la même?",
         'type': 'categorical',
-        'value_labels': {'cat_1': "Value 1", 'cat_2': "Value 2", 'cat_3': "Value 3"},
+        'value_labels': {'amelioree': "Améliorée", 'deterioree': "Détériorée", 'meme': "À peu près la même"},
     }
 
     # --- q48 ---
-    # op_q48 — Inferred response to question 48
+    # --- q48 ---
+    # op_political_identity — Identité politique (fédéraliste/souverainiste)
     # Source: q48
-    # Assumption: Codes 1-4 are valid answers, codes 8 and 9 are missing. Question label is a placeholder.
-    df_clean['op_q48'] = df['q48'].map({
-        '1': 'one',
-        '2': 'two',
-        '3': 'three',
-        '4': 'four',
+    df_clean['op_political_identity'] = df['q48'].map({
+        '1': 'federaliste',
+        '2': 'souverainiste',
+        '3': 'entre_les_deux',
+        '4': 'ni_lun_ni_lautre',
         '8': np.nan,
         '9': np.nan,
     })
-    CODEBOOK_VARIABLES['op_q48'] = {
+    CODEBOOK_VARIABLES['op_political_identity'] = {
         'original_variable': 'q48',
-        'question_label': "Inferred response for question 48",
+        'question_label': "Vous considérez-vous surtout comme un(e) fédéraliste, surtout comme un(e) souverainiste, comme quelqu'un qui est entre les deux, ou ni l'un ni l'autre?",
         'type': 'categorical',
-        'value_labels': {'one': "Answer One", 'two': "Answer Two", 'three': "Answer Three", 'four': "Answer Four"},
+        'value_labels': {'federaliste': "Fédéraliste", 'souverainiste': "Souverainiste", 'entre_les_deux': "Entre les deux", 'ni_lun_ni_lautre': "Ni l'un ni l'autre"},
     }
 
     # --- q49 ---
-    # op_q49 — Response to question 49 (assumed categorical)
+    # --- q49 ---
+    # op_power_distribution — Distribution des pouvoirs fédéral/provincial
     # Source: q49
-    # Assumption: Codes 8 and 9 are unlabelled missing values based on data exploration.
-    # Assumption: Codes 1, 2, 3 map to standard agreement scale for this placeholder.
-    df_clean['op_q49'] = df['q49'].map({
-        1.0: 'yes',
-        2.0: 'no',
-        3.0: "don't know",
-        8.0: np.nan,
-        9.0: np.nan,
+    df_clean['op_power_distribution'] = df['q49'].map({
+        '1': 'plus_provincial',
+        '2': 'plus_federal',
+        '3': 'statu_quo',
+        '8': np.nan,
+        '9': np.nan,
     })
-    CODEBOOK_VARIABLES['op_q49'] = {
+    CODEBOOK_VARIABLES['op_power_distribution'] = {
         'original_variable': 'q49',
-        'question_label': "Response to Question 49 (Placeholder as codebook was missing)",
+        'question_label': "D'après vous, à l'avenir les gouvernements provinciaux devraient avoir plus de pouvoirs, le gouvernement fédéral devrait avoir plus de pouvoirs, ou les choses devraient rester comme elles sont?",
         'type': 'categorical',
-        'value_labels': {'yes': "Yes", 'no': "No", "don't know": "Don't Know"},
+        'value_labels': {'plus_provincial': "Plus de pouvoirs aux provinces", 'plus_federal': "Plus de pouvoirs au fédéral", 'statu_quo': "Statu quo"},
     }
 
     # --- q5 ---
@@ -1438,186 +1433,177 @@ def clean_data(raw_path: str) -> pd.DataFrame:
     }
 
     # --- q50 ---
-    # behav_vote_intention_last_election — Vote intention (last election)
+    # op_statement_q50 — Accord/désaccord énoncé q50 (4-point Likert)
     # Source: q50
-    # Assumption: Codes 5, 6, 7 not observed, mapped to np.nan. Code 99 treated as missing.
-    df_clean['behav_vote_intention_last_election'] = df['q50'].map({
-        '1': 'bq',
-        '2': 'pc',
-        '3': 'lpc',
-        '4': 'npd',
-        '8': 'autre',
-        '9': 'refuse_no_vote',
-        # Explicitly map any other codes (like 99) to nan if they appear as strings
-        '99': np.nan,
+    df_clean['op_statement_q50'] = df['q50'].map({
+        '1': 1.0,
+        '2': 0.667,
+        '3': 0.333,
+        '4': 0.0,
+        '8': np.nan,
+        '9': np.nan,
     })
-    CODEBOOK_VARIABLES['behav_vote_intention_last_election'] = {
+    CODEBOOK_VARIABLES['op_statement_q50'] = {
         'original_variable': 'q50',
-        'question_label': "Vote intention (last election)",
-        'type': 'categorical',
-        'value_labels': {'bq': "Bloc Québécois", 'pc': "Conservateur", 'lpc': "Libéral", 'npd': "NPD", 'autre': "Autre parti", 'refuse_no_vote': "Ne votera pas"},
+        'question_label': "Veuillez indiquer si vous êtes fortement d'accord, plutôt d'accord, plutôt en désaccord ou fortement en désaccord.",
+        'type': 'likert',
+        'value_labels': {1.0: "Fortement d'accord", 0.667: "Plutôt d'accord", 0.333: "Plutôt en désaccord", 0.0: "Fortement en désaccord"},
     }
 
     # --- q51 ---
-    # op_q51 — Placeholder for Q51 response, assumed categorical
+    # op_statement_q51 — Accord/désaccord énoncé q51 (4-point Likert)
     # Source: q51
-    # Assumption: Codes 8/9 are treated as missing (no labels provided)
-    df_clean['op_q51'] = df['q51'].map({
-        '1': 'option_1',
-        '2': 'option_2',
-        '3': 'option_3',
-        '4': 'option_4',
+    df_clean['op_statement_q51'] = df['q51'].map({
+        '1': 1.0,
+        '2': 0.667,
+        '3': 0.333,
+        '4': 0.0,
         '8': np.nan,
         '9': np.nan,
     })
-    CODEBOOK_VARIABLES['op_q51'] = {
+    CODEBOOK_VARIABLES['op_statement_q51'] = {
         'original_variable': 'q51',
-        'question_label': "Q51 (Label unknown - using placeholder)",
-        'type': 'categorical',
-        'value_labels': {'option_1': "Option 1", 'option_2': "Option 2", 'option_3': "Option 3", 'option_4': "Option 4"},
+        'question_label': "Veuillez indiquer si vous êtes fortement d'accord, plutôt d'accord, plutôt en désaccord ou fortement en désaccord.",
+        'type': 'likert',
+        'value_labels': {1.0: "Fortement d'accord", 0.667: "Plutôt d'accord", 0.333: "Plutôt en désaccord", 0.0: "Fortement en désaccord"},
     }
 
     # --- q52 ---
-    # know_voter_intent — Voter intention or related knowledge question (inferred)
+    # op_statement_q52 — Accord/désaccord énoncé q52 (4-point Likert)
     # Source: q52
-    # Assumption: Codes 8 and 9 are treated as missing (unlabelled in codebook).
-    # The meaning of codes 1-4 is inferred as primary choices.
-    df_clean['know_voter_intent'] = df['q52'].map({
-        '1': 'choice_1',
-        '2': 'choice_2',
-        '3': 'choice_3',
-        '4': 'choice_4',
+    df_clean['op_statement_q52'] = df['q52'].map({
+        '1': 1.0,
+        '2': 0.667,
+        '3': 0.333,
+        '4': 0.0,
         '8': np.nan,
         '9': np.nan,
     })
-    CODEBOOK_VARIABLES['know_voter_intent'] = {
+    CODEBOOK_VARIABLES['op_statement_q52'] = {
         'original_variable': 'q52',
-        'question_label': "Voter intention or related knowledge question (inferred)",
-        'type': 'categorical',
-        'value_labels': {'choice_1': "Choice 1", 'choice_2': "Choice 2", 'choice_3': "Choice 3", 'choice_4': "Choice 4"},
+        'question_label': "Veuillez indiquer si vous êtes fortement d'accord, plutôt d'accord, plutôt en désaccord ou fortement en désaccord.",
+        'type': 'likert',
+        'value_labels': {1.0: "Fortement d'accord", 0.667: "Plutôt d'accord", 0.333: "Plutôt en désaccord", 0.0: "Fortement en désaccord"},
     }
 
     # --- q53 ---
-    # op_vote_intention — Voting intention (assumed)
+    # op_statement_q53 — Accord/désaccord énoncé q53 (4-point Likert)
     # Source: q53
-    # Assumption: Codes 8 and 9 are treated as missing based on common survey practices.
-    # Assumption: Labels 1-4 map to major/other parties as no codebook was provided.
-    df_clean['op_vote_intention'] = df['q53'].map({
-        1.0: 'party_a',
-        2.0: 'party_b',
-        3.0: 'party_c',
-        4.0: 'other',
-        8.0: np.nan,
-        9.0: np.nan,
-    })
-    CODEBOOK_VARIABLES['op_vote_intention'] = {
-        'original_variable': 'q53',
-        'question_label': "Voting intention (Inferred - please verify)",
-        'type': 'categorical',
-        'value_labels': {'party_a': "Party A", 'party_b': "Party B", 'party_c': "Party C", 'other': "Other"},
-    }
-
-    # --- q54 ---
-    # op_vote_intention — Inferred vote intention (no codebook provided)
-    # Source: q54
-    # Assumption: Codes 8 and 9 are treated as missing, and 1-4 map to generic parties.
-    df_clean['op_vote_intention'] = df['q54'].map({
-        '1': 'party_a',
-        '2': 'party_b',
-        '3': 'party_c',
-        '4': 'party_d',
+    df_clean['op_statement_q53'] = df['q53'].map({
+        '1': 1.0,
+        '2': 0.667,
+        '3': 0.333,
+        '4': 0.0,
         '8': np.nan,
         '9': np.nan,
     })
-    CODEBOOK_VARIABLES['op_vote_intention'] = {
+    CODEBOOK_VARIABLES['op_statement_q53'] = {
+        'original_variable': 'q53',
+        'question_label': "Veuillez indiquer si vous êtes fortement d'accord, plutôt d'accord, plutôt en désaccord ou fortement en désaccord.",
+        'type': 'likert',
+        'value_labels': {1.0: "Fortement d'accord", 0.667: "Plutôt d'accord", 0.333: "Plutôt en désaccord", 0.0: "Fortement en désaccord"},
+    }
+
+    # --- q54 ---
+    # op_statement_q54 — Accord/désaccord énoncé q54 (4-point Likert)
+    # Source: q54
+    df_clean['op_statement_q54'] = df['q54'].map({
+        '1': 1.0,
+        '2': 0.667,
+        '3': 0.333,
+        '4': 0.0,
+        '8': np.nan,
+        '9': np.nan,
+    })
+    CODEBOOK_VARIABLES['op_statement_q54'] = {
         'original_variable': 'q54',
-        'question_label': "Inferred vote intention based on single-digit response pattern (1-4)",
-        'type': 'categorical',
-        'value_labels': {'party_a': "Party A", 'party_b': "Party B", 'party_c': "Party C", 'party_d': "Party D"},
+        'question_label': "Veuillez indiquer si vous êtes fortement d'accord, plutôt d'accord, plutôt en désaccord ou fortement en désaccord.",
+        'type': 'likert',
+        'value_labels': {1.0: "Fortement d'accord", 0.667: "Plutôt d'accord", 0.333: "Plutôt en désaccord", 0.0: "Fortement en désaccord"},
     }
 
     # --- q55 ---
-    # op_q55 — Likely political opinion or behaviour indicator
+    # op_best_party_sante — Meilleur parti pour améliorer les soins de santé
     # Source: q55
-    # Assumption: Codes '01' through '05' are labelled options. Codes '96' to '99' are treated as missing (unmapped).
-    df_clean['op_q55'] = df['q55'].map({
-        '01': 'option_one',
-        '02': 'option_two',
-        '03': 'option_three',
-        '04': 'option_four',
-        '05': 'option_five',
+    df_clean['op_best_party_sante'] = df['q55'].map({
+        '01': 'liberal',
+        '02': 'pq',
+        '03': 'adq',
+        '04': 'quebec_solidaire',
+        '05': 'parti_vert',
+        '96': 'autre',
+        '97': 'aucun',
+        '98': np.nan,
+        '99': np.nan,
     })
-    CODEBOOK_VARIABLES['op_q55'] = {
+    CODEBOOK_VARIABLES['op_best_party_sante'] = {
         'original_variable': 'q55',
-        'question_label': "Unknown question for q55",
+        'question_label': "Selon vous, quel parti politique est le meilleur pour améliorer les soins de santé?",
         'type': 'categorical',
-        'value_labels': {'option_one': "First option", 'option_two': "Second option", 'option_three': "Third option", 'option_four': "Fourth option", 'option_five': "Fifth option"},
+        'value_labels': {'liberal': "Libéral", 'pq': "Parti québécois", 'adq': "ADQ", 'quebec_solidaire': "Québec Solidaire", 'parti_vert': "Parti Vert", 'autre': "Autre", 'aucun': "Aucun"},
     }
 
     # --- q56 ---
-    # op_attitude_q56 — General attitude or opinion question 56
+    # op_best_party_education — Meilleur parti pour améliorer l'éducation
     # Source: q56
-    # Assumption: Codes 01-05 are substantive responses. Codes 96, 97, 98, 99 are treated as missing (not in codebook).
-    df_clean['op_attitude_q56'] = df['q56'].map({
-        '01': 'response_1',
-        '02': 'response_2',
-        '03': 'response_3',
-        '04': 'response_4',
-        '05': 'response_5',
-        '96': np.nan,
-        '97': np.nan,
+    df_clean['op_best_party_education'] = df['q56'].map({
+        '01': 'liberal',
+        '02': 'pq',
+        '03': 'adq',
+        '04': 'quebec_solidaire',
+        '05': 'parti_vert',
+        '96': 'autre',
+        '97': 'aucun',
         '98': np.nan,
         '99': np.nan,
     })
-    CODEBOOK_VARIABLES['op_attitude_q56'] = {
+    CODEBOOK_VARIABLES['op_best_party_education'] = {
         'original_variable': 'q56',
-        'question_label': "Inferred: General attitude/opinion for question 56",
+        'question_label': "Quel parti est le meilleur pour améliorer l'éducation?",
         'type': 'categorical',
-        'value_labels': {'response_1': "Substantive response 1", 'response_2': "Substantive response 2", 'response_3': "Substantive response 3", 'response_4': "Substantive response 4", 'response_5': "Substantive response 5"},
+        'value_labels': {'liberal': "Libéral", 'pq': "Parti québécois", 'adq': "ADQ", 'quebec_solidaire': "Québec Solidaire", 'parti_vert': "Parti Vert", 'autre': "Autre", 'aucun': "Aucun"},
     }
 
     # --- q57 ---
-    # know_q57 — Unknown question/score, assuming 5-point scale
+    # op_best_party_chomage — Meilleur parti pour faire baisser le chômage
     # Source: q57
-    # Assumption: Codes 01-05 mapped to placeholder levels, 96-99 treated as missing (unlabelled in codebook)
-    df_clean['know_q57'] = df['q57'].map({
-        '01': 'level_one',
-        '02': 'level_two',
-        '03': 'level_three',
-        '04': 'level_four',
-        '05': 'level_five',
-        '96': np.nan,
-        '97': np.nan,
+    df_clean['op_best_party_chomage'] = df['q57'].map({
+        '01': 'liberal',
+        '02': 'pq',
+        '03': 'adq',
+        '04': 'quebec_solidaire',
+        '05': 'parti_vert',
+        '96': 'autre',
+        '97': 'aucun',
         '98': np.nan,
         '99': np.nan,
     })
-    CODEBOOK_VARIABLES['know_q57'] = {
+    CODEBOOK_VARIABLES['op_best_party_chomage'] = {
         'original_variable': 'q57',
-        'question_label': "Unknown question content for q57",
+        'question_label': "Quel parti est le meilleur pour faire baisser le taux de chômage?",
         'type': 'categorical',
-        'value_labels': {'level_one': "Level One", 'level_two': "Level Two", 'level_three': "Level Three", 'level_four': "Level Four", 'level_five': "Level Five"},
+        'value_labels': {'liberal': "Libéral", 'pq': "Parti québécois", 'adq': "ADQ", 'quebec_solidaire': "Québec Solidaire", 'parti_vert': "Parti Vert", 'autre': "Autre", 'aucun': "Aucun"},
     }
 
     # --- q58 ---
-    # ses_province — Province de résidence (Inferred due to missing codebook_entry)
+    # op_best_party_pauvrete — Meilleur parti pour lutter contre la pauvreté
     # Source: q58
-    # Assumption: Codes 01-03 map to Quebec/Ontario/Alberta based on context example. Codes 04/05 are unlabelled and treated as missing. Codes 96-99 are treated as missing.
-    df_clean['ses_province'] = df['q58'].map({
-        '01': 'quebec',
-        '02': 'ontario',
-        '03': 'alberta',
-        '04': np.nan,
-        '05': np.nan,
-        '96': np.nan,
-        '97': np.nan,
+    df_clean['op_best_party_pauvrete'] = df['q58'].map({
+        '01': 'liberal',
+        '02': 'pq',
+        '03': 'adq',
+        '04': 'quebec_solidaire',
+        '05': 'parti_vert',
+        '96': 'autre',
+        '97': 'aucun',
         '98': np.nan,
         '99': np.nan,
     })
-    CODEBOOK_VARIABLES['ses_province'] = {
+    CODEBOOK_VARIABLES['op_best_party_pauvrete'] = {
         'original_variable': 'q58',
-        'question_label': "Province de résidence (Inferred)",
+        'question_label': "Quel parti est le meilleur pour lutter contre la pauvreté?",
         'type': 'categorical',
-        'value_labels': {'quebec': "Québec", 'ontario': "Ontario", 'alberta': "Alberta"},
+        'value_labels': {'liberal': "Libéral", 'pq': "Parti québécois", 'adq': "ADQ", 'quebec_solidaire': "Québec Solidaire", 'parti_vert': "Parti Vert", 'autre': "Autre", 'aucun': "Aucun"},
     }
 
     # --- q59 ---
@@ -1660,138 +1646,129 @@ def clean_data(raw_path: str) -> pd.DataFrame:
     }
 
     # --- q60 ---
-    # op_vote_intention — Voting intention (01-05 coded, 96-99 missing/other)
+    # op_best_party_familles — Meilleur parti pour aider les familles
     # Source: q60
-    # Assumption: Invented schema based on value counts, as codebook entry was for Q2_province.
-    # Codes 01-05 are assumed to be parties, 96-98 are assumed to be non-response, 99 is missing.
-    df_clean['op_vote_intention'] = df['q60'].map({
-        '01': 'vote_pc',
-        '02': 'vote_lib',
-        '03': 'vote_bq',
-        '04': 'vote_ndp',
-        '05': 'vote_other',
-        '96': 'refused',
-        '97': 'don_t_know',
-        '98': 'non_eligible',
+    df_clean['op_best_party_familles'] = df['q60'].map({
+        '01': 'liberal',
+        '02': 'pq',
+        '03': 'adq',
+        '04': 'quebec_solidaire',
+        '05': 'parti_vert',
+        '96': 'autre',
+        '97': 'aucun',
+        '98': np.nan,
         '99': np.nan,
     })
-    CODEBOOK_VARIABLES['op_vote_intention'] = {
+    CODEBOOK_VARIABLES['op_best_party_familles'] = {
         'original_variable': 'q60',
-        'question_label': "Voting intention (inferred)",
+        'question_label': "Quel parti est le meilleur pour aider les familles?",
         'type': 'categorical',
-        'value_labels': {'vote_pc': "PC", 'vote_lib': "Liberal", 'vote_bq': "Bloc Québécois", 'vote_ndp': "NDP", 'vote_other': "Other", 'refused': "Refused", 'don_t_know': "Don't Know", 'non_eligible': "Non-eligible"},
+        'value_labels': {'liberal': "Libéral", 'pq': "Parti québécois", 'adq': "ADQ", 'quebec_solidaire': "Québec Solidaire", 'parti_vert': "Parti Vert", 'autre': "Autre", 'aucun': "Aucun"},
     }
 
     # --- q61a ---
-    # op_vote_intention_q61a — Inferred voting intention or party choice
+    # op_best_party_interets_qc — Meilleur parti pour défendre les intérêts du Québec
     # Source: q61a
-    # Assumption: Codes 01-05 are valid responses, codes 96, 97, 98, 99 are missing.
-    # TODO: Verify variable meaning and correct standard name/labels.
-    df_clean['op_vote_intention_q61a'] = df['q61a'].map({
-        '01': 'party_a',
-        '02': 'party_b',
-        '03': 'party_c',
-        '04': 'other',
-        '05': 'none',
-        '96': np.nan,
-        '97': np.nan,
+    df_clean['op_best_party_interets_qc'] = df['q61a'].map({
+        '01': 'liberal',
+        '02': 'pq',
+        '03': 'adq',
+        '04': 'quebec_solidaire',
+        '05': 'parti_vert',
+        '96': 'autre',
+        '97': 'aucun',
         '98': np.nan,
         '99': np.nan,
     })
-    CODEBOOK_VARIABLES['op_vote_intention_q61a'] = {
+    CODEBOOK_VARIABLES['op_best_party_interets_qc'] = {
         'original_variable': 'q61a',
-        'question_label': "Inferred voting intention or party choice (Variable Q61a)",
+        'question_label': "Quel parti est le meilleur pour défendre les intérêts du Québec?",
         'type': 'categorical',
-        'value_labels': {'party_a': "Party A", 'party_b': "Party B", 'party_c': "Party C", 'other': "Other party", 'none': "None"},
+        'value_labels': {'liberal': "Libéral", 'pq': "Parti québécois", 'adq': "ADQ", 'quebec_solidaire': "Québec Solidaire", 'parti_vert': "Parti Vert", 'autre': "Autre", 'aucun': "Aucun"},
     }
 
     # --- q61b ---
-    # op_q61b — Frequency of action (inferred)
+    # op_best_party_identite_qc — Meilleur parti pour défendre l'identité et la culture québécoise
     # Source: q61b
-    # Assumption: Codes 96, 97, 98, 99 treated as missing (unlabelled in codebook)
-    df_clean['op_q61b'] = df['q61b'].map({
-        '01': 'frequent',
-        '02': 'moderate',
-        '03': 'infrequent',
-        '04': 'very infrequent',
-        '05': 'never',
-        '96': np.nan,
-        '97': np.nan,
+    df_clean['op_best_party_identite_qc'] = df['q61b'].map({
+        '01': 'liberal',
+        '02': 'pq',
+        '03': 'adq',
+        '04': 'quebec_solidaire',
+        '05': 'parti_vert',
+        '96': 'autre',
+        '97': 'aucun',
         '98': np.nan,
         '99': np.nan,
     })
-    CODEBOOK_VARIABLES['op_q61b'] = {
+    CODEBOOK_VARIABLES['op_best_party_identite_qc'] = {
         'original_variable': 'q61b',
-        'question_label': "Frequency of action q61b (INFERRED)",
+        'question_label': "Quel parti est le meilleur pour défendre l'identité et la culture québécoise?",
         'type': 'categorical',
-        'value_labels': {'frequent': "01 - Frequent", 'moderate': "02 - Moderate", 'infrequent': "03 - Infrequent", 'very infrequent': "04 - Very Infrequent", 'never': "05 - Never"},
+        'value_labels': {'liberal': "Libéral", 'pq': "Parti québécois", 'adq': "ADQ", 'quebec_solidaire': "Québec Solidaire", 'parti_vert': "Parti Vert", 'autre': "Autre", 'aucun': "Aucun"},
     }
 
     # --- q61c ---
-    # op_q61c — Opinion variable q61c (Mapping inferred due to missing codebook)
+    # op_best_party_interets_region — Meilleur parti pour défendre les intérêts de votre région
     # Source: q61c
-    # Assumption: Codes 01-05 map to generic levels 1-5.
-    # Assumption: Codes 96-99 are missing values and will be mapped to np.nan.
-    df_clean['op_q61c'] = df['q61c'].map({
-        '01': 'level_1',
-        '02': 'level_2',
-        '03': 'level_3',
-        '04': 'level_4',
-        '05': 'level_5',
-        '96': np.nan,
-        '97': np.nan,
+    df_clean['op_best_party_interets_region'] = df['q61c'].map({
+        '01': 'liberal',
+        '02': 'pq',
+        '03': 'adq',
+        '04': 'quebec_solidaire',
+        '05': 'parti_vert',
+        '96': 'autre',
+        '97': 'aucun',
         '98': np.nan,
         '99': np.nan,
     })
-    CODEBOOK_VARIABLES['op_q61c'] = {
+    CODEBOOK_VARIABLES['op_best_party_interets_region'] = {
         'original_variable': 'q61c',
-        'question_label': "Q61c - Question label missing (inferred as categorical)",
+        'question_label': "Quel parti est le meilleur pour défendre les intérêts de votre région?",
         'type': 'categorical',
-        'value_labels': {'level_1': "Value 01 (Label Missing)", 'level_2': "Value 02 (Label Missing)", 'level_3': "Value 03 (Label Missing)", 'level_4': "Value 04 (Label Missing)", 'level_5': "Value 05 (Label Missing)"},
+        'value_labels': {'liberal': "Libéral", 'pq': "Parti québécois", 'adq': "ADQ", 'quebec_solidaire': "Québec Solidaire", 'parti_vert': "Parti Vert", 'autre': "Autre", 'aucun': "Aucun"},
     }
 
     # --- q61d ---
-    # op_q61d — Opinion/Attitude question from Q61 (Mapping based on observed codes as codebook was missing)
+    # op_best_party_dette — Meilleur parti pour réduire la dette du Québec
     # Source: q61d
-    # Assumption: Codes 01-05 are distinct categories; 96=Don't Know; 97=Refused; 98=No Answer; 99=Missing
-    df_clean['op_q61d'] = df['q61d'].map({
-        '01': 'response_01',
-        '02': 'response_02',
-        '03': 'response_03',
-        '04': 'response_04',
-        '05': 'response_05',
-        '96': 'dont_know',
-        '97': 'refused',
-        '98': 'no_answer',
-        '99': np.nan,
-    })
-    CODEBOOK_VARIABLES['op_q61d'] = {
-        'original_variable': 'q61d',
-        'question_label': "Opinion/Attitude question from Q61 (Codebook missing, mapping inferred)",
-        'type': 'categorical',
-        'value_labels': {'response_01': "Response Category 01", 'response_02': "Response Category 02", 'response_03': "Response Category 03", 'response_04': "Response Category 04", 'response_05': "Response Category 05", 'dont_know': "Don't Know", 'refused': "Refused to Answer", 'no_answer': "No Answer Recorded"},
-    }
-
-    # --- q62 ---
-    # op_support_party — Support for main political parties
-    # Source: q62
-    # Assumption: Codes 01-05 are valid parties, codes 96-99 are treated as missing (unlabelled in codebook)
-    df_clean['op_support_party'] = df['q62'].map({
-        '01': 'party_a',
-        '02': 'party_b',
-        '03': 'party_c',
-        '04': 'party_d',
-        '05': 'party_e',
-        '96': np.nan,
-        '97': np.nan,
+    df_clean['op_best_party_dette'] = df['q61d'].map({
+        '01': 'liberal',
+        '02': 'pq',
+        '03': 'adq',
+        '04': 'quebec_solidaire',
+        '05': 'parti_vert',
+        '96': 'autre',
+        '97': 'aucun',
         '98': np.nan,
         '99': np.nan,
     })
-    CODEBOOK_VARIABLES['op_support_party'] = {
-        'original_variable': 'q62',
-        'question_label': "Support for main political parties (Inferred)",
+    CODEBOOK_VARIABLES['op_best_party_dette'] = {
+        'original_variable': 'q61d',
+        'question_label': "Quel parti est le meilleur pour réduire la dette du Québec?",
         'type': 'categorical',
-        'value_labels': {'party_a': "Party A (01)", 'party_b': "Party B (02)", 'party_c': "Party C (03)", 'party_d': "Party D (04)", 'party_e': "Party E (05)"},
+        'value_labels': {'liberal': "Libéral", 'pq': "Parti québécois", 'adq': "ADQ", 'quebec_solidaire': "Québec Solidaire", 'parti_vert': "Parti Vert", 'autre': "Autre", 'aucun': "Aucun"},
+    }
+
+    # --- q62 ---
+    # op_best_party_citoyens — Meilleur parti pour défendre les intérêts des citoyens ordinaires
+    # Source: q62
+    df_clean['op_best_party_citoyens'] = df['q62'].map({
+        '01': 'liberal',
+        '02': 'pq',
+        '03': 'adq',
+        '04': 'quebec_solidaire',
+        '05': 'parti_vert',
+        '96': 'autre',
+        '97': 'aucun',
+        '98': np.nan,
+        '99': np.nan,
+    })
+    CODEBOOK_VARIABLES['op_best_party_citoyens'] = {
+        'original_variable': 'q62',
+        'question_label': "Quel parti est le meilleur pour défendre les intérêts des citoyens ordinaires?",
+        'type': 'categorical',
+        'value_labels': {'liberal': "Libéral", 'pq': "Parti québécois", 'adq': "ADQ", 'quebec_solidaire': "Québec Solidaire", 'parti_vert': "Parti Vert", 'autre': "Autre", 'aucun': "Aucun"},
     }
 
     # --- q64 ---
