@@ -656,21 +656,24 @@ def clean_data(raw_path: str) -> pd.DataFrame:
     }
 
     # --- Q23 ---
-    # op_vote_intention — Intentions de vote pour la prochaine élection
+    # op_second_party_choice — Deuxième préférence constitutionnelle
     # Source: Q23
-    # Assumption: Codes 8/9 are missing based on observation and standard practice
-    df_clean['op_vote_intention'] = df['Q23'].map({
-        1.0: 'liberal',
-        2.0: 'conservative',
-        3.0: 'ndp',
+    # Question: "Si l'option [RAPPEL DE LA RÉPONSE DONNÉE À Q22] était rejetée par une majorité de la population, 
+    #           quelle serait alors votre deuxième préférence?"
+    # Les trois options: Signer la Constitution de 1982, Avoir plus de pouvoirs pour le Québec, Indépendance
+    # TODO: Valider le mapping exact avec les codes réels dans les données et le codebook
+    df_clean['op_second_party_choice'] = df['Q23'].map({
+        1.0: 'sign_constitution',
+        2.0: 'more_powers',
+        3.0: 'independence',
         8.0: np.nan,
         9.0: np.nan,
     })
-    CODEBOOK_VARIABLES['op_vote_intention'] = {
+    CODEBOOK_VARIABLES['op_second_party_choice'] = {
         'original_variable': 'Q23',
-        'question_label': "Intentions de vote pour la prochaine élection",
+        'question_label': "Deuxième préférence constitutionnelle",
         'type': 'categorical',
-        'value_labels': {'liberal': "Liberal Party", 'conservative': "Conservative Party", 'ndp': "NDP"},
+        'value_labels': {'sign_constitution': "Signer la Constitution de 1982", 'more_powers': "Avoir plus de pouvoirs pour le Québec", 'independence': "Indépendance"},
     }
 
     # --- Q24A ---
@@ -1020,41 +1023,42 @@ def clean_data(raw_path: str) -> pd.DataFrame:
     }
 
     # --- Q31A ---
-    # behav_political_donation_last12m — Avez-vous fait un don à un parti politique ou à un candidat lors des 12 derniers mois?
+    # op_left_right_scale_plq — Placement du PLQ sur l'échelle gauche-droite (0-10 → 0.0-1.0)
     # Source: Q31A
-    # Assumption: Codes 0.0, 3.0-10.0, 98.0, 99.0 are treated as missing (np.nan) as they are not documented in codebook values.
-    # Assuming df_clean and df are pandas DataFrames available in the scope
-    # Mapping based on the provided strategy: only 1.0 and 2.0 are kept, others become np.nan.
-    df_clean['behav_political_donation_last12m'] = df['Q31A'].map({
-        1.0: 'oui',
-        2.0: 'non',
-        0.0: np.nan,
-        3.0: np.nan,
-        4.0: np.nan,
-        5.0: np.nan,
-        6.0: np.nan,
-        7.0: np.nan,
-        8.0: np.nan,
-        9.0: np.nan,
-        10.0: np.nan,
+    # Question: "En politique, les gens parlent de la « gauche » et de la « droite ». Sur une échelle allant de 0 à 10,
+    #           où 0 est le plus à gauche et 10 est le plus à droite, où placeriez-vous chacun des partis politiques suivants?
+    #           a. Parti libéral du Québec"
+    # TODO: Valider le mapping avec les données réelles et le codebook complet
+    df_clean['op_left_right_scale_plq'] = df['Q31A'].map({
+        0.0: 0.0,
+        1.0: 0.1,
+        2.0: 0.2,
+        3.0: 0.3,
+        4.0: 0.4,
+        5.0: 0.5,
+        6.0: 0.6,
+        7.0: 0.7,
+        8.0: 0.8,
+        9.0: 0.9,
+        10.0: 1.0,
         98.0: np.nan,
         99.0: np.nan,
     })
-    # The variable 'value_labels' in the final codebook should map the new cleaned string values back to human-readable text.
-    CODEBOOK_VARIABLES['behav_political_donation_last12m'] = {
+    CODEBOOK_VARIABLES['op_left_right_scale_plq'] = {
         'original_variable': 'Q31A',
-        'question_label': "Avez-vous fait un don à un parti politique ou à un candidat lors des 12 derniers mois?",
-        'type': 'categorical',
-        # Mapping from cleaned string values to original labels
-        'value_labels': {'oui': "Oui", 'non': "Non"},
+        'question_label': "Placement du Parti libéral du Québec sur l'échelle gauche-droite (0=gauche, 10=droite)",
+        'type': 'numeric',
+        'value_labels': {}
     }
 
     # --- Q31B ---
-    # op_q31b — Likert scale question Q31B
+    # op_left_right_scale_pq — Placement du PQ sur l'échelle gauche-droite (0-10 → 0.0-1.0)
     # Source: Q31B
-    # Assumption: Mapping 0 to 0.0 (most negative) and 10 to 1.0 (most positive) for Likert scale.
-    # Assumption: Codes 98 and 99 are treated as missing as they are unlabelled in the inferred context.
-    df_clean['op_q31b'] = df['Q31B'].map({
+    # Question: "En politique, les gens parlent de la « gauche » et de la « droite ». Sur une échelle allant de 0 à 10,
+    #           où 0 est le plus à gauche et 10 est le plus à droite, où placeriez-vous chacun des partis politiques suivants?
+    #           b. Parti québécois"
+    # TODO: Valider le mapping avec les données réelles et le codebook complet
+    df_clean['op_left_right_scale_pq'] = df['Q31B'].map({
         0.0: 0.0,
         1.0: 0.1,
         2.0: 0.2,
@@ -1069,126 +1073,21 @@ def clean_data(raw_path: str) -> pd.DataFrame:
         98.0: np.nan,
         99.0: np.nan,
     })
-    CODEBOOK_VARIABLES['op_q31b'] = {
+    CODEBOOK_VARIABLES['op_left_right_scale_pq'] = {
         'original_variable': 'Q31B',
-        'question_label': "Likert scale question Q31B",
-        'type': 'likert',
-        'value_labels': {
-            '0.0': "Most Negative End of Scale",
-            '1.0': "Most Positive End of Scale",
-            'np.nan': "Missing/Refused"
-        }
+        'question_label': "Placement du Parti québécois sur l'échelle gauche-droite (0=gauche, 10=droite)",
+        'type': 'numeric',
+        'value_labels': {}
     }
 
     # --- Q31C ---
-    # behav_Q31C — Q31C from eeq_2014 (Missing original labels)
+    # op_left_right_scale_caq — Placement de la CAQ sur l'échelle gauche-droite (0-10 → 0.0-1.0)
     # Source: Q31C
-    # Assumption: Codes 0.0-10.0 are distinct categories. Codes 98.0 and 99.0 are treated as missing.
-    # TODO: Verify actual meaning of codes 0-10 and labels for 98/99.
-    df_clean['behav_Q31C'] = df['Q31C'].map({
-        0.0: 'option_0',
-        1.0: 'option_1',
-        2.0: 'option_2',
-        3.0: 'option_3',
-        4.0: 'option_4',
-        5.0: 'option_5',
-        6.0: 'option_6',
-        7.0: 'option_7',
-        8.0: 'option_8',
-        9.0: 'option_9',
-        10.0: 'option_10',
-        98.0: np.nan,
-        99.0: np.nan,
-    })
-    CODEBOOK_VARIABLES['behav_Q31C'] = {
-        'original_variable': 'Q31C',
-        'question_label': "Q31C from eeq_2014 (Manual Map)",
-        'type': 'categorical',
-        'value_labels': {'option_0': "Option 0", 'option_1': "Option 1", 'option_2': "Option 2", 'option_3': "Option 3", 'option_4': "Option 4", 'option_5': "Option 5", 'option_6': "Option 6", 'option_7': "Option 7", 'option_8': "Option 8", 'option_9': "Option 9", 'option_10': "Option 10"},
-    }
-
-    # --- Q31D ---
-    # behav_q31d — Specific survey item Q31D (Likelihood scale)
-    # Source: Q31D
-    # Assumption: Codes 0.0-10.0 are a scale, 98.0/99.0 are missing (unlabelled in codebook)
-    df_clean['behav_q31d'] = df['Q31D'].map({
-        0.0: 'not at all likely',
-        1.0: 'unlikely_1',
-        2.0: 'unlikely_2',
-        3.0: 'unlikely_3',
-        4.0: 'unlikely_4',
-        5.0: 'neutral',
-        6.0: 'likely_6',
-        7.0: 'likely_7',
-        8.0: 'likely_8',
-        9.0: 'likely_9',
-        10.0: 'very likely',
-        98.0: np.nan,
-        99.0: np.nan,
-    })
-    CODEBOOK_VARIABLES['behav_q31d'] = {
-        'original_variable': 'Q31D',
-        'question_label': "Likelihood item Q31D (0-10 scale)",
-        'type': 'categorical',
-        'value_labels': {'not at all likely': "Not at all likely", 'unlikely_1': "Unlikely 1", 'unlikely_2': "Unlikely 2", 'unlikely_3': "Unlikely 3", 'unlikely_4': "Unlikely 4", 'neutral': "Neutral", 'likely_6': "Likely 6", 'likely_7': "Likely 7", 'likely_8': "Likely 8", 'likely_9': "Likely 9", 'very likely': "Very likely"},
-    }
-
-    # --- Q31E ---
-    # op_scale_q31e — Scale response for Q31E
-    # Source: Q31E
-    # Note: No codebook entry provided. Mapping derived from data exploration (codes 0-10 present, 98/99 also present).
-    # Assumption: Codes 98 and 99 are missing values.
-    df_clean['op_scale_q31e'] = df['Q31E'].map({
-        0.0: 'zero',
-        1.0: 'one',
-        2.0: 'two',
-        3.0: 'three',
-        4.0: 'four',
-        5.0: 'five',
-        6.0: 'six',
-        7.0: 'seven',
-        8.0: 'eight',
-        9.0: 'nine',
-        10.0: 'ten',
-        98.0: np.nan,
-        99.0: np.nan,
-    })
-    CODEBOOK_VARIABLES['op_scale_q31e'] = {
-        'original_variable': 'Q31E',
-        'question_label': "Response to item Q31E",
-        'type': 'categorical',
-        'value_labels': {'zero': '0', 'one': '1', 'two': '2', 'three': '3', 'four': '4', 'five': '5', 'six': '6', 'seven': '7', 'eight': '8', 'nine': '9', 'ten': '10'},
-    }
-
-    # --- Q31F ---
-    # behav_vote_frequency — Frequency of participation in federal elections
-    # Source: Q31F
-    # Assumption: Codes 9.0, 98.0, 99.0 are unmapped/missing and will become np.nan.
-    # Assumption: Likert scale normalized 1.0 (Always) to 0.0 (Never/Not applicable).
-    df_clean['behav_vote_frequency'] = df['Q31F'].map({
-        0.0: 1.0,
-        1.0: 0.8,
-        2.0: 0.6,
-        3.0: 0.4,
-        4.0: 0.2,
-        5.0: 0.0,
-        6.0: 0.0, # N'a pas voté (2011) mapped to lowest frequency bin
-        7.0: 0.0, # N'était pas admissible (2011) mapped to lowest frequency bin
-        98.0: np.nan,
-        99.0: np.nan,
-    })
-    CODEBOOK_VARIABLES['behav_vote_frequency'] = {
-        'original_variable': 'Q31F',
-        'question_label': "Fréquence de participation aux élections fédérales",
-        'type': 'likert',
-        'value_labels': {1.0: "Toujours", 0.8: "Presque toujours", 0.6: "Souvent", 0.4: "Parfois", 0.2: "Rarement", 0.0: "Jamais / Non-parti"},
-    }
-
-    # --- Q32 ---
-    # op_attitude_q32 — Opinion/Attitude (Likert scale 0-10, scaled 0.0-1.0)
-    # Source: Q32
-    # Assumption: Variable is a 0-10 scale (0.0 to 1.0 after scaling). Codes 98.0 and 99.0 treated as missing.
-    df_clean['op_attitude_q32'] = df['Q32'].map({
+    # Question: "En politique, les gens parlent de la « gauche » et de la « droite ». Sur une échelle allant de 0 à 10,
+    #           où 0 est le plus à gauche et 10 est le plus à droite, où placeriez-vous chacun des partis politiques suivants?
+    #           c. Coalition avenir Québec"
+    # TODO: Valider le mapping avec les données réelles et le codebook complet
+    df_clean['op_left_right_scale_caq'] = df['Q31C'].map({
         0.0: 0.0,
         1.0: 0.1,
         2.0: 0.2,
@@ -1203,11 +1102,126 @@ def clean_data(raw_path: str) -> pd.DataFrame:
         98.0: np.nan,
         99.0: np.nan,
     })
-    CODEBOOK_VARIABLES['op_attitude_q32'] = {
+    CODEBOOK_VARIABLES['op_left_right_scale_caq'] = {
+        'original_variable': 'Q31C',
+        'question_label': "Placement de la Coalition avenir Québec sur l'échelle gauche-droite (0=gauche, 10=droite)",
+        'type': 'numeric',
+        'value_labels': {}
+    }
+
+    # --- Q31D ---
+    # op_left_right_scale_qs — Placement de Québec solidaire sur l'échelle gauche-droite (0-10 → 0.0-1.0)
+    # Source: Q31D
+    # Question: "En politique, les gens parlent de la « gauche » et de la « droite ». Sur une échelle allant de 0 à 10,
+    #           où 0 est le plus à gauche et 10 est le plus à droite, où placeriez-vous chacun des partis politiques suivants?
+    #           d. Québec solidaire"
+    # TODO: Valider le mapping avec les données réelles et le codebook complet
+    df_clean['op_left_right_scale_qs'] = df['Q31D'].map({
+        0.0: 0.0,
+        1.0: 0.1,
+        2.0: 0.2,
+        3.0: 0.3,
+        4.0: 0.4,
+        5.0: 0.5,
+        6.0: 0.6,
+        7.0: 0.7,
+        8.0: 0.8,
+        9.0: 0.9,
+        10.0: 1.0,
+        98.0: np.nan,
+        99.0: np.nan,
+    })
+    CODEBOOK_VARIABLES['op_left_right_scale_qs'] = {
+        'original_variable': 'Q31D',
+        'question_label': "Placement de Québec solidaire sur l'échelle gauche-droite (0=gauche, 10=droite)",
+        'type': 'numeric',
+        'value_labels': {}
+    }
+
+    # --- Q31E ---
+    # op_left_right_scale_on — Placement d'Option nationale sur l'échelle gauche-droite (0-10 → 0.0-1.0)
+    # Source: Q31E
+    # Question: "En politique, les gens parlent de la « gauche » et de la « droite ». Sur une échelle allant de 0 à 10,
+    #           où 0 est le plus à gauche et 10 est le plus à droite, où placeriez-vous chacun des partis politiques suivants?
+    #           e. Option nationale"
+    # TODO: Valider le mapping avec les données réelles et le codebook complet
+    df_clean['op_left_right_scale_on'] = df['Q31E'].map({
+        0.0: 0.0,
+        1.0: 0.1,
+        2.0: 0.2,
+        3.0: 0.3,
+        4.0: 0.4,
+        5.0: 0.5,
+        6.0: 0.6,
+        7.0: 0.7,
+        8.0: 0.8,
+        9.0: 0.9,
+        10.0: 1.0,
+        98.0: np.nan,
+        99.0: np.nan,
+    })
+    CODEBOOK_VARIABLES['op_left_right_scale_on'] = {
+        'original_variable': 'Q31E',
+        'question_label': "Placement d'Option nationale sur l'échelle gauche-droite (0=gauche, 10=droite)",
+        'type': 'numeric',
+        'value_labels': {}
+    }
+
+    # --- Q31F ---
+    # op_left_right_scale_pv — Placement du Parti vert sur l'échelle gauche-droite (0-10 → 0.0-1.0)
+    # Source: Q31F
+    # Question: "En politique, les gens parlent de la « gauche » et de la « droite ». Sur une échelle allant de 0 à 10,
+    #           où 0 est le plus à gauche et 10 est le plus à droite, où placeriez-vous chacun des partis politiques suivants?
+    #           f. Parti vert du Québec"
+    # TODO: Valider le mapping avec les données réelles et le codebook complet
+    df_clean['op_left_right_scale_pv'] = df['Q31F'].map({
+        0.0: 0.0,
+        1.0: 0.1,
+        2.0: 0.2,
+        3.0: 0.3,
+        4.0: 0.4,
+        5.0: 0.5,
+        6.0: 0.6,
+        7.0: 0.7,
+        8.0: 0.8,
+        9.0: 0.9,
+        10.0: 1.0,
+        98.0: np.nan,
+        99.0: np.nan,
+    })
+    CODEBOOK_VARIABLES['op_left_right_scale_pv'] = {
+        'original_variable': 'Q31F',
+        'question_label': "Placement du Parti vert du Québec sur l'échelle gauche-droite (0=gauche, 10=droite)",
+        'type': 'numeric',
+        'value_labels': {}
+    }
+
+    # --- Q32 ---
+    # op_personal_position — Position personnelle sur l'échelle gauche-droite (0-10 → 0.0-1.0)
+    # Source: Q32
+    # Question: "Et sur la même échelle, où vous placeriez-vous, de manière générale?"
+    # Échelle: 0 = le plus à gauche, 10 = le plus à droite
+    # TODO: Valider le mapping avec les données réelles et le codebook complet
+    df_clean['op_personal_position'] = df['Q32'].map({
+        0.0: 0.0,
+        1.0: 0.1,
+        2.0: 0.2,
+        3.0: 0.3,
+        4.0: 0.4,
+        5.0: 0.5,
+        6.0: 0.6,
+        7.0: 0.7,
+        8.0: 0.8,
+        9.0: 0.9,
+        10.0: 1.0,
+        98.0: np.nan,
+        99.0: np.nan,
+    })
+    CODEBOOK_VARIABLES['op_personal_position'] = {
         'original_variable': 'Q32',
-        'question_label': "Opinion/Attitude based on Q32 (No codebook provided, assumed 0-10 Likert)",
-        'type': 'likert',
-        'value_labels': {'0.0': "Strongest negative end (0)", '1.0': "Strongest positive end (10)"},
+        'question_label': "Position personnelle sur l'échelle gauche-droite (0=gauche, 10=droite)",
+        'type': 'numeric',
+        'value_labels': {}
     }
 
     # --- Q33 ---
@@ -1423,20 +1437,22 @@ def clean_data(raw_path: str) -> pd.DataFrame:
     }
 
     # --- Q37 ---
-    # op_q37 — Unknown opinion question 37
+    # op_abortion_opinion — Opinion sur l'avortement
     # Source: Q37
-    # Assumption: Codes 8.0/9.0 treated as missing (unlabelled in codebook)
-    df_clean['op_q37'] = df['Q37'].map({
-        1.0: 'response_a',
-        2.0: 'response_b',
+    # Question: "Selon vous, l'avortement devrait-il être illégal ou non?"
+    # Réponses: 1=Oui, 2=Non, 8=Je ne sais pas, 9=Je préfère ne pas répondre
+    # TODO: Valider le mapping exact avec les codes réels dans les données et le codebook
+    df_clean['op_abortion_opinion'] = df['Q37'].map({
+        1.0: 'yes',
+        2.0: 'no',
         8.0: np.nan,
         9.0: np.nan,
     })
-    CODEBOOK_VARIABLES['op_q37'] = {
+    CODEBOOK_VARIABLES['op_abortion_opinion'] = {
         'original_variable': 'Q37',
-        'question_label': "Q37 (Label unknown, derived from data)",
+        'question_label': "Opinion sur le statut légal de l'avortement",
         'type': 'categorical',
-        'value_labels': {'response_a': "Response A (Assumed)", 'response_b': "Response B (Assumed)"},
+        'value_labels': {'yes': "Oui, l'avortement devrait être illégal", 'no': "Non, l'avortement ne devrait pas être illégal"},
     }
 
     # --- Q38 ---
@@ -2276,25 +2292,27 @@ def clean_data(raw_path: str) -> pd.DataFrame:
     }
 
     # --- Q6 ---
-    # op_voting_intention — Inferred voting intention
+    # behav_previous_vote — Vote aux élections provinciales du 4 septembre 2012
     # Source: Q6
-    # Assumption: Codes 96, 97, 99 are missing/unlabelled. Mapping 1-6 to placeholder parties based on context.
-    df_clean['op_voting_intention'] = df['Q6'].map({
-        1.0: 'party_a',
-        2.0: 'party_b',
-        3.0: 'party_c',
-        4.0: 'party_d',
-        5.0: 'other_party',
-        6.0: 'none_of_the_above',
-        96.0: np.nan,
-        97.0: np.nan,
-        99.0: np.nan,
+    # Question: "Pour quel parti aviez-vous voté lors de l'élection provinciale du 4 septembre 2012?"
+    # Options: PLQ (1), PQ (2), CAQ (3), QS (4), PV (5), ON (6), Autre (7), N'a pas voté (8), Préfère ne pas répondre (9)
+    # TODO: Valider le mapping exact avec les codes réels dans les données et le codebook
+    df_clean['behav_previous_vote'] = df['Q6'].map({
+        1.0: 'plq',
+        2.0: 'pq',
+        3.0: 'caq',
+        4.0: 'qs',
+        5.0: 'pv',
+        6.0: 'on',
+        7.0: 'other',
+        8.0: 'did_not_vote',
+        9.0: np.nan,
     })
-    CODEBOOK_VARIABLES['op_voting_intention'] = {
+    CODEBOOK_VARIABLES['behav_previous_vote'] = {
         'original_variable': 'Q6',
-        'question_label': "Inferred: Voting intention for Q6",
+        'question_label': "Parti pour lequel on a voté aux élections provinciales du 4 septembre 2012",
         'type': 'categorical',
-        'value_labels': {'party_a': "Party A (Inferred)", 'party_b': "Party B (Inferred)", 'party_c': "Party C (Inferred)", 'party_d': "Party D (Inferred)", 'other_party': "Other Party (Inferred)", 'none_of_the_above': "None of the above (Inferred)"},
+        'value_labels': {'plq': "Parti libéral du Québec", 'pq': "Parti québécois", 'caq': "Coalition avenir Québec", 'qs': "Québec solidaire", 'pv': "Parti vert du Québec", 'on': "Option nationale", 'other': "Autre parti", 'did_not_vote': "N'a pas voté"},
     }
 
     # --- Q60A ---
