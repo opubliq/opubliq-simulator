@@ -520,6 +520,25 @@ def clean_data(df):
         }
     }
 
+    # --- Q63B_1 ---
+    # ses_financial_assets_savings_account — Détient un compte épargne
+    # Source: Q63B_1
+    df_clean['ses_financial_assets_savings_account'] = df['q63b_1'].map({
+        1.0: 'yes',
+        2.0: 'no',
+        98.0: np.nan,  # Je ne sais pas
+        99.0: np.nan   # Je préfère ne pas répondre
+    })
+    CODEBOOK_VARIABLES['ses_financial_assets_savings_account'] = {
+        'original_variable': 'q63b_1',
+        'question_label': "Compte épargne dans une banque",
+        'type': 'binary',
+        'value_labels': {
+            'yes': "Oui",
+            'no': "Non"
+        }
+    }
+
     # --- Q70 ---
     # ses_home_language — Langue parlée à la maison
     # Source: Q70
