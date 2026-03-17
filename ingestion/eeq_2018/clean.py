@@ -389,6 +389,31 @@ def clean_data(df):
         }
     }
 
+    # --- Q68 ---
+    # ses_sexual_orientation — Orientation sexuelle
+    # Source: Q68
+    df_clean['ses_sexual_orientation'] = df['q68'].map({
+        1.0: 'heterosexual',
+        2.0: 'gay',
+        3.0: 'lesbian',
+        4.0: 'bisexual',
+        96.0: 'other',
+        98.0: np.nan,  # Je ne sais pas
+        99.0: np.nan   # Je préfère ne pas répondre
+    })
+    CODEBOOK_VARIABLES['ses_sexual_orientation'] = {
+        'original_variable': 'q68',
+        'question_label': "Quelle est votre orientation sexuelle?",
+        'type': 'categorical',
+        'value_labels': {
+            'heterosexual': "Hétérosexuel(le)",
+            'gay': "Gai(e)",
+            'lesbian': "Lesbienne",
+            'bisexual': "Bisexuel(le)",
+            'other': "Autre"
+        }
+    }
+
     # --- Q61 ---
     # ses_income — Revenu ménage
     # Source: Q61
@@ -3218,14 +3243,16 @@ def clean_data(df):
     # op_ethnic_origin_north_africa — Origine ethnique: Afrique du Nord
     # Source: Q71_3
     df_clean['op_ethnic_origin_north_africa'] = df['q71_3'].map({
-        1.0: 'selected'
+        1.0: 'selected',
+        0.0: 'not_selected'
     })
     CODEBOOK_VARIABLES['op_ethnic_origin_north_africa'] = {
         'original_variable': 'q71_3',
         'question_label': "De quelle origine ethnique êtes-vous? Afrique du Nord (Maroc, Algérie, Tunisie, Libye, Égypte)",
         'type': 'binary',
         'value_labels': {
-            'selected': "Sélectionné"
+            'selected': "Sélectionné",
+            'not_selected': "Non sélectionné"
         }
     }
 
