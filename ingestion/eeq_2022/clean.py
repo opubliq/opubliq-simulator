@@ -850,6 +850,29 @@ def clean_data(df):
         'value_labels': {}
     }
 
+    # --- cps_jobsfirst ---
+    # cps_jobsfirst — Lorsqu'il existe un conflit entre la protection de l'environnement et la création d'emplois
+    # Source: cps_jobsfirst
+    df_clean['cps_jobsfirst'] = df['cps_jobsfirst'].map({
+        1.0: 'strongly_disagree',
+        2.0: 'somewhat_disagree',
+        3.0: 'neutral',
+        4.0: 'somewhat_agree',
+        5.0: 'strongly_agree'
+    })
+    CODEBOOK_VARIABLES['cps_jobsfirst'] = {
+        'original_variable': 'cps_jobsfirst',
+        'question_label': "Lorsqu'il existe un conflit entre la protection de l'environnement et la création d'emplois, laquelle des deux est la plus importante pour vous?",
+        'type': 'categorical',
+        'value_labels': {
+            'strongly_disagree': "Fortement en désaccord",
+            'somewhat_disagree': "Plutôt en désaccord",
+            'neutral': "Ni en accord, ni en désaccord",
+            'somewhat_agree': "Plutôt en accord",
+            'strongly_agree': "Fortement en accord"
+        }
+    }
+
     return df_clean
 
 def get_metadata():
