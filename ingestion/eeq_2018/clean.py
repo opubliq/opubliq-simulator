@@ -615,6 +615,25 @@ def clean_data(df):
         }
     }
 
+    # --- Q63A_6 ---
+    # ses_financial_assets_other — Détient d'autres actifs financiers
+    # Source: Q63A_6
+    df_clean['ses_financial_assets_other'] = df['q63a_6'].map({
+        1.0: 'yes',
+        2.0: 'no',
+        98.0: np.nan,  # Je ne sais pas
+        99.0: np.nan   # Je préfère ne pas répondre
+    })
+    CODEBOOK_VARIABLES['ses_financial_assets_other'] = {
+        'original_variable': 'q63a_6',
+        'question_label': "Autres actifs financiers",
+        'type': 'binary',
+        'value_labels': {
+            'yes': "Oui",
+            'no': "Non"
+        }
+    }
+
     # --- Q70 ---
     # ses_home_language — Langue parlée à la maison
     # Source: Q70
