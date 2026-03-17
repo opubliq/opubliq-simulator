@@ -7,7 +7,6 @@ Expose:
   - get_metadata() → dictionnaire avec métadonnées du sondage et variables
 """
 
-import os
 import pyreadstat
 import pandas as pd
 import numpy as np

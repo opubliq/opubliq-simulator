@@ -7,7 +7,6 @@ Expose:
   - get_metadata() → dictionnaire avec métadonnées du sondage et variables
 """
 
-import os
 import pyreadstat
 import pandas as pd
 import numpy as np
@@ -2017,24 +2016,24 @@ def clean_data(raw_path: str) -> pd.DataFrame:
     }
 
     # --- Q62AB ---
-    # op_vote_preference — Primary vote intention
-    # Source: Q62AB
-    # Assumption: Observed code 96.0 is unlabelled and treated as missing. Codebook missing code 99 is also treated as missing.
-    df_clean['op_vote_preference'] = df['Q62AB'].map({
-        1.0: 'parti libéral',
-        2.0: 'parti conservateur',
-        3.0: 'parti québécois',
-        4.0: 'parti québécois',
-        5.0: 'parti vert',
-        6.0: 'n.d.a.',
-        99.0: np.nan,
-        96.0: np.nan,
+    # op_decision_body_immigration — Décisions prises par l'Assemblée nationale du Québec ou par le Parlement du Canada pour la politique d'immigration
+    # Source: Q62AB (assumed Q62b from codebook)
+    df_clean['op_decision_body_immigration'] = df['Q62AB'].map({
+        1.0: 'assemblee_nationale_qc',
+        2.0: 'parlement_canada',
+        3.0: 'other', # Autre (spécifiez)
+        8.0: np.nan, # Ne sais pas
+        9.0: np.nan, # Pas de réponse
     })
-    CODEBOOK_VARIABLES['op_vote_preference'] = {
+    CODEBOOK_VARIABLES['op_decision_body_immigration'] = {
         'original_variable': 'Q62AB',
-        'question_label': "Candidat principal de votre choix",
+        'question_label': "Pour la politique d'immigration, pensez-vous que les décisions doivent être prises par l'Assemblée nationale du Québec ou par le Parlement du Canada?",
         'type': 'categorical',
-        'value_labels': {'parti libéral': "Parti libéral", 'parti conservateur': "Parti conservateur", 'parti québécois': "Parti québécois", 'parti vert': "Parti vert", 'n.d.a.': "N.D.A."},
+        'value_labels': {
+            'assemblee_nationale_qc': "Assemblée nationale du Québec",
+            'parlement_canada': "Parlement du Canada",
+            'other': "Autre (spécifiez)",
+        },
     }
 
     # --- Q62AC ---
@@ -2972,7 +2971,7 @@ def clean_data(raw_path: str) -> pd.DataFrame:
         'original_variable': 'Q70E',
         'question_label': "Attitude scale (0-10) based on data exploration",
         'type': 'likert',
-        'value_labels': {'0.0': "Most Negative (0)", '1.0': "0.1", '2.0': "0.2", '3.0': "0.3", '4.0': "0.4", '5.0': "Midpoint (0.5)", '6.0': "0.6", '7.0': "0.7", '8.0': "0.8", '9.0': "0.9", '1.0': "Most Positive (1.0)"},
+        'value_labels': {'0.0': "Most Negative (0)", '1.0': "0.1", '2.0': "0.2", '3.0': "0.3", '4.0': "0.4", '5.0': "Midpoint (0.5)", '6.0': "0.6", '7.0': "0.7", '8.0': "0.8", '9.0': "0.9", '10.0': "Most Positive (1.0)"},
     }
 
     # --- Q70F ---

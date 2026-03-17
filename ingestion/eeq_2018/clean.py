@@ -558,10 +558,24 @@ def clean_data(df):
         }
     }
 
-    # --- Q63B_3 ---
-    # Note: q63b_3 was not found in the original dataset for eeq_2018 and is not mapped.
-    # --- Q63B_4 ---
-    # Note: q63b_4 was not found in the original dataset for eeq_2018 and is not mapped.
+    # --- Q63B_5 ---
+    # ses_financial_assets_bonds — Détient des obligations
+    # Source: Q63B_5
+    df_clean['ses_financial_assets_bonds'] = df['q63b_5'].map({
+        1.0: 'yes',
+        2.0: 'no',
+        98.0: np.nan,  # Je ne sais pas
+        99.0: np.nan   # Je préfère ne pas répondre
+    })
+    CODEBOOK_VARIABLES['ses_financial_assets_bonds'] = {
+        'original_variable': 'q63b_5',
+        'question_label': "Obligations (obligations d’épargne du Canada, etc.)",
+        'type': 'binary',
+        'value_labels': {
+            'yes': "Oui",
+            'no': "Non"
+        }
+    }
 
     # --- Q63A_4 ---
     # ses_financial_assets_stocks — Détient des actions ou parts d’entreprise

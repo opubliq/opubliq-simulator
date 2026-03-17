@@ -7,7 +7,6 @@ Expose:
   - get_metadata() → dictionnaire avec métadonnées du sondage et variables
 """
 
-import os
 import pyreadstat
 import pandas as pd
 import numpy as np
@@ -1859,7 +1858,7 @@ def clean_data(raw_path: str) -> pd.DataFrame:
     })
     CODEBOOK_VARIABLES['op_statement_q68'] = {
         'original_variable': 'q68',
-        'question_label': "Veuillez indiquer si vous êtes fortement d'accord, plutôt d'accord, plutôt en désaccord ou fortement en désaccord.",
+        'question_label': "Il y aurait beaucoup moins de problèmes au Québec si on accordait plus d'importance aux valeurs familiales",
         'type': 'likert',
         'value_labels': {1.0: "Fortement d'accord", 0.667: "Plutôt d'accord", 0.333: "Plutôt en désaccord", 0.0: "Fortement en désaccord"},
     }
