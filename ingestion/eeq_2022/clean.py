@@ -180,6 +180,25 @@ def clean_data(df):
         }
     }
 
+    # --- cps_attractimm ---
+    # cps_attractimm — Opinion sur l'attraction d'immigrants
+    # Source: cps_attractimm
+    df_clean['cps_attractimm'] = df['cps_attractimm'].map({
+        1.0: 'attract_more',
+        2.0: 'attract_less',
+        3.0: 'maintain_level'
+    })
+    CODEBOOK_VARIABLES['cps_attractimm'] = {
+        'original_variable': 'cps_attractimm',
+        'question_label': "Pensez-vous que le Québec devrait essayer...",
+        'type': 'categorical',
+        'value_labels': {
+            'attract_more': "D'attirer plus d'immigrants dans la province",
+            'attract_less': "D'attirer moins d'immigrants dans la province",
+            'maintain_level': "De maintenir le niveau d'immigrants comme il est actuellement"
+        }
+    }
+
     # --- cps_income ---
     # cps_income — Revenu total du ménage avant impôts en 2021
     # Source: cps_income
@@ -983,7 +1002,7 @@ def clean_data(df):
     })
     CODEBOOK_VARIABLES['cps_can_attach'] = {
         'original_variable': 'cps_can_attach',
-        'question_label': "Quel est votre degré d'attachement au Canada?",
+        'question_label': "Quel est votre degré d’attachement au Canada?",
         'type': 'categorical',
         'value_labels': {
             'very_attached': "Très attaché",
@@ -994,15 +1013,36 @@ def clean_data(df):
         }
     }
 
-    # --- cps_RecordedDate ---
-    # cps_RecordedDate — When the Campaign Period Survey response was recorded in Qualtrics
-    # Source: full_text.txt
-    df_clean['cps_RecordedDate'] = df['cps_RecordedDate']
-    CODEBOOK_VARIABLES['cps_RecordedDate'] = {
-        'original_variable': 'cps_RecordedDate',
-        'question_label': "When the Campaign Period Survey response was recorded in Qualtrics.",
-        'type': 'continuous',
-        'value_labels': {}
+    # --- cps_candtherm_23 ---
+    # cps_candtherm_23 — Candidat(e) libéral(e) dans votre circonscription
+    # Source: cps_candtherm_23 (feeling thermometer)
+    df_clean['cps_candtherm_23'] = df['cps_candtherm_23']
+    CODEBOOK_VARIABLES['cps_candtherm_23'] = {
+        'original_variable': 'cps_candtherm_23',
+        'question_label': "Sur la même échelle, que pensez-vous des candidat(e)s dans votre circonscription? (Candidat(e) libéral(e))",
+        'type': 'ordinal',
+        'value_labels': {},
+        'missing_codes': {
+            -99: "Je ne connais pas le/la candidat"
+        },
+        'range_min': 0,
+        'range_max': 100
+    }
+
+    # --- cps_candtherm_25 ---
+    # cps_candtherm_25 — Candidat(e) péquiste dans votre circonscription
+    # Source: cps_candtherm_25 (feeling thermometer)
+    df_clean['cps_candtherm_25'] = df['cps_candtherm_25']
+    CODEBOOK_VARIABLES['cps_candtherm_25'] = {
+        'original_variable': 'cps_candtherm_25',
+        'question_label': "Sur la même échelle, que pensez-vous des candidat(e)s dans votre circonscription? (Candidat(e) péquiste)",
+        'type': 'ordinal',
+        'value_labels': {},
+        'missing_codes': {
+            -99: "Je ne connais pas le/la candidat"
+        },
+        'range_min': 0,
+        'range_max': 100
     }
 
     return df_clean
