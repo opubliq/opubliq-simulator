@@ -158,14 +158,14 @@ def upsert_survey(client, survey_id: str, df: pd.DataFrame, metadata: dict):
     print(f"  Inserted {inserted_questions} questions")
 
     # 4. Batch insert respondents
-    # ses_* columns → strate_canonical JSONB; rest → responses JSONB
-    ses_cols = [c for c in df.columns if c.startswith("ses_")]
-    other_cols = [c for c in df.columns if not c.startswith("ses_")]
+    # strate_* columns → strate_canonical JSONB; rest → responses JSONB
+    strate_cols = [c for c in df.columns if c.startswith("strate_")]
+    other_cols = [c for c in df.columns if not c.startswith("strate_")]
 
     records = df_to_records(df)
     respondent_rows = []
     for rec in records:
-        strate = {k: rec[k] for k in ses_cols if k in rec}
+        strate = {k: rec[k] for k in strate_cols if k in rec}
         responses = {k: rec[k] for k in other_cols if k in rec}
         respondent_rows.append({
             "survey_id": survey_db_id,

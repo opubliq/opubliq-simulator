@@ -12,6 +12,7 @@ par les marts downstream pour l'interprétation sémantique des données.
 """
 
 import pandas as pd
+import numpy as np
 
 # ============================================================================
 # SURVEY METADATA (à remplir au début du script)
@@ -1562,25 +1563,108 @@ def clean_data(df):
         'range_max': 100
      }
 
-     # --- cps_cares_DO_1 ---
-     # cps_cares_DO_1 — Display order for first leader option in cps_cares
-     # Source: cps_cares_DO_1
-     df_clean['cps_cares_DO_1'] = df['cps_cares_DO_1'].map({
-         1.0: 'first',
-         2.0: 'second',
-         3.0: 'third'
-     })
-     CODEBOOK_VARIABLES['cps_cares_DO_1'] = {
-         'original_variable': 'cps_cares_DO_1',
-         'question_label': "Display order for first leader option in cps_cares",
-         'type': 'ordinal',
-         'value_labels': {
-             'first': "premier",
-             'second': "deuxième",
-             'third': "troisième"
-         },
-         'missing_codes': []
-     }
+    # --- cps_cares_DO_1 ---
+    # cps_cares_DO_1 — Display order for first leader option in cps_cares
+    # Source: cps_cares_DO_1
+    df_clean['cps_cares_DO_1'] = df['cps_cares_DO_1'].map({
+        1.0: 'first',
+        2.0: 'second',
+        3.0: 'third'
+    })
+    CODEBOOK_VARIABLES['cps_cares_DO_1'] = {
+        'original_variable': 'cps_cares_DO_1',
+        'question_label': "Display order for first leader option in cps_cares",
+        'type': 'ordinal',
+        'value_labels': {
+            'first': "premier",
+            'second': "deuxième",
+            'third': "troisième"
+        },
+        'missing_codes': []
+    }
+
+    # =========================================================================
+    # VARIABLES SES DÉTAILLÉES
+    # =========================================================================
+
+    # ses_age — Âge en années
+    # Source: cps_age_in_years
+    df_clean['ses_age'] = pd.to_numeric(df['cps_age_in_years'], errors='coerce')
+    df_clean.loc[df_clean['ses_age'] < 18, 'ses_age'] = np.nan
+    CODEBOOK_VARIABLES['ses_age'] = {
+        'original_variable': 'cps_age_in_years',
+        'question_label': "Quel est votre âge?",
+        'type': 'numeric',
+        'value_labels': {},
+    }
+
+    # ses_gender — Genre
+    # Source: cps_genderid
+    df_clean['ses_gender'] = df['cps_genderid'].map({
+        'A man':                            'homme',
+        'A woman':                          'femme',
+        'Non-binary':                       'non_binaire',
+        'Another gender, please specify:':  'autre',
+    })
+    CODEBOOK_VARIABLES['ses_gender'] = {
+        'original_variable': 'cps_genderid',
+        'question_label': "Êtes-vous...",
+        'type': 'categorical',
+        'value_labels': {
+            'homme':       "Homme",
+            'femme':       "Femme",
+            'non_binaire': "Non-binaire",
+            'autre':       "Autre genre",
+        },
+    }
+
+    # ses_language — Première(s) langue(s) apprise(s) (synthèse depuis cps_lang_1/2)
+    lang_fr = df['cps_lang_2'] == 'French'
+    lang_en = df['cps_lang_1'] == 'English'
+    ses_language = pd.Series('autre', index=df.index)
+    ses_language[lang_en & ~lang_fr] = 'english'
+    ses_language[lang_fr] = 'french'
+    df_clean['ses_language'] = ses_language
+    CODEBOOK_VARIABLES['ses_language'] = {
+        'original_variable': 'cps_lang_1 / cps_lang_2',
+        'question_label': "Quelle est la/les première(s) langue(s) que vous avez apprise(s)?",
+        'type': 'categorical',
+        'value_labels': {'french': "Français", 'english': "Anglais", 'autre': "Autre"},
+    }
+
+    # ses_education — Niveau de scolarité complété
+    # Source: cps_edu
+    df_clean['ses_education'] = df['cps_edu'].map({
+        'No schooling':                                                         'aucune_scolarite',
+        'Some elementary school':                                               'primaire_incomplet',
+        'Completed elementary school':                                          'primaire_complet',
+        'Some secondary/ high school':                                          'secondaire_incomplet',
+        'Completed secondary/ high school':                                     'secondaire_complet',
+        'Some technical, community college, CEGEP, College Classique':         'cegep_incomplet',
+        'Completed technical, community college, CEGEP, College Classique':    'cegep_complet',
+        'Some university':                                                      'universite_incomplet',
+        "Bachelor's degree":                                                    'baccalaureat',
+        "Master's degree":                                                      'maitrise',
+        'Professional degree or doctorate':                                     'doctorat_professionnel',
+    })
+    CODEBOOK_VARIABLES['ses_education'] = {
+        'original_variable': 'cps_edu',
+        'question_label': "Quel est votre plus haut niveau de scolarité complété?",
+        'type': 'categorical',
+        'value_labels': {
+            'aucune_scolarite':      "Aucune scolarité",
+            'primaire_incomplet':    "Quelques années primaire",
+            'primaire_complet':      "École primaire terminée",
+            'secondaire_incomplet':  "Quelques années secondaire",
+            'secondaire_complet':    "École secondaire terminée",
+            'cegep_incomplet':       "Quelques années cégep/collège",
+            'cegep_complet':         "Études cégep/collège terminées",
+            'universite_incomplet':  "Quelques années université",
+            'baccalaureat':          "Baccalauréat",
+            'maitrise':              "Maîtrise",
+            'doctorat_professionnel':"Diplôme professionnel ou doctorat",
+        },
+    }
 
     # =========================================================================
     # STRATES CANONIQUES
@@ -1594,32 +1678,31 @@ def clean_data(df):
         labels=['18-34', '35-54', '55+']
     ).astype(object).where(age.notna())
 
-    # strate_genre — depuis cps_genderid
+    # strate_genre — depuis cps_genderid (valeurs string dans le .dta)
     df_clean['strate_genre'] = df['cps_genderid'].map({
-        1.0: 'homme',
-        2.0: 'femme',
-        3.0: 'non_binaire',
-        4.0: 'autre',
+        'A man':                            'homme',
+        'A woman':                          'femme',
+        'Non-binary':                       'non_binaire',
+        'Another gender, please specify:':  'autre',
     })
 
-    # strate_langue — depuis cps_lang_2 (français) et cps_lang_1 (anglais)
-    # cps_lang_2 = 1 → français sélectionné; cps_lang_1 = 1 → anglais sélectionné
-    lang_fr = pd.to_numeric(df['cps_lang_2'], errors='coerce') == 1.0
+    # strate_langue — depuis cps_lang_2 (French sélectionné = 'French')
+    lang_fr = df['cps_lang_2'] == 'French'
     df_clean['strate_langue'] = lang_fr.map({True: 'francophone', False: 'anglo_autre'})
 
-    # strate_education — depuis cps_edu (11 niveaux → 3 strates)
+    # strate_education — depuis cps_edu (valeurs string → 3 strates)
     df_clean['strate_education'] = df['cps_edu'].map({
-        1.0:  'sans_diplome_sec',   # Aucune scolarité
-        2.0:  'sans_diplome_sec',   # Quelques années primaire
-        3.0:  'sans_diplome_sec',   # Primaire terminé
-        4.0:  'sans_diplome_sec',   # Quelques années secondaire
-        5.0:  'diplome_sec_cegep',  # École secondaire terminée
-        6.0:  'diplome_sec_cegep',  # Quelques années cégep
-        7.0:  'diplome_sec_cegep',  # Cégep terminé
-        8.0:  'universite',         # Quelques années université
-        9.0:  'universite',         # Baccalauréat
-        10.0: 'universite',         # Maîtrise
-        11.0: 'universite',         # Doctorat/professionnel
+        'No schooling':                                                          'sans_diplome_sec',
+        'Some elementary school':                                                'sans_diplome_sec',
+        'Completed elementary school':                                           'sans_diplome_sec',
+        'Some secondary/ high school':                                           'sans_diplome_sec',
+        'Completed secondary/ high school':                                      'diplome_sec_cegep',
+        'Some technical, community college, CEGEP, College Classique':          'diplome_sec_cegep',
+        'Completed technical, community college, CEGEP, College Classique':     'diplome_sec_cegep',
+        'Some university':                                                       'universite',
+        "Bachelor's degree":                                                     'universite',
+        "Master's degree":                                                       'universite',
+        'Professional degree or doctorate':                                      'universite',
     })
 
     # strate_region → voir issue opubliq-simulator-3gh (mapping code postal → région)

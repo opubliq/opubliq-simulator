@@ -3382,28 +3382,40 @@ def clean_data(raw_path: str) -> pd.DataFrame:
     }
 
     # --- QSCOL ---
-    # op_col_support — Inferred support level for item COL on 11-point scale
+    # ses_education — Niveau de scolarité complété
     # Source: QSCOL
-    # Assumption: 1.0 is minimum (0.0) and 11.0 is maximum (1.0) for Likert scale. Code 99.0 treated as missing.
-    df_clean['op_col_support'] = df['QSCOL'].map({
-        1.0: 0.0,
-        2.0: 0.1,
-        3.0: 0.2,
-        4.0: 0.3,
-        5.0: 0.4,
-        6.0: 0.5,
-        7.0: 0.6,
-        8.0: 0.7,
-        9.0: 0.8,
-        10.0: 0.9,
-        11.0: 1.0,
+    df_clean['ses_education'] = df['QSCOL'].map({
+        1.0:  'aucune_scolarite',
+        2.0:  'primaire_sans_diplome',
+        3.0:  'primaire_avec_diplome',
+        4.0:  'secondaire_sans_diplome',
+        5.0:  'secondaire_avec_diplome',
+        6.0:  'cegep_sans_diplome',
+        7.0:  'cegep_avec_diplome',
+        8.0:  'cours_technique',
+        9.0:  'universite_non_complete',
+        10.0: 'baccalaureat',
+        11.0: 'maitrise_doctorat',
+        98.0: np.nan,
         99.0: np.nan,
     })
-    CODEBOOK_VARIABLES['op_col_support'] = {
+    CODEBOOK_VARIABLES['ses_education'] = {
         'original_variable': 'QSCOL',
-        'question_label': "Inferred support level for item COL on 11-point scale",
-        'type': 'likert',
-        'value_labels': {'0.0': "Lowest level of support", '0.1': "Level 2", '0.2': "Level 3", '0.3': "Level 4", '0.4': "Level 5", '0.5': "Level 6 (Midpoint)", '0.6': "Level 7", '0.7': "Level 8", '0.8': "Level 9", '0.9': "Level 10", '1.0': "Highest level of support"},
+        'question_label': "À quel niveau se situe la dernière année de scolarité que vous avez complétée?",
+        'type': 'categorical',
+        'value_labels': {
+            'aucune_scolarite':        "Aucune scolarité",
+            'primaire_sans_diplome':   "Cours primaire (sans diplôme)",
+            'primaire_avec_diplome':   "Cours primaire (avec diplôme)",
+            'secondaire_sans_diplome': "Cours secondaire (sans diplôme)",
+            'secondaire_avec_diplome': "Cours secondaire (avec diplôme)",
+            'cegep_sans_diplome':      "CÉGEP (sans diplôme)",
+            'cegep_avec_diplome':      "CÉGEP (avec diplôme)",
+            'cours_technique':         "Cours technique",
+            'universite_non_complete': "Université non complétée",
+            'baccalaureat':            "Baccalauréat",
+            'maitrise_doctorat':       "Maîtrise ou doctorat",
+        },
     }
 
     # --- QSEXE ---

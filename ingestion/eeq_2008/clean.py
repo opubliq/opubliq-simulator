@@ -1587,8 +1587,8 @@ def clean_data(raw_path: str) -> pd.DataFrame:
         8.0: '55+',    # 75+
     })
 
-    # strate_genre — depuis Q76
-    df_clean['strate_genre'] = df['Q76'].map({
+    # strate_genre — depuis q76 (lowercase dans le .sav)
+    df_clean['strate_genre'] = df['q76'].map({
         1.0: 'homme',
         2.0: 'femme',
     })
@@ -1604,29 +1604,15 @@ def clean_data(raw_path: str) -> pd.DataFrame:
         7.0: 'francophone',  # français et anglais → francophone
     })
 
-    # strate_region — 4 strates depuis Q0QC (17 régions administratives)
-    df_clean['strate_region'] = df['Q0QC'].map({
-        6.0:  'montreal',   # Montréal
-        13.0: 'montreal',   # Laval
-        14.0: 'couronne',   # Lanaudière
-        15.0: 'couronne',   # Laurentides
-        16.0: 'couronne',   # Montérégie
-        3.0:  'quebec',     # Capitale-Nationale
-        1.0:  'regions',    # Bas-Saint-Laurent
-        2.0:  'regions',    # Saguenay-Lac-Saint-Jean
-        4.0:  'regions',    # Mauricie
-        5.0:  'regions',    # Estrie
-        7.0:  'regions',    # Outaouais
-        8.0:  'regions',    # Abitibi-Témiscamingue
-        9.0:  'regions',    # Côte-Nord
-        10.0: 'regions',    # Nord-du-Québec
-        11.0: 'regions',    # Gaspésie-Îles-de-la-Madeleine
-        12.0: 'regions',    # Chaudière-Appalaches
-        17.0: 'regions',    # Centre-du-Québec
+    # strate_region — 3 strates depuis regio (Q0QC absent dans ce fichier)
+    df_clean['strate_region'] = df['regio'].map({
+        1.0: 'montreal',
+        2.0: 'quebec',
+        3.0: 'regions',
     })
 
-    # strate_education — depuis Q77 (11 niveaux → 3 strates)
-    df_clean['strate_education'] = df['Q77'].map({
+    # strate_education — depuis q77 (lowercase, 11 niveaux → 3 strates)
+    df_clean['strate_education'] = df['q77'].map({
         1.0:  'sans_diplome_sec',   # Aucune scolarité
         2.0:  'sans_diplome_sec',   # Primaire sans diplôme
         3.0:  'sans_diplome_sec',   # Primaire avec diplôme

@@ -3957,26 +3957,29 @@ def map_strates_canoniques(df: pd.DataFrame) -> pd.DataFrame:
     """
     df_strata = pd.DataFrame(index=df.index)
 
-    # Genre
-    df_strata['genre'] = df['SEXE'].map({
+    # strate_genre
+    df_strata['strate_genre'] = df['SEXE'].map({
         1.0: 'homme',
         2.0: 'femme',
     })
 
-    # Langue
-    df_strata['langue'] = df['LANGU'].map({
+    # strate_langue
+    df_strata['strate_langue'] = df['LANGU'].map({
         1.0: 'francophone',
-        2.0: 'anglo-autre',
-        3.0: 'anglo-autre',
+        2.0: 'anglo_autre',
+        3.0: 'anglo_autre',
+        4.0: 'francophone',  # français et anglais → francophone
+        5.0: 'francophone',  # français et autre → francophone
+        6.0: 'anglo_autre',  # anglais et autre
     })
 
-    # Age group
+    # strate_age_group
     age = pd.to_numeric(df['AGE'], errors='coerce')
-    df_strata['age_group'] = pd.cut(
+    df_strata['strate_age_group'] = pd.cut(
         age,
         bins=[17, 34, 54, np.inf],
         labels=['18-34', '35-54', '55+']
-    )
+    ).astype(object).where(age.notna())
 
     # strate_region — 4 strates depuis Q0QC (17 régions administratives)
     df_strata['strate_region'] = df['Q0QC'].map({

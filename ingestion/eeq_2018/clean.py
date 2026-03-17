@@ -4313,8 +4313,9 @@ def clean_data(df):
     # STRATES CANONIQUES
     # =========================================================================
 
-    # strate_age_group — depuis agenum (âge en années)
-    age = pd.to_numeric(df['agenum'].replace({999.0: np.nan}), errors='coerce')
+    # strate_age_group — depuis agecalc (âge calculé, plus fiable que agenum)
+    age = pd.to_numeric(df['agecalc'], errors='coerce')
+    age = age.where(age >= 18)  # exclure les moins de 18 ans
     df_clean['strate_age_group'] = pd.cut(
         age,
         bins=[17, 34, 54, np.inf],
