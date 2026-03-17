@@ -750,6 +750,52 @@ def clean_data(df):
         }
     }
 
+    # --- cps_intelligent_DO_4 ---
+    # cps_intelligent_DO_4 — Display order for Gabriel Nadeau-Dubois in cps_intelligent
+    # Source: cps_intelligent_DO_4
+    df_clean['cps_intelligent_DO_4'] = df['cps_intelligent_DO_4'].map({
+        1.0: 'first',
+        2.0: 'second',
+        3.0: 'third',
+        4.0: 'fourth',
+        5.0: 'fifth'
+    })
+    CODEBOOK_VARIABLES['cps_intelligent_DO_4'] = {
+        'original_variable': 'cps_intelligent_DO_4',
+        'question_label': "Display order for Gabriel Nadeau-Dubois in cps_intelligent",
+        'type': 'ordinal',
+        'value_labels': {
+            'first': "premier",
+            'second': "deuxième",
+            'third': "troisième",
+            'fourth': "quatrième",
+            'fifth': "cinquième"
+        }
+    }
+
+    # --- cps_intelligent_DO_5 ---
+    # cps_intelligent_DO_5 — Display order for Éric Duhaime in cps_intelligent
+    # Source: cps_intelligent_DO_5
+    df_clean['cps_intelligent_DO_5'] = df['cps_intelligent_DO_5'].map({
+        1.0: 'first',
+        2.0: 'second',
+        3.0: 'third',
+        4.0: 'fourth',
+        5.0: 'fifth'
+    })
+    CODEBOOK_VARIABLES['cps_intelligent_DO_5'] = {
+        'original_variable': 'cps_intelligent_DO_5',
+        'question_label': "Display order for Éric Duhaime in cps_intelligent",
+        'type': 'ordinal',
+        'value_labels': {
+            'first': "premier",
+            'second': "deuxième",
+            'third': "troisième",
+            'fourth': "quatrième",
+            'fifth': "cinquième"
+        }
+    }
+
     # --- cps_income2 ---
     # cps_income2 — Revenu du ménage (catégories)
     # Source: cps_income2
@@ -776,6 +822,20 @@ def clean_data(df):
              '110k_to_150k': "110 001$ à 150 000$",
              '150k_to_200k': "150 001$ à 200 000$",
              'over_200k': "Plus de 200 000$"
+        }
+    }
+
+    # --- cps_interest_1 ---
+    # cps_interest_1 — Quel est votre niveau d'intérêt pour la politique en général?
+    # Source: cps_interest_1
+    df_clean['cps_interest_1'] = df['cps_interest_1']
+    CODEBOOK_VARIABLES['cps_interest_1'] = {
+        'original_variable': 'cps_interest_1',
+        'question_label': "Quel est votre niveau d'intérêt pour la politique en général? Veuillez glisser le curseur à l'endroit qui correspond le mieux à votre opinion.",
+        'type': 'ordinal',
+        'value_labels': {
+            0: "Aucun intérêt",
+            10: "Beaucoup d'intérêt"
         }
     }
 
