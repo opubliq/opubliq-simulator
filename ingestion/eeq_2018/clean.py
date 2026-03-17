@@ -1152,9 +1152,9 @@ def clean_data(df):
     # --- Q41 ---
     # op_taxes_vs_services — Préférence taxation vs services gouvernementaux
     # Source: Q41
-    df_clean['op_taxes_vs_services'] = pd.to_numeric(df['q41'], errors='coerce')
+    df_clean['op_taxes_vs_services'] = pd.to_numeric(df['q41_1'], errors='coerce')
     CODEBOOK_VARIABLES['op_taxes_vs_services'] = {
-        'original_variable': 'q41',
+        'original_variable': 'q41_1',
         'question_label': "Préférez-vous un État imposant beaucoup de taxes servant à financer plus de services gouvernementaux ou un État n'imposant pas beaucoup de taxes mais offrant moins de services?",
         'type': 'ordinal',
         'value_labels': {
@@ -1264,7 +1264,7 @@ def clean_data(df):
     # op_gov_employment_role — Rôle du gouvernement dans l'emploi et la qualité de vie
     # Source: Q47
     # 5-point scale: 1 = government should ensure employment/quality of life, 5 = people should fend for themselves
-    df_clean['op_gov_employment_role'] = df['q47'].map({
+    df_clean['op_gov_employment_role'] = df['q47_1'].map({
         1.0: 'gov_should_ensure',
         2.0: 'gov_lean_ensure',
         3.0: 'neutral',
@@ -2037,7 +2037,7 @@ def clean_data(df):
     # --- Q21 ---
     # op_distinct_values — Distinctness of Québécois values (0-10 scale)
     # Source: Q21
-    df_clean['op_distinct_values'] = pd.to_numeric(df['q21'], errors='coerce')
+    df_clean['op_distinct_values'] = pd.to_numeric(df['q21_1'], errors='coerce')
     CODEBOOK_VARIABLES['op_distinct_values'] = {
         'original_variable': 'q21',
         'question_label': "Où vous situez-vous sur une échelle de 0 à 10, où 0 veut dire que les Québécois ont des valeurs et priorités distinctes et 10 veut dire que les Québécois ont les mêmes valeurs que les autres Canadiens?",
@@ -2274,7 +2274,7 @@ def clean_data(df):
     # --- Q33_a ---
     # op_politician_thermometer_philippe_couillard — Feeling thermometer: Philippe Couillard
     # Source: Q33_a
-    df_clean['op_politician_thermometer_philippe_couillard'] = pd.to_numeric(df['q33a'], errors='coerce')
+    df_clean['op_politician_thermometer_philippe_couillard'] = pd.to_numeric(df['q33_a'], errors='coerce')
     CODEBOOK_VARIABLES['op_politician_thermometer_philippe_couillard'] = {
         'original_variable': 'q33a',
         'question_label': "Sur une échelle de 0 à 10, où 0 veut dire que vous N'AIMEZ VRAIMENT PAS DU TOUT un politicien, et 10 veut dire que vous L'AIMEZ VRAIMENT BEAUCOUP, que pensez-vous de Philippe Couillard?",
@@ -2285,7 +2285,7 @@ def clean_data(df):
     # --- Q33_b ---
     # op_politician_thermometer_jean_francois_lisee — Feeling thermometer: Jean-François Lisée
     # Source: Q33_b
-    df_clean['op_politician_thermometer_jean_francois_lisee'] = pd.to_numeric(df['q33b'], errors='coerce')
+    df_clean['op_politician_thermometer_jean_francois_lisee'] = pd.to_numeric(df['q33_b'], errors='coerce')
     CODEBOOK_VARIABLES['op_politician_thermometer_jean_francois_lisee'] = {
         'original_variable': 'q33b',
         'question_label': "Sur une échelle de 0 à 10, où 0 veut dire que vous N'AIMEZ VRAIMENT PAS DU TOUT un politicien, et 10 veut dire que vous L'AIMEZ VRAIMENT BEAUCOUP, que pensez-vous de Jean-François Lisée?",
@@ -2296,7 +2296,7 @@ def clean_data(df):
     # --- Q33_c ---
     # op_politician_thermometer_francois_legault — Feeling thermometer: François Legault
     # Source: Q33_c
-    df_clean['op_politician_thermometer_francois_legault'] = pd.to_numeric(df['q33c'], errors='coerce')
+    df_clean['op_politician_thermometer_francois_legault'] = pd.to_numeric(df['q33_c'], errors='coerce')
     CODEBOOK_VARIABLES['op_politician_thermometer_francois_legault'] = {
         'original_variable': 'q33c',
         'question_label': "Sur une échelle de 0 à 10, où 0 veut dire que vous N'AIMEZ VRAIMENT PAS DU TOUT un politicien, et 10 veut dire que vous L'AIMEZ VRAIMENT BEAUCOUP, que pensez-vous de François Legault?",
@@ -2307,7 +2307,7 @@ def clean_data(df):
     # --- Q33_d ---
     # op_politician_thermometer_manon_masse — Feeling thermometer: Manon Massé
     # Source: Q33_d
-    df_clean['op_politician_thermometer_manon_masse'] = pd.to_numeric(df['q33d'], errors='coerce')
+    df_clean['op_politician_thermometer_manon_masse'] = pd.to_numeric(df['q33_d'], errors='coerce')
     CODEBOOK_VARIABLES['op_politician_thermometer_manon_masse'] = {
         'original_variable': 'q33d',
         'question_label': "Sur une échelle de 0 à 10, où 0 veut dire que vous N'AIMEZ VRAIMENT PAS DU TOUT un politicien, et 10 veut dire que vous L'AIMEZ VRAIMENT BEAUCOUP, que pensez-vous de Manon Massé?",
@@ -2318,7 +2318,7 @@ def clean_data(df):
     # --- Q33_e ---
     # op_politician_thermometer_veronique_hivon — Feeling thermometer: Véronique Hivon
     # Source: Q33_e
-    df_clean['op_politician_thermometer_veronique_hivon'] = pd.to_numeric(df['q33e'], errors='coerce')
+    df_clean['op_politician_thermometer_veronique_hivon'] = pd.to_numeric(df['q33_e'], errors='coerce')
     CODEBOOK_VARIABLES['op_politician_thermometer_veronique_hivon'] = {
         'original_variable': 'q33e',
         'question_label': "Sur une échelle de 0 à 10, où 0 veut dire que vous N'AIMEZ VRAIMENT PAS DU TOUT un politicien, et 10 veut dire que vous L'AIMEZ VRAIMENT BEAUCOUP, que pensez-vous de Véronique Hivon?",
@@ -2329,7 +2329,7 @@ def clean_data(df):
     # --- Q33_f ---
     # op_politician_thermometer_gabriel_nadeau_dubois — Feeling thermometer: Gabriel Nadeau-Dubois
     # Source: Q33_f
-    df_clean['op_politician_thermometer_gabriel_nadeau_dubois'] = pd.to_numeric(df['q33f'], errors='coerce')
+    df_clean['op_politician_thermometer_gabriel_nadeau_dubois'] = pd.to_numeric(df['q33_f'], errors='coerce')
     CODEBOOK_VARIABLES['op_politician_thermometer_gabriel_nadeau_dubois'] = {
         'original_variable': 'q33f',
         'question_label': "Sur une échelle de 0 à 10, où 0 veut dire que vous N'AIMEZ VRAIMENT PAS DU TOUT un politicien, et 10 veut dire que vous L'AIMEZ VRAIMENT BEAUCOUP, que pensez-vous de Gabriel Nadeau-Dubois?",
@@ -2344,7 +2344,7 @@ def clean_data(df):
     # --- Q34_a ---
     # op_group_thermometer_ethnocultural_minorities — Feeling thermometer: ethnocultural minorities
     # Source: Q34_a
-    df_clean['op_group_thermometer_ethnocultural_minorities'] = pd.to_numeric(df['q34a'], errors='coerce')
+    df_clean['op_group_thermometer_ethnocultural_minorities'] = pd.to_numeric(df['q34_a'], errors='coerce')
     CODEBOOK_VARIABLES['op_group_thermometer_ethnocultural_minorities'] = {
         'original_variable': 'q34a',
         'question_label': "Sur une échelle de 0 à 10, où 0 veut dire que vous N'AIMEZ VRAIMENT PAS DU TOUT un groupe de gens, et 10 veut dire que vous L'AIMEZ VRAIMENT BEAUCOUP, que pensez-vous des minorités ethnoculturelles?",
@@ -2355,7 +2355,7 @@ def clean_data(df):
     # --- Q34_b ---
     # op_group_thermometer_immigrants — Feeling thermometer: immigrants
     # Source: Q34_b
-    df_clean['op_group_thermometer_immigrants'] = pd.to_numeric(df['q34b'], errors='coerce')
+    df_clean['op_group_thermometer_immigrants'] = pd.to_numeric(df['q34_b'], errors='coerce')
     CODEBOOK_VARIABLES['op_group_thermometer_immigrants'] = {
         'original_variable': 'q34b',
         'question_label': "Sur une échelle de 0 à 10, où 0 veut dire que vous N'AIMEZ VRAIMENT PAS DU TOUT un groupe de gens, et 10 veut dire que vous L'AIMEZ VRAIMENT BEAUCOUP, que pensez-vous des immigrants?",
@@ -2366,7 +2366,7 @@ def clean_data(df):
     # --- Q34_c ---
     # op_group_thermometer_francophones — Feeling thermometer: Francophones
     # Source: Q34_c
-    df_clean['op_group_thermometer_francophones'] = pd.to_numeric(df['q34c'], errors='coerce')
+    df_clean['op_group_thermometer_francophones'] = pd.to_numeric(df['q34_c'], errors='coerce')
     CODEBOOK_VARIABLES['op_group_thermometer_francophones'] = {
         'original_variable': 'q34c',
         'question_label': "Sur une échelle de 0 à 10, où 0 veut dire que vous N'AIMEZ VRAIMENT PAS DU TOUT un groupe de gens, et 10 veut dire que vous L'AIMEZ VRAIMENT BEAUCOUP, que pensez-vous des Francophones?",
@@ -2377,7 +2377,7 @@ def clean_data(df):
     # --- Q34_d ---
     # op_group_thermometer_anglophones — Feeling thermometer: Anglophones
     # Source: Q34_d
-    df_clean['op_group_thermometer_anglophones'] = pd.to_numeric(df['q34d'], errors='coerce')
+    df_clean['op_group_thermometer_anglophones'] = pd.to_numeric(df['q34_d'], errors='coerce')
     CODEBOOK_VARIABLES['op_group_thermometer_anglophones'] = {
         'original_variable': 'q34d',
         'question_label': "Sur une échelle de 0 à 10, où 0 veut dire que vous N'AIMEZ VRAIMENT PAS DU TOUT un groupe de gens, et 10 veut dire que vous L'AIMEZ VRAIMENT BEAUCOUP, que pensez-vous des Anglophones?",
@@ -2388,7 +2388,7 @@ def clean_data(df):
     # --- Q34_e ---
     # op_group_thermometer_muslims — Feeling thermometer: Muslims living in Quebec
     # Source: Q34_e
-    df_clean['op_group_thermometer_muslims'] = pd.to_numeric(df['q34e'], errors='coerce')
+    df_clean['op_group_thermometer_muslims'] = pd.to_numeric(df['q34_e'], errors='coerce')
     CODEBOOK_VARIABLES['op_group_thermometer_muslims'] = {
         'original_variable': 'q34e',
         'question_label': "Sur une échelle de 0 à 10, où 0 veut dire que vous N'AIMEZ VRAIMENT PAS DU TOUT un groupe de gens, et 10 veut dire que vous L'AIMEZ VRAIMENT BEAUCOUP, que pensez-vous des musulmans qui vivent au Québec?",
@@ -2659,7 +2659,7 @@ def clean_data(df):
     # --- Q37A ---
     # op_decision_maker_citizens_politicians — Qui devrait prendre les décisions importantes : citoyens ou politiciens élus
     # Source: Q37A
-    df_clean['op_decision_maker_citizens_politicians'] = pd.to_numeric(df['q37a'], errors='coerce')
+    df_clean['op_decision_maker_citizens_politicians'] = pd.to_numeric(df['q37a_1'], errors='coerce')
     CODEBOOK_VARIABLES['op_decision_maker_citizens_politicians'] = {
         'original_variable': 'q37a',
         'question_label': "Sur une échelle de 0 à 5, selon vous, qui devrait prendre les décisions politiques importantes : les citoyens ou les politiciens élus ?",
@@ -2673,7 +2673,7 @@ def clean_data(df):
     # --- Q37B ---
     # op_decision_maker_politicians_experts — Qui devrait prendre les décisions importantes : politiciens élus ou experts politiques
     # Source: Q37B
-    df_clean['op_decision_maker_politicians_experts'] = pd.to_numeric(df['q37b'], errors='coerce')
+    df_clean['op_decision_maker_politicians_experts'] = pd.to_numeric(df['q37b_1'], errors='coerce')
     CODEBOOK_VARIABLES['op_decision_maker_politicians_experts'] = {
         'original_variable': 'q37b',
         'question_label': "Sur une échelle de 0 à 5, selon vous, qui devrait prendre les décisions politiques importantes : les politiciens élus ou les experts politiques indépendants ?",
@@ -2687,7 +2687,7 @@ def clean_data(df):
     # --- Q37C ---
     # op_decision_maker_experts_citizens — Qui devrait prendre les décisions importantes : experts politiques ou citoyens
     # Source: Q37C
-    df_clean['op_decision_maker_experts_citizens'] = pd.to_numeric(df['q37c'], errors='coerce')
+    df_clean['op_decision_maker_experts_citizens'] = pd.to_numeric(df['q37c_1'], errors='coerce')
     CODEBOOK_VARIABLES['op_decision_maker_experts_citizens'] = {
         'original_variable': 'q37c',
         'question_label': "Sur une échelle de 0 à 5, selon vous, qui devrait prendre les décisions politiques importantes : les experts politiques indépendants ou les citoyens ?",

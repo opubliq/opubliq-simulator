@@ -1,5 +1,7 @@
 {
   "permissions": {
-    "defaultMode": "bypassPermissions"
+    "deny": [
+      "Read(.env.local)"
+    ]
   }
 }
