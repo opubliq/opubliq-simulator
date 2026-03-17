@@ -1604,7 +1604,11 @@ def clean_data(raw_path: str) -> pd.DataFrame:
         7.0: 'francophone',  # français et anglais → francophone
     })
 
-    # strate_region — 3 strates depuis regio (Q0QC absent dans ce fichier)
+    # strate_region — depuis regio (3 catégories; Q0QC et sous-variables de ville
+    # absents du .sav distribué, confirmé via R/haven).
+    # MTL RMR (1) couvre l'île + Laval + couronne sans distinction possible.
+    # On assigne 'montreal' — la prédiction est identique pour montreal et couronne
+    # dans le simulateur, donc la perte de granularité n'affecte pas les résultats.
     df_clean['strate_region'] = df['regio'].map({
         1.0: 'montreal',
         2.0: 'quebec',
