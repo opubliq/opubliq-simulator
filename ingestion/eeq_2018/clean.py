@@ -569,39 +569,98 @@ def clean_data(df):
         }
     }
 
+    # --- Q64A_1 ---
+    # ses_q64a_1 — Propriétaire de la résidence principale
+    # Source: Q64A_1
+    df_clean['ses_q64a_1'] = df['q64a_1'].map({
+        1.0: 'yes',
+        2.0: 'no',
+        98.0: np.nan,  # Je ne sais pas
+        99.0: np.nan   # Je préfère ne pas répondre
+    })
+    CODEBOOK_VARIABLES['ses_q64a_1'] = {
+        'original_variable': 'q64a_1',
+        'question_label': "Aujourd’hui, êtes-vous propriétaire de votre résidence principale?",
+        'type': 'binary',
+        'value_labels': {
+            'yes': "Oui",
+            'no': "Non"
+        }
+    }
+
+    # --- Q64A_3 ---
+    # ses_q64a_3 — Propriétaire d'autres biens immobiliers (locatifs)
+    # Source: Q64A_3
+    df_clean['ses_q64a_3'] = df['q64a_3'].map({
+        1.0: 'yes',
+        2.0: 'no',
+        98.0: np.nan,
+        99.0: np.nan
+    })
+    CODEBOOK_VARIABLES['ses_q64a_3'] = {
+        'original_variable': 'q64a_3',
+        'question_label': "Aujourd’hui, êtes-vous propriétaire d’autres biens immobiliers ou de propriétés que vous louez (duplex, etc.)?",
+        'type': 'binary',
+        'value_labels': {
+            'yes': "Oui",
+            'no': "Non"
+        }
+    }
+
+    # --- Q64A_4 ---
+    # ses_q64a_4 — Propriétaire d'autres biens immobiliers (non-locatifs)
+    # Source: Q64A_4
+    df_clean['ses_q64a_4'] = df['q64a_4'].map({
+        1.0: 'yes',
+        2.0: 'no',
+        98.0: np.nan,  # Je ne sais pas
+        99.0: np.nan   # Je préfère ne pas répondre
+    })
+    CODEBOOK_VARIABLES['ses_q64a_4'] = {
+        'original_variable': 'q64a_4',
+        'question_label': "Aujourd’hui, êtes-vous propriétaire d’autres biens immobiliers ou propriétés?",
+        'type': 'binary',
+        'value_labels': {
+            'yes': "Oui",
+            'no': "Non"
+        }
+    }
+
     # --- Q64B_4 ---
-    # ses_q64b_4 — Placeholder for Q64B_4
+    # ses_q64b_4 — Parents propriétaires d'autres biens immobiliers (non-locatifs)
     # Source: Q64B_4
     df_clean['ses_q64b_4'] = df['q64b_4'].map({
-        1.0: 'value_1',
-        2.0: 'value_2',
+        1.0: 'yes',
+        2.0: 'no',
+        98.0: np.nan,
         99.0: np.nan
     })
     CODEBOOK_VARIABLES['ses_q64b_4'] = {
         'original_variable': 'q64b_4',
-        'question_label': "Question Q64B_4 (À valider)",
-        'type': 'categorical',
+        'question_label': "Est-ce que vos parents (ou un de vos parents) sont aujourd’hui propriétaires d’autres biens immobiliers ou propriétés?",
+        'type': 'binary',
         'value_labels': {
-            'value_1': "Label 1 (À valider)",
-            'value_2': "Label 2 (À valider)"
+            'yes': "Oui",
+            'no': "Non"
         }
     }
 
     # --- Q64B_5 ---
-    # ses_q64b_5 — Placeholder for Q64B_5
+    # ses_q64b_5 — Parents propriétaires d'un ou plusieurs terrains
     # Source: Q64B_5
     df_clean['ses_q64b_5'] = df['q64b_5'].map({
-        1.0: 'value_1',
-        2.0: 'value_2',
+        1.0: 'yes',
+        2.0: 'no',
+        98.0: np.nan,
         99.0: np.nan
     })
     CODEBOOK_VARIABLES['ses_q64b_5'] = {
         'original_variable': 'q64b_5',
-        'question_label': "Question Q64B_5 (À valider)",
-        'type': 'categorical',
+        'question_label': "Est-ce que vos parents (ou un de vos parents) sont aujourd’hui propriétaires d’un ou de plusieurs terrains?",
+        'type': 'binary',
         'value_labels': {
-            'value_1': "Label 1 (À valider)",
-            'value_2': "Label 2 (À valider)"
+            'yes': "Oui",
+            'no': "Non"
         }
     }
 
