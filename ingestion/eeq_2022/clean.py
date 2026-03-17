@@ -971,6 +971,29 @@ def clean_data(df):
         }
     }
 
+    # --- cps_can_attach ---
+    # cps_can_attach — Degree of attachment to Canada
+    # Source: cps_can_attach
+    df_clean['cps_can_attach'] = df['cps_can_attach'].map({
+        1.0: 'very_attached',
+        2.0: 'quite_attached',
+        3.0: 'not_very_attached',
+        4.0: 'not_at_all_attached',
+        5.0: 'dont_know'
+    })
+    CODEBOOK_VARIABLES['cps_can_attach'] = {
+        'original_variable': 'cps_can_attach',
+        'question_label': "Quel est votre degré d'attachement au Canada?",
+        'type': 'categorical',
+        'value_labels': {
+            'very_attached': "Très attaché",
+            'quite_attached': "Assez attaché",
+            'not_very_attached': "Peu attaché",
+            'not_at_all_attached': "Pas du tout attaché",
+            'dont_know': "Je ne sais pas"
+        }
+    }
+
     # --- cps_RecordedDate ---
     # cps_RecordedDate — When the Campaign Period Survey response was recorded in Qualtrics
     # Source: full_text.txt
