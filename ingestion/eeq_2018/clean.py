@@ -615,6 +615,25 @@ def clean_data(df):
         }
     }
 
+    # --- Q63A_7 ---
+    # ses_financial_assets_retirement_plan — Détient un régime d'épargne-retraite
+    # Source: Q63A_7
+    df_clean['ses_financial_assets_retirement_plan'] = df['q63a_7'].map({
+        1.0: 'yes',
+        2.0: 'no',
+        98.0: np.nan,  # Je ne sais pas
+        99.0: np.nan   # Je préfère ne pas répondre
+    })
+    CODEBOOK_VARIABLES['ses_financial_assets_retirement_plan'] = {
+        'original_variable': 'q63a_7',
+        'question_label': "Régime d’épargne-retraite",
+        'type': 'binary',
+        'value_labels': {
+            'yes': "Oui",
+            'no': "Non"
+        }
+    }
+
     # --- Q63A_6 ---
     # ses_financial_assets_other — Détient d'autres actifs financiers
     # Source: Q63A_6
