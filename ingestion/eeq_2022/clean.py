@@ -1706,16 +1706,16 @@ def clean_data(df):
         'Professional degree or doctorate':                                      'universite',
     })
 
-    # strate_region — depuis cps_postal (code postal 6 caractères → RTA → strate)
-    # Référence : data/fsa_region_qc.csv (généré par jointure spatiale RTA × RA via ISQ)
+    # strate_region — depuis feduid (circonscription fédérale → région admin → strate)
+    # cps_postal absent du .dta v1 (retiré pour confidentialité); feduid est dérivé
+    # du PCCF par les auteurs de l'étude et couvre tous les répondants.
+    # Référence : data/feduid_region_qc.csv (généré par jointure spatiale CEF × RA via ISQ)
     # Cohérent avec le mapping région admin → strate utilisé dans eeq_2018/clean.py
-    _fsa_csv = os.path.join(os.path.dirname(__file__), '..', '..', 'data', 'fsa_region_qc.csv')
-    _fsa_map = pd.read_csv(_fsa_csv, usecols=['fsa', 'strate_region']).set_index('fsa')['strate_region'].to_dict()
-    postal = df['cps_postal'].astype(str).str.strip().str.upper()
-    fsa = postal.str[:3]
-    df_clean['strate_region'] = fsa.map(_fsa_map)
+    _fed_csv = os.path.join(os.path.dirname(__file__), '..', '..', 'data', 'feduid_region_qc.csv')
+    _fed_map = pd.read_csv(_fed_csv, usecols=['feduid', 'strate_region']).set_index('feduid')['strate_region'].to_dict()
+    df_clean['strate_region'] = pd.to_numeric(df['feduid'], errors='coerce').map(_fed_map)
     CODEBOOK_VARIABLES['strate_region'] = {
-        'original_variable': 'cps_postal',
+        'original_variable': 'feduid',
         'question_label': "Région de résidence (strate canonique)",
         'type': 'categorical',
         'value_labels': {
