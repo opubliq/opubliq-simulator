@@ -539,6 +539,25 @@ def clean_data(df):
         }
     }
 
+    # --- Q63B_2 ---
+    # ses_financial_assets_rrsp — Détient un REER
+    # Source: Q63B_2
+    df_clean['ses_financial_assets_rrsp'] = df['q63b_2'].map({
+        1.0: 'yes',
+        2.0: 'no',
+        98.0: np.nan,  # Je ne sais pas
+        99.0: np.nan   # Je préfère ne pas répondre
+    })
+    CODEBOOK_VARIABLES['ses_financial_assets_rrsp'] = {
+        'original_variable': 'q63b_2',
+        'question_label': "REER (Régime enregistré d'épargne-retraite)",
+        'type': 'binary',
+        'value_labels': {
+            'yes': "Oui",
+            'no': "Non"
+        }
+    }
+
     # --- Q70 ---
     # ses_home_language — Langue parlée à la maison
     # Source: Q70
@@ -883,14 +902,14 @@ def clean_data(df):
     })
     CODEBOOK_VARIABLES['behav_vote_hypothetical_2018'] = {
         'original_variable': 'q5a',
-        'question_label': "Si vous aviez été voter le jour de cette election, pour quel parti auriez-vous vote?",
+        'question_label': "Si vous aviez été voter le jour de cette élection, pour quel parti auriez-vous voté?",
         'type': 'categorical',
         'value_labels': {
-            'plq': "Parti liberal du Quebec",
-            'pq': "Parti quebecois",
-            'caq': "Coalition avenir Quebec",
-            'qs': "Quebec solidaire",
-            'spoiled_ballot': "J'aurais annule mon vote",
+            'plq': "Parti libéral du Québec",
+            'pq': "Parti québécois",
+            'caq': "Coalition avenir Québec",
+            'qs': "Québec solidaire",
+            'spoiled_ballot': "J'aurais annulé mon vote",
             'other_party': "Un autre parti"
         }
     }
@@ -905,7 +924,7 @@ def clean_data(df):
     })
     CODEBOOK_VARIABLES['behav_first_choice'] = {
         'original_variable': 'q7',
-        'question_label': "Est-ce que ce parti etait votre premier choix?",
+        'question_label': "Est-ce que ce parti était votre premier choix?",
         'type': 'binary',
         'value_labels': {
             'yes': "Oui",
@@ -932,7 +951,8 @@ def clean_data(df):
             'plq': "Parti libéral du Québec",
             'pq': "Parti québécois",
             'caq': "Coalition avenir Québec",
-            'qs': "Québec solidaire"
+            'qs': "Québec solidaire",
+            'other': "Autre parti"
         }
     }
 
@@ -961,9 +981,9 @@ def clean_data(df):
             'qs': "Québec solidaire",
             'spoiled_ballot': "A annulé son vote",
             'other': "Autre parti",
-             'did_not_vote': "N'a pas voté",
-             'dont_remember': "Ne se rappelle plus"
-         }
+            'did_not_vote': "N'a pas voté",
+            'dont_remember': "Ne se rappelle plus"
+        }
     }
 
     # ========================================================================
