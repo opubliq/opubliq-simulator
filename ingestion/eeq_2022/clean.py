@@ -1326,8 +1326,31 @@ def clean_data(df):
         'missing_codes': {
             -99: "Je ne connais pas le/la candidat"
         },
-        'range_min': 0,
-        'range_max': 100
+         'range_min': 0,
+         'range_max': 100
+     }
+
+    # --- cps_candtherm_DO_25 ---
+    # cps_candtherm_DO_25 — Display order for Candidat(e) péquiste dans votre circonscription in cps_candtherm
+    # Source: cps_candtherm_DO_25
+    df_clean['cps_candtherm_DO_25'] = df['cps_candtherm_DO_25'].map({
+        1.0: 'first',
+        2.0: 'second',
+        3.0: 'third',
+        4.0: 'fourth',
+        5.0: 'fifth'
+    })
+    CODEBOOK_VARIABLES['cps_candtherm_DO_25'] = {
+        'original_variable': 'cps_candtherm_DO_25',
+        'question_label': "Display order for Candidat(e) péquiste dans votre circonscription in cps_candtherm",
+        'type': 'ordinal',
+        'value_labels': {
+            'first': "premier",
+            'second': "deuxième",
+            'third': "troisième",
+            'fourth': "quatrième",
+            'fifth': "cinquième"
+        }
     }
 
     # --- cps_candtherm_27 ---
@@ -1344,6 +1367,29 @@ def clean_data(df):
         },
         'range_min': 0,
         'range_max': 100
+    }
+
+    # --- cps_candtherm_DO_27 ---
+    # cps_candtherm_DO_27 — Display order for Candidat(e) caquiste dans votre circonscription in cps_candtherm
+    # Source: cps_candtherm_DO_27
+    df_clean['cps_candtherm_DO_27'] = df['cps_candtherm_DO_27'].map({
+        1.0: 'first',
+        2.0: 'second',
+        3.0: 'third',
+        4.0: 'fourth',
+        5.0: 'fifth'
+    })
+    CODEBOOK_VARIABLES['cps_candtherm_DO_27'] = {
+        'original_variable': 'cps_candtherm_DO_27',
+        'question_label': "Display order for Candidat(e) caquiste dans votre circonscription in cps_candtherm",
+        'type': 'ordinal',
+        'value_labels': {
+            'first': "premier",
+            'second': "deuxième",
+            'third': "troisième",
+            'fourth': "quatrième",
+            'fifth': "cinquième"
+        }
     }
 
     # --- cps_candtherm_29 ---
