@@ -1,12 +1,12 @@
 #!/usr/bin/env Rscript
-# Génère data/strate_weights_final.csv au format strate_weights Supabase :
-#   age_group | language | region | genre | weight_pct
+# Génère ingestion/weights/strate_weights_final.csv au format strate_weights Supabase :
+#   strate_age_group | strate_langue | strate_region | strate_genre | weight
 #
-# age_group ∈ {18-34, 35-54, 55+}   (note: 18-34 inclut 20-34 car cancensus
-#                                     n'isole pas 18-19 — simplification acceptable)
-# language  ∈ {french, english}
-# region    ∈ {montreal, quebec, couronne, regions}
-# genre     ∈ {male, female}
+# strate_age_group ∈ {18-34, 35-54, 55+}   (note: 18-34 inclut 20-34 car cancensus
+#                                            n'isole pas 18-19 — simplification acceptable)
+# strate_langue    ∈ {francophone, anglo_autre}
+# strate_region    ∈ {montreal, quebec, couronne, regions}
+# strate_genre     ∈ {homme, femme}
 
 library(cancensus)
 library(dplyr)
@@ -35,38 +35,38 @@ region_mapping <- list(
 # ---------------------------------------------------------------------------
 # 2. Vecteurs : âge par genre (5 ans) + langue maternelle (total)
 # ---------------------------------------------------------------------------
-# Triplets (vecteur, genre, age_group_canonique)
+# Triplets (vecteur, strate_genre, strate_age_group_canonique)
 age_spec <- rbind(
-  # Male
-  data.frame(v="v_CA21_90",  genre="male",   ag="18-34"),
-  data.frame(v="v_CA21_108", genre="male",   ag="18-34"),
-  data.frame(v="v_CA21_126", genre="male",   ag="18-34"),
-  data.frame(v="v_CA21_144", genre="male",   ag="35-54"),
-  data.frame(v="v_CA21_162", genre="male",   ag="35-54"),
-  data.frame(v="v_CA21_180", genre="male",   ag="35-54"),
-  data.frame(v="v_CA21_198", genre="male",   ag="35-54"),
-  data.frame(v="v_CA21_216", genre="male",   ag="55+"),
-  data.frame(v="v_CA21_234", genre="male",   ag="55+"),
-  data.frame(v="v_CA21_255", genre="male",   ag="55+"),
-  data.frame(v="v_CA21_273", genre="male",   ag="55+"),
-  data.frame(v="v_CA21_291", genre="male",   ag="55+"),
-  data.frame(v="v_CA21_309", genre="male",   ag="55+"),
-  data.frame(v="v_CA21_327", genre="male",   ag="55+"),
-  # Female
-  data.frame(v="v_CA21_91",  genre="female", ag="18-34"),
-  data.frame(v="v_CA21_109", genre="female", ag="18-34"),
-  data.frame(v="v_CA21_127", genre="female", ag="18-34"),
-  data.frame(v="v_CA21_145", genre="female", ag="35-54"),
-  data.frame(v="v_CA21_163", genre="female", ag="35-54"),
-  data.frame(v="v_CA21_181", genre="female", ag="35-54"),
-  data.frame(v="v_CA21_199", genre="female", ag="35-54"),
-  data.frame(v="v_CA21_217", genre="female", ag="55+"),
-  data.frame(v="v_CA21_235", genre="female", ag="55+"),
-  data.frame(v="v_CA21_256", genre="female", ag="55+"),
-  data.frame(v="v_CA21_274", genre="female", ag="55+"),
-  data.frame(v="v_CA21_292", genre="female", ag="55+"),
-  data.frame(v="v_CA21_310", genre="female", ag="55+"),
-  data.frame(v="v_CA21_328", genre="female", ag="55+"),
+  # Homme
+  data.frame(v="v_CA21_90",  genre="homme", ag="18-34"),
+  data.frame(v="v_CA21_108", genre="homme", ag="18-34"),
+  data.frame(v="v_CA21_126", genre="homme", ag="18-34"),
+  data.frame(v="v_CA21_144", genre="homme", ag="35-54"),
+  data.frame(v="v_CA21_162", genre="homme", ag="35-54"),
+  data.frame(v="v_CA21_180", genre="homme", ag="35-54"),
+  data.frame(v="v_CA21_198", genre="homme", ag="35-54"),
+  data.frame(v="v_CA21_216", genre="homme", ag="55+"),
+  data.frame(v="v_CA21_234", genre="homme", ag="55+"),
+  data.frame(v="v_CA21_255", genre="homme", ag="55+"),
+  data.frame(v="v_CA21_273", genre="homme", ag="55+"),
+  data.frame(v="v_CA21_291", genre="homme", ag="55+"),
+  data.frame(v="v_CA21_309", genre="homme", ag="55+"),
+  data.frame(v="v_CA21_327", genre="homme", ag="55+"),
+  # Femme
+  data.frame(v="v_CA21_91",  genre="femme", ag="18-34"),
+  data.frame(v="v_CA21_109", genre="femme", ag="18-34"),
+  data.frame(v="v_CA21_127", genre="femme", ag="18-34"),
+  data.frame(v="v_CA21_145", genre="femme", ag="35-54"),
+  data.frame(v="v_CA21_163", genre="femme", ag="35-54"),
+  data.frame(v="v_CA21_181", genre="femme", ag="35-54"),
+  data.frame(v="v_CA21_199", genre="femme", ag="35-54"),
+  data.frame(v="v_CA21_217", genre="femme", ag="55+"),
+  data.frame(v="v_CA21_235", genre="femme", ag="55+"),
+  data.frame(v="v_CA21_256", genre="femme", ag="55+"),
+  data.frame(v="v_CA21_274", genre="femme", ag="55+"),
+  data.frame(v="v_CA21_292", genre="femme", ag="55+"),
+  data.frame(v="v_CA21_310", genre="femme", ag="55+"),
+  data.frame(v="v_CA21_328", genre="femme", ag="55+"),
   stringsAsFactors = FALSE
 )
 
@@ -135,27 +135,27 @@ for (rname in names(region_mapping)) {
     ag     <- age_spec$ag[i]
 
     rows[[length(rows)+1]] <- data.frame(
-      age_group = ag, language = "french",
-      region = rname, genre = genre, n = n_ag * frac_fr,
+      strate_age_group = ag, strate_langue = "francophone",
+      strate_region = rname, strate_genre = genre, n = n_ag * frac_fr,
       stringsAsFactors = FALSE)
     rows[[length(rows)+1]] <- data.frame(
-      age_group = ag, language = "english",
-      region = rname, genre = genre, n = n_ag * frac_en,
+      strate_age_group = ag, strate_langue = "anglo_autre",
+      strate_region = rname, strate_genre = genre, n = n_ag * frac_en,
       stringsAsFactors = FALSE)
   }
 }
 
 long <- bind_rows(rows) %>%
-  group_by(age_group, language, region, genre) %>%
+  group_by(strate_age_group, strate_langue, strate_region, strate_genre) %>%
   summarise(n = sum(n, na.rm = TRUE), .groups = "drop")
 
 total_n <- sum(long$n)
 long <- long %>%
-  mutate(weight_pct = round(n / total_n * 100, 2)) %>%
-  select(age_group, language, region, genre, weight_pct)
+  mutate(weight = round(n / total_n * 100, 2)) %>%
+  select(strate_age_group, strate_langue, strate_region, strate_genre, weight)
 
-cat(sprintf("\nRows: %d  |  Sum weight_pct: %.2f%%\n", nrow(long), sum(long$weight_pct)))
-print(long %>% arrange(region, age_group, genre, language), n = Inf)
+cat(sprintf("\nRows: %d  |  Sum weight: %.2f\n", nrow(long), sum(long$weight)))
+print(long %>% arrange(strate_region, strate_age_group, strate_genre, strate_langue), n = Inf)
 
-write_csv(long, "data/strate_weights_final.csv")
-cat("Saved to data/strate_weights_final.csv\n")
+write_csv(long, "ingestion/weights/strate_weights_final.csv")
+cat("Saved to ingestion/weights/strate_weights_final.csv\n")

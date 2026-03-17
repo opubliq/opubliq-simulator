@@ -42,26 +42,26 @@ create table respondents (
 -- Create strate_predictions table
 create table strate_predictions (
   question_id bigint not null references questions(id) on delete cascade,
-  age_group text not null,
-  language text not null,
-  region text not null,
-  genre text not null,
+  strate_age_group text not null,
+  strate_langue text not null,
+  strate_region text not null,
+  strate_genre text not null,
   distribution jsonb not null,
   created_at timestamp with time zone default now(),
   updated_at timestamp with time zone default now(),
-  primary key (question_id, age_group, language, region, genre)
+  primary key (question_id, strate_age_group, strate_langue, strate_region, strate_genre)
 );
 
 -- Create strate_weights table
 create table strate_weights (
-  age_group text not null,
-  language text not null,
-  region text not null,
-  genre text not null,
-  weight_pct numeric(5, 2) not null,
+  strate_age_group text not null,
+  strate_langue text not null,
+  strate_region text not null,
+  strate_genre text not null,
+  weight numeric(5, 2) not null,
   created_at timestamp with time zone default now(),
   updated_at timestamp with time zone default now(),
-  primary key (age_group, language, region, genre)
+  primary key (strate_age_group, strate_langue, strate_region, strate_genre)
 );
 
 -- Create indexes for common queries
