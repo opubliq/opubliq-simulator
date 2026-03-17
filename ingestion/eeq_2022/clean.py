@@ -873,6 +873,20 @@ def clean_data(df):
         }
     }
 
+    # --- cps_lang_1 ---
+    # cps_lang_1 — Anglais language selection (sub-variable of cps_lang)
+    # Source: cps_lang_1
+    df_clean['cps_lang_1'] = df['cps_lang_1']
+    CODEBOOK_VARIABLES['cps_lang_1'] = {
+        'original_variable': 'cps_lang_1',
+        'question_label': "Quelle est la/les première(s) langue(s) que vous avez apprise(s) et que vous parlez encore? (Anglais)",
+        'type': 'categorical',
+        'value_labels': {
+            1: "Selected",
+            -99: "Not selected"
+        }
+    }
+
     return df_clean
 
 def get_metadata():
