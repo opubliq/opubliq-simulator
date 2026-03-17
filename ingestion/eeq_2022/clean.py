@@ -960,6 +960,17 @@ def clean_data(df):
         }
     }
 
+    # --- cps_RecordedDate ---
+    # cps_RecordedDate — When the Campaign Period Survey response was recorded in Qualtrics
+    # Source: full_text.txt
+    df_clean['cps_RecordedDate'] = df['cps_RecordedDate']
+    CODEBOOK_VARIABLES['cps_RecordedDate'] = {
+        'original_variable': 'cps_RecordedDate',
+        'question_label': "When the Campaign Period Survey response was recorded in Qualtrics.",
+        'type': 'continuous',
+        'value_labels': {}
+    }
+
     return df_clean
 
 def get_metadata():
