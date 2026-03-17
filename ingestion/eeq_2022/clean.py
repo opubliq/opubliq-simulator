@@ -152,12 +152,42 @@ def clean_data(df):
     # --- cps_impissue_matrix_DO_2 ---
     # cps_impissue_matrix_DO_2 — Display order for second issue option in cps_impissue_matrix
     # Source: cps_impissue_matrix_DO_2
-    df_clean['cps_impissue_matrix_DO_2'] = df['cps_impissue_matrix_DO_2']
+    df_clean['cps_impissue_matrix_DO_2'] = df['cps_impissue_matrix_DO_2'].map({
+        1.0: 'first',
+        2.0: 'second',
+        3.0: 'third',
+        4.0: 'fourth',
+        5.0: 'fifth',
+        6.0: 'sixth',
+        7.0: 'seventh',
+        8.0: 'eighth',
+        9.0: 'ninth',
+        10.0: 'tenth',
+        11.0: 'eleventh',
+        12.0: 'twelfth',
+        13.0: 'thirteenth',
+        14.0: 'fourteenth'
+    })
     CODEBOOK_VARIABLES['cps_impissue_matrix_DO_2'] = {
         'original_variable': 'cps_impissue_matrix_DO_2',
-        'question_label': "Display order for second issue option in cps_impissue_matrix",
-        'type': 'continuous',
-        'value_labels': {}
+        'question_label': "Display order for second issue option (La santé) in cps_impissue_matrix",
+        'type': 'ordinal',
+        'value_labels': {
+            'first': "premier",
+            'second': "deuxième",
+            'third': "troisième",
+            'fourth': "quatrième",
+            'fifth': "cinquième",
+            'sixth': "sixième",
+            'seventh': "septième",
+            'eighth': "huitième",
+            'ninth': "neuvième",
+            'tenth': "dixième",
+            'eleventh': "onzième",
+            'twelfth': "douzième",
+            'thirteenth': "treizième",
+            'fourteenth': "quatorzième"
+        }
     }
 
     # --- cps_impissue_matrix_DO_3 ---
@@ -172,25 +202,85 @@ def clean_data(df):
     }
 
     # --- cps_impissue_matrix_DO_4 ---
-    # cps_impissue_matrix_DO_4 — Display order for fourth issue option in cps_impissue_matrix
+    # cps_impissue_matrix_DO_4 — Display order for fourth issue option (L'éducation) in cps_impissue_matrix
     # Source: cps_impissue_matrix_DO_4
-    df_clean['cps_impissue_matrix_DO_4'] = df['cps_impissue_matrix_DO_4']
+    df_clean['cps_impissue_matrix_DO_4'] = df['cps_impissue_matrix_DO_4'].map({
+        1.0: 'first',
+        2.0: 'second',
+        3.0: 'third',
+        4.0: 'fourth',
+        5.0: 'fifth',
+        6.0: 'sixth',
+        7.0: 'seventh',
+        8.0: 'eighth',
+        9.0: 'ninth',
+        10.0: 'tenth',
+        11.0: 'eleventh',
+        12.0: 'twelfth',
+        13.0: 'thirteenth',
+        14.0: 'fourteenth'
+    })
     CODEBOOK_VARIABLES['cps_impissue_matrix_DO_4'] = {
         'original_variable': 'cps_impissue_matrix_DO_4',
-        'question_label': "Display order for fourth issue option in cps_impissue_matrix",
-        'type': 'continuous',
-        'value_labels': {}
+        'question_label': "Display order for fourth issue option (L'éducation) in cps_impissue_matrix",
+        'type': 'ordinal',
+        'value_labels': {
+            'first': "premier",
+            'second': "deuxième",
+            'third': "troisième",
+            'fourth': "quatrième",
+            'fifth': "cinquième",
+            'sixth': "sixième",
+            'seventh': "septième",
+            'eighth': "huitième",
+            'ninth': "neuvième",
+            'tenth': "dixième",
+            'eleventh': "onzième",
+            'twelfth': "douzième",
+            'thirteenth': "treizième",
+            'fourteenth': "quatorzième"
+        }
     }
 
     # --- cps_impissue_matrix_DO_5 ---
-    # cps_impissue_matrix_DO_5 — Display order for fifth issue option in cps_impissue_matrix
+    # cps_impissue_matrix_DO_5 — Display order for fifth issue option (La pauvreté) in cps_impissue_matrix
     # Source: cps_impissue_matrix_DO_5
-    df_clean['cps_impissue_matrix_DO_5'] = df['cps_impissue_matrix_DO_5']
+    df_clean['cps_impissue_matrix_DO_5'] = df['cps_impissue_matrix_DO_5'].map({
+        1.0: 'first',
+        2.0: 'second',
+        3.0: 'third',
+        4.0: 'fourth',
+        5.0: 'fifth',
+        6.0: 'sixth',
+        7.0: 'seventh',
+        8.0: 'eighth',
+        9.0: 'ninth',
+        10.0: 'tenth',
+        11.0: 'eleventh',
+        12.0: 'twelfth',
+        13.0: 'thirteenth',
+        14.0: 'fourteenth'
+    })
     CODEBOOK_VARIABLES['cps_impissue_matrix_DO_5'] = {
         'original_variable': 'cps_impissue_matrix_DO_5',
-        'question_label': "Display order for fifth issue option in cps_impissue_matrix",
-        'type': 'continuous',
-        'value_labels': {}
+        'question_label': "Display order for fifth issue option (La pauvreté) in cps_impissue_matrix",
+        'type': 'ordinal',
+        'value_labels': {
+            'first': "premier",
+            'second': "deuxième",
+            'third': "troisième",
+            'fourth': "quatrième",
+            'fifth': "cinquième",
+            'sixth': "sixième",
+            'seventh': "septième",
+            'eighth': "huitième",
+            'ninth': "neuvième",
+            'tenth': "dixième",
+            'eleventh': "onzième",
+            'twelfth': "douzième",
+            'thirteenth': "treizième",
+            'fourteenth': "quatorzième"
+        }
     }
 
     # --- cps_impissue_matrix_DO_6 ---
