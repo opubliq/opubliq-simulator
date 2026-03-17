@@ -558,6 +558,30 @@ def clean_data(df):
         }
     }
 
+    # --- Q63B_3 ---
+    # Note: q63b_3 was not found in the original dataset for eeq_2018 and is not mapped.
+    # --- Q63B_4 ---
+    # Note: q63b_4 was not found in the original dataset for eeq_2018 and is not mapped.
+
+    # --- Q63A_4 ---
+    # ses_financial_assets_stocks — Détient des actions ou parts d’entreprise
+    # Source: Q63A_4
+    df_clean['ses_financial_assets_stocks'] = df['q63a_4'].map({
+        1.0: 'yes',
+        2.0: 'no',
+        98.0: np.nan,  # Je ne sais pas
+        99.0: np.nan   # Je préfère ne pas répondre
+    })
+    CODEBOOK_VARIABLES['ses_financial_assets_stocks'] = {
+        'original_variable': 'q63a_4',
+        'question_label': "Actions ou parts d’entreprise",
+        'type': 'binary',
+        'value_labels': {
+            'yes': "Oui",
+            'no': "Non"
+        }
+    }
+
     # --- Q70 ---
     # ses_home_language — Langue parlée à la maison
     # Source: Q70
@@ -3026,7 +3050,8 @@ def clean_data(df):
             'often': "Souvent",
             'sometimes': 'Parfois',
             'rarely': "Rarement",
-            'never': "Jamais"
+            'never': "Jamais",
+            np.nan: "Je préfère ne pas répondre"
         }
     }
 
@@ -3098,7 +3123,8 @@ def clean_data(df):
             'often': "Souvent",
             'sometimes': 'Parfois',
             'rarely': "Rarement",
-            'never': "Jamais"
+            'never': "Jamais",
+            np.nan: "Je préfère ne pas répondre"
         }
     }
 
