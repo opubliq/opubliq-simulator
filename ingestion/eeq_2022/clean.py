@@ -1323,6 +1323,22 @@ def clean_data(df):
         'range_max': 100
     }
 
+    # --- cps_candtherm_29 ---
+    # cps_candtherm_29 — Candidat(e) solidaire dans votre circonscription
+    # Source: cps_candtherm_29 (feeling thermometer)
+    df_clean['cps_candtherm_29'] = df['cps_candtherm_29']
+    CODEBOOK_VARIABLES['cps_candtherm_29'] = {
+        'original_variable': 'cps_candtherm_29',
+        'question_label': "Sur la même échelle, que pensez-vous des candidat(e)s dans votre circonscription? (Candidat(e) solidaire)",
+        'type': 'ordinal',
+        'value_labels': {},
+        'missing_codes': {
+            -99: "Je ne connais pas le/la candidat"
+        },
+        'range_min': 0,
+        'range_max': 100
+    }
+
     return df_clean
 
 def get_metadata():
