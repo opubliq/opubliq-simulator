@@ -48,6 +48,29 @@ def clean_data(df):
     """
     df_clean = pd.DataFrame(index=df.index)
 
+    # --- cps_ideoself_1 ---
+    # cps_ideoself_1 — Auto-identification gauche/droite
+    # Source: cps_ideoself_1
+    df_clean['cps_ideoself_1'] = df['cps_ideoself_1']
+    CODEBOOK_VARIABLES['cps_ideoself_1'] = {
+        'original_variable': 'cps_ideoself_1',
+        'question_label': "En politique, on parle parfois de gauche et de droite. Où vous placeriez-vous",
+        'type': 'ordinal',
+        'value_labels': {
+            0: "Gauche",
+            1: "1",
+            2: "2",
+            3: "3",
+            4: "4",
+            5: "5",
+            6: "6",
+            7: "7",
+            8: "8",
+            9: "9",
+            10: "Droite"
+        }
+    }
+
     # --- cps_impissue_matrix ---
     # cps_impissue_matrix — Quel est l'enjeu le plus important, pour vous personnellement
     # Source: cps_impissue_matrix
@@ -173,6 +196,29 @@ def clean_data(df):
     CODEBOOK_VARIABLES['cps_ideoparty_DO_5'] = {
         'original_variable': 'cps_ideoparty_DO_5',
         'question_label': "Display order for Coalition avenir Québec in cps_ideoparty",
+        'type': 'ordinal',
+        'value_labels': {
+            'first': "premier",
+            'second': "deuxième",
+            'third': "troisième",
+            'fourth': "quatrième",
+            'fifth': "cinquième"
+        }
+    }
+
+    # --- cps_ideoparty_DO_8 ---
+    # cps_ideoparty_DO_8 — Display order for Parti conservateur du Québec in cps_ideoparty
+    # Source: cps_ideoparty_DO_8
+    df_clean['cps_ideoparty_DO_8'] = df['cps_ideoparty_DO_8'].map({
+        1.0: 'first',
+        2.0: 'second',
+        3.0: 'third',
+        4.0: 'fourth',
+        5.0: 'fifth'
+    })
+    CODEBOOK_VARIABLES['cps_ideoparty_DO_8'] = {
+        'original_variable': 'cps_ideoparty_DO_8',
+        'question_label': "Display order for Parti conservateur du Québec in cps_ideoparty",
         'type': 'ordinal',
         'value_labels': {
             'first': "premier",
