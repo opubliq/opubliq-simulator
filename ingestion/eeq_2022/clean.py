@@ -796,6 +796,29 @@ def clean_data(df):
         }
     }
 
+    # --- cps_cares_1 ---
+    # cps_cares_1 — For each of the party leaders below, please indicate whether you agree or disagree
+    # Source: cps_cares
+    df_clean['cps_cares_1'] = df['cps_cares_1'].map({
+        1.0: 'strongly_disagree',
+        2.0: 'somewhat_disagree',
+        3.0: 'neutral',
+        4.0: 'somewhat_agree',
+        5.0: 'strongly_agree'
+    })
+    CODEBOOK_VARIABLES['cps_cares_1'] = {
+        'original_variable': 'cps_cares_1',
+        'question_label': "Pour chacun(e) des chef(fe)s de parti suivant(e)s, indiquez si vous êtes en accord ou en désaccord avec l'énoncé suivant: Il(elle) se soucie vraiment des gens comme vous? (Dominique Anglade)",
+        'type': 'categorical',
+        'value_labels': {
+            'strongly_disagree': "Fortement en désaccord",
+            'somewhat_disagree': "Plutôt en désaccord",
+            'neutral': "Ni en accord, ni en désaccord",
+            'somewhat_agree': "Plutôt en accord",
+            'strongly_agree': "Fortement en accord"
+        }
+     }
+
     # --- cps_income2 ---
     # cps_income2 — Revenu du ménage (catégories)
     # Source: cps_income2
