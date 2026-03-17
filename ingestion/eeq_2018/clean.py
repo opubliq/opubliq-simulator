@@ -587,6 +587,24 @@ def clean_data(df):
         }
     }
 
+    # --- Q64B_5 ---
+    # ses_q64b_5 — Placeholder for Q64B_5
+    # Source: Q64B_5
+    df_clean['ses_q64b_5'] = df['q64b_5'].map({
+        1.0: 'value_1',
+        2.0: 'value_2',
+        99.0: np.nan
+    })
+    CODEBOOK_VARIABLES['ses_q64b_5'] = {
+        'original_variable': 'q64b_5',
+        'question_label': "Question Q64B_5 (À valider)",
+        'type': 'categorical',
+        'value_labels': {
+            'value_1': "Label 1 (À valider)",
+            'value_2': "Label 2 (À valider)"
+        }
+    }
+
     # ========================================================================
     # POLITICAL OPINIONS / ATTITUDES (op_*)
     # ========================================================================
