@@ -3398,16 +3398,14 @@ def clean_data(df):
     # op_ethnic_origin_middle_east — Origine ethnique: Moyen-Orient
     # Source: Q71_12
     df_clean['op_ethnic_origin_middle_east'] = df['q71_12'].map({
-        1.0: 'selected',
-        0.0: 'not_selected'
+        1.0: 'selected'
     })
     CODEBOOK_VARIABLES['op_ethnic_origin_middle_east'] = {
         'original_variable': 'q71_12',
         'question_label': "De quelle origine ethnique êtes-vous? Moyen-Orient, sauf l'Afrique du Nord (Jordanie, Arabie Saoudite, Irak, Liban,...)",
         'type': 'binary',
         'value_labels': {
-            'selected': "Sélectionné",
-            'not_selected': "Non sélectionné"
+            'selected': "Sélectionné"
         }
     }
 
