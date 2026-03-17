@@ -11,6 +11,7 @@ Les métadonnées enrichies sont sauvegardées comme codebook.json dans S3 et ut
 par les marts downstream pour l'interprétation sémantique des données.
 """
 
+import os
 import pandas as pd
 import numpy as np
 
@@ -1705,7 +1706,25 @@ def clean_data(df):
         'Professional degree or doctorate':                                      'universite',
     })
 
-    # strate_region → voir issue opubliq-simulator-3gh (mapping code postal → région)
+    # strate_region — depuis cps_postal (code postal 6 caractères → RTA → strate)
+    # Référence : data/fsa_region_qc.csv (généré par jointure spatiale RTA × RA via ISQ)
+    # Cohérent avec le mapping région admin → strate utilisé dans eeq_2018/clean.py
+    _fsa_csv = os.path.join(os.path.dirname(__file__), '..', '..', 'data', 'fsa_region_qc.csv')
+    _fsa_map = pd.read_csv(_fsa_csv, usecols=['fsa', 'strate_region']).set_index('fsa')['strate_region'].to_dict()
+    postal = df['cps_postal'].astype(str).str.strip().str.upper()
+    fsa = postal.str[:3]
+    df_clean['strate_region'] = fsa.map(_fsa_map)
+    CODEBOOK_VARIABLES['strate_region'] = {
+        'original_variable': 'cps_postal',
+        'question_label': "Région de résidence (strate canonique)",
+        'type': 'categorical',
+        'value_labels': {
+            'montreal': "Montréal (île + Laval)",
+            'couronne': "Couronne de Montréal",
+            'quebec':   "Québec (Capitale-Nationale)",
+            'regions':  "Régions du Québec",
+        },
+    }
 
     return df_clean
 
