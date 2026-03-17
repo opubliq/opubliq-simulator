@@ -871,6 +871,25 @@ def clean_data(df):
             'somewhat_agree': "Plutôt en accord",
             'strongly_agree': "Fortement en accord"
         }
+     }
+
+    # --- cps_langQC ---
+    # cps_langQC — Selon vous, la langue française est-elle menacée au Québec?
+    # Source: cps_langQC
+    df_clean['cps_langQC'] = df['cps_langQC'].map({
+        1.0: 'yes',
+        2.0: 'no',
+        3.0: 'dont_know'
+    })
+    CODEBOOK_VARIABLES['cps_langQC'] = {
+        'original_variable': 'cps_langQC',
+        'question_label': "Selon vous, la langue française est-elle menacée au Québec?",
+        'type': 'categorical',
+        'value_labels': {
+            'yes': "Oui",
+            'no': "Non",
+            'dont_know': "Je ne sais pas"
+        }
     }
 
     # --- cps_lang_1 ---

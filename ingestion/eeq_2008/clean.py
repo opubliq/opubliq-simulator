@@ -176,6 +176,7 @@ def clean_data(raw_path: str) -> pd.DataFrame:
     # ses_age_group — Âge du répondant (catégories)
     # Source: q0age
     df_clean['ses_age_group'] = df['q0age'].map({
+        1.0: 'less_than_18',
         2.0: '18-24',
         3.0: '25-34',
         4.0: '35-44',
@@ -190,6 +191,7 @@ def clean_data(raw_path: str) -> pd.DataFrame:
         'question_label': "Quel âge avez-vous ?",
         'type': 'categorical',
         'value_labels': {
+            'less_than_18': "Moins de 18 ans",
             '18-24': "Entre 18 et 24 ans",
             '25-34': "Entre 25 et 34 ans",
             '35-44': "Entre 35 et 44 ans",
