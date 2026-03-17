@@ -1557,9 +1557,23 @@ def clean_data(df):
         'value_labels': {
             'only_canada_not_quebec': "Uniquement comme Canadien(ne), pas du tout comme Québécois(e)",
             'first_canada_then_quebec': "D'abord comme Canadien(ne), puis comme Québécois(e)",
-            'equally_canada_and_quebec': "É également comme Canadien(ne) et comme Québécois(e)",
+            'equally_canada_and_quebec': "Également comme Canadien(ne) et comme Québécois(e)",
             'first_quebec_then_canada': "D'abord comme Québécois(e), puis comme Canadien(ne)",
-            'only_quebec_not_canada': "Uniquement comme Québécois(e), pas du tout comme Canadien(ne)"
+             'only_quebec_not_canada': "Uniquement comme Québécois(e), pas du tout comme Canadien(ne)"
+         }
+     }
+
+    # --- Q21 ---
+    # op_distinct_values — Distinctness of Québécois values (0-10 scale)
+    # Source: Q21
+    df_clean['op_distinct_values'] = pd.to_numeric(df['q21'], errors='coerce')
+    CODEBOOK_VARIABLES['op_distinct_values'] = {
+        'original_variable': 'q21',
+        'question_label': "Où vous situez-vous sur une échelle de 0 à 10, où 0 veut dire que les Québécois ont des valeurs et priorités distinctes et 10 veut dire que les Québécois ont les mêmes valeurs que les autres Canadiens?",
+        'type': 'numeric',
+        'value_labels': {
+            0: "Valeurs distinctes",
+            10: "Mêmes valeurs"
         }
     }
 
@@ -1924,7 +1938,7 @@ def clean_data(df):
         'question_label': "Sur une échelle allant de 0 à 10, où 0 est le plus à gauche et 10 est le plus à droite, où placeriez-vous le Parti libéral du Québec?",
         'type': 'ordinal',
         'value_labels': {}
-    }
+     }
 
     # --- Q35_2 ---
     # op_party_placement_pq — Party placement: Parti québécois
@@ -1961,27 +1975,6 @@ def clean_data(df):
 
     # ========================================================================
     # CONTINUE WITH ALL REMAINING VARIABLES
-    df_clean['op_politician_rating_philippe_couillard'] = pd.to_numeric(df['q33a'], errors='coerce')
-    CODEBOOK_VARIABLES['op_politician_rating_philippe_couillard'] = {
-        'original_variable': 'q33a',
-        'question_label': "Sur une échelle de 0 à 10, où 0 veut dire que vous N’AIMEZ VRAIMENT PAS DU TOUT un politicien, et 10 veut dire que vous L’AIMEZ VRAIMENT BEAUCOUP, que pensez-vous de Philippe Couillard?",
-        'type': 'ordinal',
-        'value_labels': {}
-    }
-
-    # --- Q33 ---
-    # op_politician_rating_jean_francois_lisee — Évaluation de Jean-François Lisée
-    # Source: Q33b
-    df_clean['op_politician_rating_jean_francois_lisee'] = pd.to_numeric(df['q33b'], errors='coerce')
-    CODEBOOK_VARIABLES['op_politician_rating_jean_francois_lisee'] = {
-        'original_variable': 'q33b',
-        'question_label': "Sur une échelle de 0 à 10, où 0 veut dire que vous N’AIMEZ VRAIMENT PAS DU TOUT un politicien, et 10 veut dire que vous L’AIMEZ VRAIMENT BEAUCOUP, que pensez-vous de Jean-François Lisée?",
-        'type': 'ordinal',
-        'value_labels': {}
-    }
-
-    # ========================================================================
-    # CONTINUE WITH ALL REMAINING VARIABLES
     # op_gov_satisfaction — Satisfaction envers le gouvernement libéral
     # Source: Q10
     df_clean['op_gov_satisfaction'] = df['q10'].map({
@@ -1993,16 +1986,16 @@ def clean_data(df):
         9.0: np.nan
     })
     CODEBOOK_VARIABLES['op_gov_satisfaction'] = {
-         'original_variable': 'q10',
-         'question_label': "Quel est votre niveau global de satisfaction envers la performance du gouvernement libéral de Philippe Couillard?",
-         'type': 'ordinal',
-         'value_labels': {
-             'very_satisfied': "Très satisfait(e)",
-             'somewhat_satisfied': "Assez satisfait(e)",
-             'not_very_satisfied': "Peu satisfait(e)",
-             'not_at_all_satisfied': "Pas du tout satisfait(e)"
-         }
-     }
+        'original_variable': 'q10',
+        'question_label': "Quel est votre niveau global de satisfaction envers la performance du gouvernement libéral de Philippe Couillard?",
+        'type': 'ordinal',
+        'value_labels': {
+            'very_satisfied': "Très satisfait(e)",
+            'somewhat_satisfied': "Assez satisfait(e)",
+            'not_very_satisfied': "Peu satisfait(e)",
+            'not_at_all_satisfied': "Pas du tout satisfait(e)"
+        }
+    }
 
     # --- Q11_1 ---
     # op_responsibility_education — Palier de gouvernement responsable de l'éducation
