@@ -596,6 +596,25 @@ def clean_data(df):
         }
     }
 
+    # --- Q63A_5 ---
+    # ses_financial_assets_mutual_funds — Détient des fonds communs de placement
+    # Source: Q63A_5
+    df_clean['ses_financial_assets_mutual_funds'] = df['q63a_5'].map({
+        1.0: 'yes',
+        2.0: 'no',
+        98.0: np.nan,  # Je ne sais pas
+        99.0: np.nan   # Je préfère ne pas répondre
+    })
+    CODEBOOK_VARIABLES['ses_financial_assets_mutual_funds'] = {
+        'original_variable': 'q63a_5',
+        'question_label': "Fonds communs de placement ou autres fonds d’investissement",
+        'type': 'binary',
+        'value_labels': {
+            'yes': "Oui",
+            'no': "Non"
+        }
+    }
+
     # --- Q70 ---
     # ses_home_language — Langue parlée à la maison
     # Source: Q70
