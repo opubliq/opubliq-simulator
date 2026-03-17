@@ -569,6 +569,24 @@ def clean_data(df):
         }
     }
 
+    # --- Q64B_4 ---
+    # ses_q64b_4 — Placeholder for Q64B_4
+    # Source: Q64B_4
+    df_clean['ses_q64b_4'] = df['q64b_4'].map({
+        1.0: 'value_1',
+        2.0: 'value_2',
+        99.0: np.nan
+    })
+    CODEBOOK_VARIABLES['ses_q64b_4'] = {
+        'original_variable': 'q64b_4',
+        'question_label': "Question Q64B_4 (À valider)",
+        'type': 'categorical',
+        'value_labels': {
+            'value_1': "Label 1 (À valider)",
+            'value_2': "Label 2 (À valider)"
+        }
+    }
+
     # ========================================================================
     # POLITICAL OPINIONS / ATTITUDES (op_*)
     # ========================================================================
@@ -3380,14 +3398,16 @@ def clean_data(df):
     # op_ethnic_origin_middle_east — Origine ethnique: Moyen-Orient
     # Source: Q71_12
     df_clean['op_ethnic_origin_middle_east'] = df['q71_12'].map({
-        1.0: 'selected'
+        1.0: 'selected',
+        0.0: 'not_selected'
     })
     CODEBOOK_VARIABLES['op_ethnic_origin_middle_east'] = {
         'original_variable': 'q71_12',
         'question_label': "De quelle origine ethnique êtes-vous? Moyen-Orient, sauf l'Afrique du Nord (Jordanie, Arabie Saoudite, Irak, Liban,...)",
         'type': 'binary',
         'value_labels': {
-            'selected': "Sélectionné"
+            'selected': "Sélectionné",
+            'not_selected': "Non sélectionné"
         }
     }
 
