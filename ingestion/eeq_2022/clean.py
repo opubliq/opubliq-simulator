@@ -1291,6 +1291,29 @@ def clean_data(df):
         'range_max': 100
     }
 
+    # --- cps_candtherm_DO_23 ---
+    # cps_candtherm_DO_23 — Display order for Candidat(e) libéral(e) dans votre circonscription in cps_candtherm
+    # Source: cps_candtherm_DO_23
+    df_clean['cps_candtherm_DO_23'] = df['cps_candtherm_DO_23'].map({
+        1.0: 'first',
+        2.0: 'second',
+        3.0: 'third',
+        4.0: 'fourth',
+        5.0: 'fifth'
+    })
+    CODEBOOK_VARIABLES['cps_candtherm_DO_23'] = {
+        'original_variable': 'cps_candtherm_DO_23',
+        'question_label': "Display order for Candidat(e) libéral(e) dans votre circonscription in cps_candtherm",
+        'type': 'ordinal',
+        'value_labels': {
+            'first': "premier",
+            'second': "deuxième",
+            'third': "troisième",
+            'fourth': "quatrième",
+            'fifth': "cinquième"
+        }
+    }
+
     # --- cps_candtherm_25 ---
     # cps_candtherm_25 — Candidat(e) péquiste dans votre circonscription
     # Source: cps_candtherm_25 (feeling thermometer)
