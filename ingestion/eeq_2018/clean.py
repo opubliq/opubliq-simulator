@@ -827,6 +827,121 @@ def clean_data(df):
          }
     }
 
+    # ========================================================================
+    # Q41-Q60: CORE POLITICAL ATTITUDES BLOCK
+    # ========================================================================
+
+    # --- Q41 ---
+    # op_taxes_vs_services — Préférence taxation vs services gouvernementaux
+    # Source: Q41
+    df_clean['op_taxes_vs_services'] = pd.to_numeric(df['q41'], errors='coerce')
+    CODEBOOK_VARIABLES['op_taxes_vs_services'] = {
+        'original_variable': 'q41',
+        'question_label': "Préférez-vous un État imposant beaucoup de taxes servant à financer plus de services gouvernementaux ou un État n'imposant pas beaucoup de taxes mais offrant moins de services?",
+        'type': 'ordinal',
+        'value_labels': {
+            0: "Beaucoup de taxes et plus de services",
+            5: "Pas beaucoup de taxes mais moins de services"
+        }
+    }
+
+    # --- Q42 ---
+    # op_abortion_difficulty — Difficulté d'obtenir un avortement
+    # Source: Q42
+    df_clean['op_abortion_difficulty'] = df['q42'].map({
+        1.0: 'too_easy',
+        2.0: 'just_right',
+        3.0: 'too_difficult',
+        98.0: np.nan,
+        99.0: np.nan
+    })
+    CODEBOOK_VARIABLES['op_abortion_difficulty'] = {
+        'original_variable': 'q42',
+        'question_label': "Selon vous, est-ce qu'obtenir un avortement est...",
+        'type': 'categorical',
+        'value_labels': {
+            'too_easy': "Trop facile",
+            'just_right': "Ni trop facile, ni trop difficile",
+            'too_difficult': "Trop difficile"
+        }
+    }
+
+    # --- Q43 ---
+    # op_same_sex_adoption — Adoption par des conjoints de même sexe
+    # Source: Q43
+    df_clean['op_same_sex_adoption'] = df['q43'].map({
+        1.0: 'for',
+        2.0: 'against',
+        98.0: np.nan,
+        99.0: np.nan
+    })
+    CODEBOOK_VARIABLES['op_same_sex_adoption'] = {
+        'original_variable': 'q43',
+        'question_label': "Êtes-vous pour ou contre l'adoption d'enfants par des conjoints de même sexe?",
+        'type': 'binary',
+        'value_labels': {
+            'for': "Pour",
+            'against': "Contre"
+        }
+    }
+
+    # --- Q44 ---
+    # op_ban_religious_signs — Interdiction des signes religieux visibles
+    # Source: Q44
+    df_clean['op_ban_religious_signs'] = df['q44'].map({
+        1.0: 'yes',
+        2.0: 'no',
+        98.0: np.nan,
+        99.0: np.nan
+    })
+    CODEBOOK_VARIABLES['op_ban_religious_signs'] = {
+        'original_variable': 'q44',
+        'question_label': "Selon vous, devrait-on interdire le port de signes religieux visibles pour les employés de la fonction publique au Québec?",
+        'type': 'binary',
+        'value_labels': {
+            'yes': "Oui",
+            'no': "Non"
+        }
+    }
+
+    # --- Q45 ---
+    # op_death_penalty — Position sur la peine de mort
+    # Source: Q45
+    df_clean['op_death_penalty'] = df['q45'].map({
+        1.0: 'for',
+        2.0: 'against',
+        98.0: np.nan,
+        99.0: np.nan
+    })
+    CODEBOOK_VARIABLES['op_death_penalty'] = {
+        'original_variable': 'q45',
+        'question_label': "Êtes-vous pour ou contre la peine de mort?",
+        'type': 'binary',
+        'value_labels': {
+            'for': "Pour",
+            'against': "Contre"
+        }
+    }
+
+    # --- Q46 ---
+    # op_cannabis_legalization — Légalisation du cannabis
+    # Source: Q46
+    df_clean['op_cannabis_legalization'] = df['q46'].map({
+        1.0: 'for',
+        2.0: 'against',
+        98.0: np.nan,
+        99.0: np.nan
+    })
+    CODEBOOK_VARIABLES['op_cannabis_legalization'] = {
+        'original_variable': 'q46',
+        'question_label': "Êtes-vous pour ou contre la légalisation du cannabis (marijuana)?",
+        'type': 'binary',
+        'value_labels': {
+            'for': "Pour",
+            'against': "Contre"
+        }
+    }
+
     # --- Q47 ---
     # op_gov_employment_role — Rôle du gouvernement dans l'emploi et la qualité de vie
     # Source: Q47
@@ -850,6 +965,44 @@ def clean_data(df):
              'neutral': "Position neutre",
              'people_lean_self_reliant': "Penche vers les gens devraient se débrouiller",
              'people_should_fend_for_themselves': "Les gens devraient se débrouiller par eux-mêmes"
+        }
+    }
+
+    # --- Q48 ---
+    # op_crucifix_assembly_national — Crucifix à l'Assemblée nationale
+    # Source: Q48
+    df_clean['op_crucifix_assembly_national'] = df['q48'].map({
+        1.0: 'keep',
+        2.0: 'remove',
+        98.0: np.nan,
+        99.0: np.nan
+    })
+    CODEBOOK_VARIABLES['op_crucifix_assembly_national'] = {
+        'original_variable': 'q48',
+        'question_label': "Certaines personnes pensent que le crucifix à l'Assemblée nationale doit être laissé en place pour refléter l'histoire du Québec. D'autres pensent qu'il devrait être retiré pour affirmer que le Québec est une société laïque. Quelle est votre propre opinion à ce sujet?",
+        'type': 'binary',
+        'value_labels': {
+            'keep': "Le crucifix doit être laissé en place",
+            'remove': "Le crucifix devrait être retiré"
+        }
+    }
+
+    # --- Q49 ---
+    # op_integration_vs_diversity — Intégration vs diversité des immigrants
+    # Source: Q49
+    df_clean['op_integration_vs_diversity'] = df['q49'].map({
+        1.0: 'integrate',
+        2.0: 'maintain_diversity',
+        98.0: np.nan,
+        99.0: np.nan
+    })
+    CODEBOOK_VARIABLES['op_integration_vs_diversity'] = {
+        'original_variable': 'q49',
+        'question_label': "Il existe des opinions différentes à propos de ceux qui viennent de l'extérieur du Québec, qui ont différentes coutumes, religions et traditions. Croyez-vous qu'il vaut mieux que ces nouveaux arrivants essaient de s'adapter et de s'intégrer à la culture locale? Ou vaut-il mieux qu'ils restent différents et qu'ils contribuent à la diversité des coutumes et traditions locales?",
+        'type': 'binary',
+        'value_labels': {
+            'integrate': "Les nouveaux arrivants devraient s'adapter et s'intégrer",
+            'maintain_diversity': "Les nouveaux arrivants devraient rester différents et contribuer à la diversité"
         }
     }
 
@@ -3269,11 +3422,266 @@ def clean_data(df):
         'value_labels': {
             'selected': "Sélectionné"
         }
-    }
+     }
 
     # ========================================================================
-    # BEHAVIORAL - Party best for issues/groups (Q51A, Q52)
+    # Q53-Q60: ECONOMIC & IDENTITY ATTITUDES
     # ========================================================================
+
+    # --- Q53 ---
+    # op_economy_last_year — Situation économique du Québec au cours de la dernière année
+    # Source: Q53
+    df_clean['op_economy_last_year'] = df['q53'].map({
+        1.0: 'improved',
+        2.0: 'deteriorated',
+        3.0: 'remained_same',
+        98.0: np.nan,
+        99.0: np.nan
+    })
+    CODEBOOK_VARIABLES['op_economy_last_year'] = {
+        'original_variable': 'q53',
+        'question_label': "Selon vous, l'économie du Québec s'est-elle améliorée, détériorée ou est-elle restée à peu près la même depuis un an?",
+        'type': 'categorical',
+        'value_labels': {
+            'improved': "S'est améliorée",
+            'deteriorated': "S'est détériorée",
+            'remained_same': "Restée à peu près la même"
+        }
+    }
+
+    # --- Q54 ---
+    # op_economy_if_independent — Situation économique si le Québec devenait indépendant
+    # Source: Q54
+    df_clean['op_economy_if_independent'] = df['q54'].map({
+        1.0: 'would_improve',
+        2.0: 'would_deteriorate',
+        3.0: 'would_remain_same',
+        98.0: np.nan,
+        99.0: np.nan
+    })
+    CODEBOOK_VARIABLES['op_economy_if_independent'] = {
+        'original_variable': 'q54',
+        'question_label': "Si le Québec devenait un pays indépendant, croyez-vous que la situation économique au Québec s'améliorerait, se détériorerait ou resterait à peu près la même?",
+        'type': 'categorical',
+        'value_labels': {
+            'would_improve': "S'améliorerait",
+            'would_deteriorate': "Se détériorerait",
+            'would_remain_same': "Resterait à peu près la même"
+        }
+    }
+
+    # --- Q55A ---
+    # op_priority_most_important — Objectif politique le plus important
+    # Source: Q55A
+    df_clean['op_priority_most_important'] = df['q55a'].map({
+        1.0: 'maintain_order',
+        2.0: 'citizen_voice',
+        3.0: 'fight_inflation',
+        4.0: 'protect_freedom_expression',
+        98.0: np.nan,
+        99.0: np.nan
+    })
+    CODEBOOK_VARIABLES['op_priority_most_important'] = {
+        'original_variable': 'q55a',
+        'question_label': "Voici quelques objectifs pour le Québec. Pourriez-vous me dire lequel d'après vous est le plus important?",
+        'type': 'categorical',
+        'value_labels': {
+            'maintain_order': "Maintenir l'ordre dans la nation",
+            'citizen_voice': "Donner plus de voix aux citoyens dans les décisions politiques importantes",
+            'fight_inflation': "Combattre l'augmentation des prix",
+            'protect_freedom_expression': "Protéger la liberté d'expression"
+        }
+    }
+
+    # --- Q55B ---
+    # op_priority_second_most_important — Deuxième objectif politique le plus important
+    # Source: Q55B
+    df_clean['op_priority_second_most_important'] = df['q55b'].map({
+        1.0: 'maintain_order',
+        2.0: 'citizen_voice',
+        3.0: 'fight_inflation',
+        4.0: 'protect_freedom_expression',
+        98.0: np.nan,
+        99.0: np.nan
+    })
+    CODEBOOK_VARIABLES['op_priority_second_most_important'] = {
+        'original_variable': 'q55b',
+        'question_label': "Et lequel est le deuxième objectif plus important?",
+        'type': 'categorical',
+        'value_labels': {
+            'maintain_order': "Maintenir l'ordre dans la nation",
+            'citizen_voice': "Donner plus de voix aux citoyens dans les décisions politiques importantes",
+            'fight_inflation': "Combattre l'augmentation des prix",
+            'protect_freedom_expression': "Protéger la liberté d'expression"
+        }
+    }
+
+    # --- Q56 ---
+    # op_party_identity — Identité politique / affiliation partisane
+    # Source: Q56
+    df_clean['op_party_identity'] = df['q56'].map({
+        1.0: 'liberal',
+        2.0: 'pequiste',
+        3.0: 'caquiste',
+        4.0: 'solidaire',
+        97.0: 'none',
+        98.0: np.nan,
+        99.0: np.nan
+    })
+    CODEBOOK_VARIABLES['op_party_identity'] = {
+        'original_variable': 'q56',
+        'question_label': "En politique provinciale, vous considérez-vous habituellement comme un...?",
+        'type': 'categorical',
+        'value_labels': {
+            'liberal': "Libéral",
+            'pequiste': "Péquiste",
+            'caquiste': "Caquiste",
+            'solidaire': "Solidaire",
+            'none': "Rien de cela"
+        }
+    }
+
+    # --- Q57 ---
+    # op_party_strength_identification — Force de l'identification partisane
+    # Source: Q57
+    df_clean['op_party_strength_identification'] = df['q57'].map({
+        1.0: 'very_strong',
+        2.0: 'somewhat_strong',
+        3.0: 'not_very_strong',
+        98.0: np.nan,
+        99.0: np.nan
+    })
+    CODEBOOK_VARIABLES['op_party_strength_identification'] = {
+        'original_variable': 'q57',
+        'question_label': "Vous sentez-vous très fortement, assez fortement, ou pas très fortement [partisan de votre parti choisi]?",
+        'type': 'ordinal',
+        'value_labels': {
+            'very_strong': "Très fortement",
+            'somewhat_strong': "Assez fortement",
+            'not_very_strong': "Pas très fortement"
+        }
+    }
+
+    # --- Q58 ---
+    # op_risk_tolerance — Propension à prendre des risques
+    # Source: Q58
+    df_clean['op_risk_tolerance'] = df['q58'].map({
+        1.0: 'very_easy',
+        2.0: 'somewhat_easy',
+        3.0: 'somewhat_difficult',
+        4.0: 'very_difficult',
+        98.0: np.nan,
+        99.0: np.nan
+    })
+    CODEBOOK_VARIABLES['op_risk_tolerance'] = {
+        'original_variable': 'q58',
+        'question_label': "En général, à quel point est-il facile ou difficile pour vous d'accepter de prendre des risques?",
+        'type': 'ordinal',
+        'value_labels': {
+            'very_easy': "Très facile",
+            'somewhat_easy': "Plutôt facile",
+            'somewhat_difficult': "Plutôt difficile",
+            'very_difficult': "Très difficile"
+        }
+    }
+
+    # --- Q59_1 ---
+    # op_adventure_seeking_places — Aime explorer des endroits étranges
+    # Source: Q59_1
+    df_clean['op_adventure_seeking_places'] = df['q59_1'].map({
+        1.0: 'strongly_disagree',
+        2.0: 'somewhat_disagree',
+        3.0: 'neither_agree_nor_disagree',
+        4.0: 'somewhat_agree',
+        5.0: 'strongly_agree',
+        98.0: np.nan,
+        99.0: np.nan
+    })
+    CODEBOOK_VARIABLES['op_adventure_seeking_places'] = {
+        'original_variable': 'q59_1',
+        'question_label': "Veuillez indiquer à quel point vous êtes d'accord ou non avec l'énoncé suivant: Je voudrais explorer des endroits étranges, différents.",
+        'type': 'ordinal',
+        'value_labels': {
+            'strongly_disagree': "Tout à fait en désaccord",
+            'somewhat_disagree': "Plutôt en désaccord",
+            'neither_agree_nor_disagree': "Ni en désaccord ni d'accord",
+            'somewhat_agree': "Plutôt d'accord",
+            'strongly_agree': "Tout à fait d'accord"
+        }
+    }
+
+    # --- Q59_2 ---
+    # op_adventure_seeking_thrills — Aime faire des choses qui donnent des sensations fortes
+    # Source: Q59_2
+    df_clean['op_adventure_seeking_thrills'] = df['q59_2'].map({
+        1.0: 'strongly_disagree',
+        2.0: 'somewhat_disagree',
+        3.0: 'neither_agree_nor_disagree',
+        4.0: 'somewhat_agree',
+        5.0: 'strongly_agree',
+        98.0: np.nan,
+        99.0: np.nan
+    })
+    CODEBOOK_VARIABLES['op_adventure_seeking_thrills'] = {
+        'original_variable': 'q59_2',
+        'question_label': "Veuillez indiquer à quel point vous êtes d'accord ou non avec l'énoncé suivant: J'aime faire des choses qui donnent des sensations fortes.",
+        'type': 'ordinal',
+        'value_labels': {
+            'strongly_disagree': "Tout à fait en désaccord",
+            'somewhat_disagree': "Plutôt en désaccord",
+            'neither_agree_nor_disagree': "Ni en désaccord ni d'accord",
+            'somewhat_agree': "Plutôt d'accord",
+            'strongly_agree': "Tout à fait d'accord"
+        }
+    }
+
+    # --- Q59_3 ---
+    # op_adventure_seeking_excitement — Aime expériences nouvelles et excitantes
+    # Source: Q59_3
+    df_clean['op_adventure_seeking_excitement'] = df['q59_3'].map({
+        1.0: 'strongly_disagree',
+        2.0: 'somewhat_disagree',
+        3.0: 'neither_agree_nor_disagree',
+        4.0: 'somewhat_agree',
+        5.0: 'strongly_agree',
+        98.0: np.nan,
+        99.0: np.nan
+    })
+    CODEBOOK_VARIABLES['op_adventure_seeking_excitement'] = {
+        'original_variable': 'q59_3',
+        'question_label': "Veuillez indiquer à quel point vous êtes d'accord ou non avec l'énoncé suivant: J'aime les expériences nouvelles et excitantes, même si je dois enfreindre les règles.",
+        'type': 'ordinal',
+        'value_labels': {
+            'strongly_disagree': "Tout à fait en désaccord",
+            'somewhat_disagree': "Plutôt en désaccord",
+            'neither_agree_nor_disagree': "Ni en désaccord ni d'accord",
+            'somewhat_agree': "Plutôt d'accord",
+            'strongly_agree': "Tout à fait d'accord"
+        }
+    }
+
+    # --- Q60 ---
+    # op_quebec_will_be_independent — Croyance que le Québec sera un jour indépendant
+    # Source: Q60
+    df_clean['op_quebec_will_be_independent'] = df['q60'].map({
+        1.0: 'yes',
+        2.0: 'no',
+        8.0: np.nan,
+        9.0: np.nan
+    })
+    CODEBOOK_VARIABLES['op_quebec_will_be_independent'] = {
+        'original_variable': 'q60',
+        'question_label': "Finalement, croyez-vous que le Québec sera un pays indépendant un jour?",
+        'type': 'binary',
+        'value_labels': {
+            'yes': "Oui",
+            'no': "Non"
+        }
+    }
+
+     # ========================================================================
+     # BEHAVIORAL - Party best for issues/groups (Q51A, Q52)
+     # ========================================================================
 
     # --- Q51_1 ---
     # behav_party_best_quebec_interests — Quel parti est meilleur pour défendre les intérêts du Québec
