@@ -260,34 +260,34 @@ def clean_data(df):
     }
 
     # --- cps_impissue_matrix_DO_12 ---
-    # cps_impissue_matrix_DO_12 — Display order for twelfth issue option in cps_impissue_matrix
+    # cps_impissue_matrix_DO_12 — Display order for third Quebec City road link option in cps_impissue_matrix
     # Source: cps_impissue_matrix_DO_12
     df_clean['cps_impissue_matrix_DO_12'] = df['cps_impissue_matrix_DO_12']
     CODEBOOK_VARIABLES['cps_impissue_matrix_DO_12'] = {
         'original_variable': 'cps_impissue_matrix_DO_12',
-        'question_label': "Display order for twelfth issue option in cps_impissue_matrix",
+        'question_label': "Display order for third Quebec City road link option in cps_impissue_matrix",
         'type': 'continuous',
         'value_labels': {}
     }
 
     # --- cps_impissue_matrix_DO_13 ---
-    # cps_impissue_matrix_DO_13 — Display order for thirteenth issue option in cps_impissue_matrix
+    # cps_impissue_matrix_DO_13 — Display order for French language option in cps_impissue_matrix
     # Source: cps_impissue_matrix_DO_13
     df_clean['cps_impissue_matrix_DO_13'] = df['cps_impissue_matrix_DO_13']
     CODEBOOK_VARIABLES['cps_impissue_matrix_DO_13'] = {
         'original_variable': 'cps_impissue_matrix_DO_13',
-        'question_label': "Display order for thirteenth issue option in cps_impissue_matrix",
+        'question_label': "Display order for French language option in cps_impissue_matrix",
         'type': 'continuous',
         'value_labels': {}
     }
 
     # --- cps_impissue_matrix_DO_14 ---
-    # cps_impissue_matrix_DO_14 — Display order for fourteenth issue option in cps_impissue_matrix
+    # cps_impissue_matrix_DO_14 — Display order for gun violence option in cps_impissue_matrix
     # Source: cps_impissue_matrix_DO_14
     df_clean['cps_impissue_matrix_DO_14'] = df['cps_impissue_matrix_DO_14']
     CODEBOOK_VARIABLES['cps_impissue_matrix_DO_14'] = {
         'original_variable': 'cps_impissue_matrix_DO_14',
-        'question_label': "Display order for fourteenth issue option in cps_impissue_matrix",
+        'question_label': "Display order for gun violence option in cps_impissue_matrix",
         'type': 'continuous',
         'value_labels': {}
     }
