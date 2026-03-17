@@ -48,6 +48,17 @@ def clean_data(df):
     """
     df_clean = pd.DataFrame(index=df.index)
 
+    # --- cps_EndDate ---
+    # cps_EndDate — End date
+    # Source: cps_EndDate
+    df_clean['cps_EndDate'] = df['cps_EndDate']
+    CODEBOOK_VARIABLES['cps_EndDate'] = {
+        'original_variable': 'cps_EndDate',
+        'question_label': "End date",
+        'type': 'categorical',
+        'value_labels': {}
+    }
+
     # --- cps_ideoself_1 ---
     # cps_ideoself_1 — Auto-identification gauche/droite
     # Source: cps_ideoself_1
