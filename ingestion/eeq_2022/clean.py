@@ -943,6 +943,23 @@ def clean_data(df):
         }
     }
 
+    # --- cps_UserLanguage ---
+    # cps_UserLanguage — Language the respondent answered the Campaign Period Survey in
+    # Source: cps_UserLanguage
+    df_clean['cps_UserLanguage'] = df['cps_UserLanguage'].map({
+        'EN': 'english',
+        'FR-CA': 'french'
+    })
+    CODEBOOK_VARIABLES['cps_UserLanguage'] = {
+        'original_variable': 'cps_UserLanguage',
+        'question_label': "Dans quelle langue avez-vous complété le sondage?",
+        'type': 'categorical',
+        'value_labels': {
+            'english': "Anglais",
+            'french': "Français"
+        }
+    }
+
     return df_clean
 
 def get_metadata():
