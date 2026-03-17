@@ -483,6 +483,75 @@ def clean_data(df):
         'value_labels': {}
     }
 
+    # --- cps_intelligent_1 ---
+    # cps_intelligent_1 — Pour chacun(e) des chef(fe)s de parti suivant(e)s, indiquez si vous êtes en
+    # Source: cps_intelligent
+    df_clean['cps_intelligent_1'] = df['cps_intelligent_1'].map({
+        1.0: 'strongly_disagree',
+        2.0: 'rather_disagree',
+        3.0: 'neutral',
+        4.0: 'rather_agree',
+        5.0: 'strongly_agree'
+    })
+    CODEBOOK_VARIABLES['cps_intelligent_1'] = {
+        'original_variable': 'cps_intelligent_1',
+        'question_label': "Pour chacun(e) des chef(fe)s de parti suivant(e)s, indiquez si vous êtes en accord ou en désaccord avec cette personne: Dominique Anglade",
+        'type': 'categorical',
+        'value_labels': {
+            'strongly_disagree': "Fortement en désaccord",
+            'rather_disagree': "Plutôt en désaccord",
+            'neutral': "Ni en accord, ni en désaccord",
+            'rather_agree': "Plutôt en accord",
+            'strongly_agree': "Fortement en accord"
+        }
+     }
+
+    # --- cps_intelligent_2 ---
+    # cps_intelligent_2 — Pour chacun(e) des chef(fe)s de parti suivant(e)s, indiquez si vous êtes en
+    # Source: cps_intelligent
+    df_clean['cps_intelligent_2'] = df['cps_intelligent_2'].map({
+        1.0: 'strongly_disagree',
+        2.0: 'rather_disagree',
+        3.0: 'neutral',
+        4.0: 'rather_agree',
+        5.0: 'strongly_agree'
+    })
+    CODEBOOK_VARIABLES['cps_intelligent_2'] = {
+        'original_variable': 'cps_intelligent_2',
+        'question_label': "Pour chacun(e) des chef(fe)s de parti suivant(e)s, indiquez si vous êtes en accord ou en désaccord avec cette personne: François Legault",
+        'type': 'categorical',
+        'value_labels': {
+            'strongly_disagree': "Fortement en désaccord",
+            'rather_disagree': "Plutôt en désaccord",
+            'neutral': "Ni en accord, ni en désaccord",
+            'rather_agree': "Plutôt en accord",
+            'strongly_agree': "Fortement en accord"
+        }
+    }
+
+    # --- cps_intelligent_3 ---
+    # cps_intelligent_3 — Pour chacun(e) des chef(fe)s de parti suivant(e)s, indiquez si vous êtes en
+    # Source: cps_intelligent
+    df_clean['cps_intelligent_3'] = df['cps_intelligent_3'].map({
+        1.0: 'strongly_disagree',
+        2.0: 'rather_disagree',
+        3.0: 'neutral',
+        4.0: 'rather_agree',
+        5.0: 'strongly_agree'
+    })
+    CODEBOOK_VARIABLES['cps_intelligent_3'] = {
+        'original_variable': 'cps_intelligent_3',
+        'question_label': "Pour chacun(e) des chef(fe)s de parti suivant(e)s, indiquez si vous êtes en accord ou en désaccord avec cette personne: Paul St-Pierre Plamondon",
+        'type': 'categorical',
+        'value_labels': {
+            'strongly_disagree': "Fortement en désaccord",
+            'rather_disagree': "Plutôt en désaccord",
+            'neutral': "Ni en accord, ni en désaccord",
+            'rather_agree': "Plutôt en accord",
+            'strongly_agree': "Fortement en accord"
+        }
+    }
+
     # --- cps_income2 ---
     # cps_income2 — Revenu du ménage (catégories)
     # Source: cps_income2
@@ -493,23 +562,34 @@ def clean_data(df):
         4.0: '60k_to_90k',
         5.0: '90k_to_110k',
         6.0: '110k_to_150k',
-        7.0: '150k_to_200k',
-        8.0: 'over_200k'
+         7.0: '150k_to_200k',
+         8.0: 'over_200k'
     })
     CODEBOOK_VARIABLES['cps_income2'] = {
-        'original_variable': 'cps_income2',
-        'question_label': "Nous n'avons pas besoin du montant exact; le revenu de votre ménage se situet-il dans l'une des catégories suivantes?",
-        'type': 'categorical',
-        'value_labels': {
-            'no_income': "Aucun revenu",
-            '1_to_30k': "1$ à 30 000$",
-            '30k_to_60k': "30 001$ à 60 000$",
-            '60k_to_90k': "60 001$ à 90 000$",
-            '90k_to_110k': "90 001$ à 110 000$",
-            '110k_to_150k': "110 001$ à 150 000$",
-            '150k_to_200k': "150 001$ à 200 000$",
-            'over_200k': "Plus de 200 000$"
+         'original_variable': 'cps_income2',
+         'question_label': "Nous n'avons pas besoin du montant exact; le revenu de votre ménage se situet-il dans l'une des catégories suivantes?",
+         'type': 'categorical',
+         'value_labels': {
+             'no_income': "Aucun revenu",
+             '1_to_30k': "1$ à 30 000$",
+             '30k_to_60k': "30 001$ à 60 000$",
+             '60k_to_90k': "60 001$ à 90 000$",
+             '90k_to_110k': "90 001$ à 110 000$",
+             '110k_to_150k': "110 001$ à 150 000$",
+             '150k_to_200k': "150 001$ à 200 000$",
+             'over_200k': "Plus de 200 000$"
         }
+    }
+
+    # --- cps_intelection_1 ---
+    # cps_intelection_1 — Quel est votre niveau d'intérêt pour cette élection au Québec?
+    # Source: cps_intelection_1
+    df_clean['cps_intelection_1'] = df['cps_intelection_1']
+    CODEBOOK_VARIABLES['cps_intelection_1'] = {
+        'original_variable': 'cps_intelection_1',
+        'question_label': "Quel est votre niveau d'intérêt pour cette élection au Québec? Veuillez",
+        'type': 'ordinal',
+        'value_labels': {}
     }
 
     return df_clean
