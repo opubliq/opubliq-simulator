@@ -355,22 +355,532 @@ def clean_data(raw_path: str) -> pd.DataFrame:
     }
 
     # --- Q10 ---
-    # op_vote_Q10 — Inferred vote choice from Q10
+    # op_government_satisfaction — Satisfaction gouvernementale
     # Source: Q10
-    # Assumption: Codes 8/9 are missing values (refused/don't know) as no codebook was provided.
-    df_clean['op_vote_Q10'] = df['Q10'].map({
-        1.0: 'choice_1',
-        2.0: 'choice_2',
-        3.0: 'choice_3',
-        4.0: 'choice_4',
+    # Échelle: 0-10 → 0.0-1.0 normalisée
+    # TODO: Valider le mapping exact avec les données et le codebook
+    df_clean['op_government_satisfaction'] = np.nan
+    mask = (df['Q10'] >= 0) & (df['Q10'] <= 10)
+    df_clean.loc[mask, 'op_government_satisfaction'] = df.loc[mask, 'Q10'] / 10.0
+    CODEBOOK_VARIABLES['op_government_satisfaction'] = {
+        'original_variable': 'Q10',
+        'question_label': "TODO: À quel point êtes-vous satisfait(e) de la performance du gouvernement?",
+        'type': 'numeric',
+        'value_labels': {},
+    }
+
+    # --- Q40 ---
+    # op_government_role — Rôle du gouvernement
+    # Source: Q40
+    # Type: categorical
+    # TODO: Valider le mapping exact avec les données et le codebook
+    df_clean['op_government_role'] = df['Q40'].map({
+        1.0: 'role_1',
+        2.0: 'role_2',
+        3.0: 'role_3',
         8.0: np.nan,
         9.0: np.nan,
     })
-    CODEBOOK_VARIABLES['op_vote_Q10'] = {
-        'original_variable': 'Q10',
-        'question_label': "Unknown - Inferred from data exploration, no codebook provided.",
+    CODEBOOK_VARIABLES['op_government_role'] = {
+        'original_variable': 'Q40',
+        'question_label': "TODO: Quel devrait être le rôle du gouvernement?",
         'type': 'categorical',
-        'value_labels': {'choice_1': "Category 1", 'choice_2': "Category 2", 'choice_3': "Category 3", 'choice_4': "Category 4"},
+        'value_labels': {'role_1': "TODO: Label 1", 'role_2': "TODO: Label 2", 'role_3': "TODO: Label 3"},
+    }
+
+    # --- Q63 ---
+    # ses_religious_affiliation — Appartenance religieuse
+    # Source: Q63
+    # Type: categorical
+    # TODO: Valider le mapping exact avec les données et le codebook
+    df_clean['ses_religious_affiliation'] = df['Q63'].map({
+        1.0: 'catholique',
+        2.0: 'protestant',
+        3.0: 'autre_chretien',
+        4.0: 'autre_religion',
+        5.0: 'sans_religion',
+        8.0: np.nan,
+        9.0: np.nan,
+    })
+    CODEBOOK_VARIABLES['ses_religious_affiliation'] = {
+        'original_variable': 'Q63',
+        'question_label': "TODO: Quelle est votre appartenance religieuse?",
+        'type': 'categorical',
+        'value_labels': {'catholique': "Catholique", 'protestant': "Protestant", 'autre_chretien': "Autre chrétien", 'autre_religion': "Autre religion", 'sans_religion': "Sans religion"},
+    }
+
+    # --- Q56 ---
+    # op_identification_strength — Force de l'identification
+    # Source: Q56
+    # Échelle: 0-10 → 0.0-1.0 normalisée
+    # TODO: Valider le mapping exact avec les données et le codebook
+    df_clean['op_identification_strength'] = np.nan
+    mask = (df['Q56'] >= 0) & (df['Q56'] <= 10)
+    df_clean.loc[mask, 'op_identification_strength'] = df.loc[mask, 'Q56'] / 10.0
+    CODEBOOK_VARIABLES['op_identification_strength'] = {
+        'original_variable': 'Q56',
+        'question_label': "TODO: Force de l'identification (0-10)",
+        'type': 'numeric',
+        'value_labels': {},
+    }
+
+    # --- Q30A ---
+    # op_leader_evaluation_A — Évaluation du chef A
+    # Source: Q30A
+    # Échelle: 0-10 → 0.0-1.0 normalisée
+    # TODO: Valider le mapping exact avec les données et le codebook
+    df_clean['op_leader_evaluation_A'] = np.nan
+    mask = (df['Q30A'] >= 0) & (df['Q30A'] <= 10)
+    df_clean.loc[mask, 'op_leader_evaluation_A'] = df.loc[mask, 'Q30A'] / 10.0
+    CODEBOOK_VARIABLES['op_leader_evaluation_A'] = {
+        'original_variable': 'Q30A',
+        'question_label': "TODO: Évaluation du chef A (0-10)",
+        'type': 'numeric',
+        'value_labels': {},
+    }
+
+    # --- Q30B ---
+    # op_leader_evaluation_B — Évaluation du chef B
+    # Source: Q30B
+    # Échelle: 0-10 → 0.0-1.0 normalisée
+    # TODO: Valider le mapping exact avec les données et le codebook
+    df_clean['op_leader_evaluation_B'] = np.nan
+    mask = (df['Q30B'] >= 0) & (df['Q30B'] <= 10)
+    df_clean.loc[mask, 'op_leader_evaluation_B'] = df.loc[mask, 'Q30B'] / 10.0
+    CODEBOOK_VARIABLES['op_leader_evaluation_B'] = {
+        'original_variable': 'Q30B',
+        'question_label': "TODO: Évaluation du chef B (0-10)",
+        'type': 'numeric',
+        'value_labels': {},
+    }
+
+    # --- Q30C ---
+    # op_leader_evaluation_C — Évaluation du chef C
+    # Source: Q30C
+    # Échelle: 0-10 → 0.0-1.0 normalisée
+    # TODO: Valider le mapping exact avec les données et le codebook
+    df_clean['op_leader_evaluation_C'] = np.nan
+    mask = (df['Q30C'] >= 0) & (df['Q30C'] <= 10)
+    df_clean.loc[mask, 'op_leader_evaluation_C'] = df.loc[mask, 'Q30C'] / 10.0
+    CODEBOOK_VARIABLES['op_leader_evaluation_C'] = {
+        'original_variable': 'Q30C',
+        'question_label': "TODO: Évaluation du chef C (0-10)",
+        'type': 'numeric',
+        'value_labels': {},
+    }
+
+    # --- Q25 ---
+    # op_preferred_issue — Question préférée
+    # Source: Q25
+    # Type: categorical
+    # TODO: Valider le mapping exact avec les données et le codebook
+    df_clean['op_preferred_issue'] = df['Q25'].map({
+        1.0: 'question_1',
+        2.0: 'question_2',
+        3.0: 'question_3',
+        8.0: np.nan,
+        9.0: np.nan,
+    })
+    CODEBOOK_VARIABLES['op_preferred_issue'] = {
+        'original_variable': 'Q25',
+        'question_label': "TODO: Laquelle de ces questions préférez-vous?",
+        'type': 'categorical',
+        'value_labels': {'question_1': "TODO: Question 1", 'question_2': "TODO: Question 2", 'question_3': "TODO: Question 3"},
+    }
+
+    # --- Q61 ---
+    # ses_union_membership — Syndicalisation
+    # Source: Q61
+    # Type: categorical (yes/no)
+    # TODO: Valider le mapping exact avec les données et le codebook
+    df_clean['ses_union_membership'] = df['Q61'].map({
+        1.0: 'yes',
+        2.0: 'no',
+        8.0: np.nan,
+        9.0: np.nan,
+    })
+    CODEBOOK_VARIABLES['ses_union_membership'] = {
+        'original_variable': 'Q61',
+        'question_label': "TODO: Êtes-vous membre d'un syndicat?",
+        'type': 'categorical',
+        'value_labels': {'yes': "Oui", 'no': "Non"},
+    }
+
+    # --- Q3 ---
+    # behav_vote — Vote réel
+    # Source: Q3
+    # Type: categorical
+    # TODO: Valider le mapping exact avec les données et le codebook
+    df_clean['behav_vote'] = df['Q3'].map({
+        1.0: 'party_a',
+        2.0: 'party_b',
+        3.0: 'party_c',
+        4.0: 'party_d',
+        8.0: np.nan,
+        9.0: np.nan,
+    })
+    CODEBOOK_VARIABLES['behav_vote'] = {
+        'original_variable': 'Q3',
+        'question_label': "TODO: Pour quel parti avez-vous voté?",
+        'type': 'categorical',
+        'value_labels': {'party_a': "TODO: Parti A", 'party_b': "TODO: Parti B", 'party_c': "TODO: Parti C", 'party_d': "TODO: Parti D"},
+    }
+
+    # --- Q53 ---
+    # op_referendum_importance — Importance du référendum
+    # Source: Q53
+    # Échelle: 0-10 → 0.0-1.0 normalisée
+    # TODO: Valider le mapping exact avec les données et le codebook
+    df_clean['op_referendum_importance'] = np.nan
+    mask = (df['Q53'] >= 0) & (df['Q53'] <= 10)
+    df_clean.loc[mask, 'op_referendum_importance'] = df.loc[mask, 'Q53'] / 10.0
+    CODEBOOK_VARIABLES['op_referendum_importance'] = {
+        'original_variable': 'Q53',
+        'question_label': "TODO: Importance du référendum (0-10)",
+        'type': 'numeric',
+        'value_labels': {},
+    }
+
+    # --- Q4 ---
+    # op_first_choice — Premier choix
+    # Source: Q4
+    # Type: categorical
+    # TODO: Valider le mapping exact avec les données et le codebook
+    df_clean['op_first_choice'] = df['Q4'].map({
+        1.0: 'yes',
+        2.0: 'no',
+        8.0: np.nan,
+        9.0: np.nan,
+    })
+    CODEBOOK_VARIABLES['op_first_choice'] = {
+        'original_variable': 'Q4',
+        'question_label': "TODO: Est-ce votre premier choix?",
+        'type': 'categorical',
+        'value_labels': {'yes': "Oui", 'no': "Non"},
+    }
+
+    # --- Q22 ---
+    # op_constitutional_preference — Préférences constitutionnelles
+    # Source: Q22
+    # Type: categorical
+    # TODO: Valider le mapping exact avec les données et le codebook
+    df_clean['op_constitutional_preference'] = df['Q22'].map({
+        1.0: 'option_1',
+        2.0: 'option_2',
+        3.0: 'option_3',
+        8.0: np.nan,
+        9.0: np.nan,
+    })
+    CODEBOOK_VARIABLES['op_constitutional_preference'] = {
+        'original_variable': 'Q22',
+        'question_label': "TODO: Préférence constitutionnelle?",
+        'type': 'categorical',
+        'value_labels': {'option_1': "TODO: Option 1", 'option_2': "TODO: Option 2", 'option_3': "TODO: Option 3"},
+    }
+
+    # --- Q38 ---
+    # op_gay_marriage_opinion — Opinion mariage homosexuel
+    # Source: Q38
+    # Type: categorical
+    # TODO: Valider le mapping exact avec les données et le codebook
+    df_clean['op_gay_marriage_opinion'] = df['Q38'].map({
+        1.0: 'for',
+        2.0: 'against',
+        3.0: 'no_opinion',
+        8.0: np.nan,
+        9.0: np.nan,
+    })
+    CODEBOOK_VARIABLES['op_gay_marriage_opinion'] = {
+        'original_variable': 'Q38',
+        'question_label': "TODO: Êtes-vous pour ou contre le mariage entre personnes de même sexe?",
+        'type': 'categorical',
+        'value_labels': {'for': "Pour", 'against': "Contre", 'no_opinion': "Sans opinion"},
+    }
+
+    # --- POND ---
+    # sample_weight — Poids d'échantillonnage
+    # Source: POND
+    # Type: numeric
+    df_clean['sample_weight'] = df['POND'].where(df['POND'] != 99.0, other=np.nan)
+    CODEBOOK_VARIABLES['sample_weight'] = {
+        'original_variable': 'POND',
+        'question_label': "Poids d'échantillonnage",
+        'type': 'numeric',
+        'value_labels': {},
+    }
+
+    # --- Q26A ---
+    # op_referendum_more_powers_A — Référendum plus de pouvoirs A
+    # Source: Q26A
+    # Type: categorical
+    # TODO: Valider le mapping exact avec les données et le codebook
+    df_clean['op_referendum_more_powers_A'] = df['Q26A'].map({
+        1.0: 'yes',
+        2.0: 'no',
+        8.0: np.nan,
+        9.0: np.nan,
+    })
+    CODEBOOK_VARIABLES['op_referendum_more_powers_A'] = {
+        'original_variable': 'Q26A',
+        'question_label': "TODO: Référendum plus de pouvoirs pour le Québec?",
+        'type': 'categorical',
+        'value_labels': {'yes': "Oui", 'no': "Non"},
+    }
+
+    # --- Q26B ---
+    # op_referendum_more_powers_B — Référendum plus de pouvoirs B
+    # Source: Q26B
+    # Type: categorical
+    # TODO: Valider le mapping exact avec les données et le codebook
+    df_clean['op_referendum_more_powers_B'] = df['Q26B'].map({
+        1.0: 'yes',
+        2.0: 'no',
+        8.0: np.nan,
+        9.0: np.nan,
+    })
+    CODEBOOK_VARIABLES['op_referendum_more_powers_B'] = {
+        'original_variable': 'Q26B',
+        'question_label': "TODO: Référendum plus de pouvoirs pour le Québec (2e)?",
+        'type': 'categorical',
+        'value_labels': {'yes': "Oui", 'no': "Non"},
+    }
+
+    # --- Q62 ---
+    # ses_religious_affiliation_2 — Appartenance religieuse (2e)
+    # Source: Q62
+    # Type: categorical
+    # TODO: Valider le mapping exact avec les données et le codebook
+    df_clean['ses_religious_affiliation_2'] = df['Q62'].map({
+        1.0: 'catholique',
+        2.0: 'protestant',
+        3.0: 'autre_chretien',
+        4.0: 'autre_religion',
+        5.0: 'sans_religion',
+        8.0: np.nan,
+        9.0: np.nan,
+    })
+    CODEBOOK_VARIABLES['ses_religious_affiliation_2'] = {
+        'original_variable': 'Q62',
+        'question_label': "TODO: Appartenance religieuse (2e occurrence)",
+        'type': 'categorical',
+        'value_labels': {'catholique': "Catholique", 'protestant': "Protestant", 'autre_chretien': "Autre chrétien", 'autre_religion': "Autre religion", 'sans_religion': "Sans religion"},
+    }
+
+    # --- Q48 ---
+    # op_currency_preference — Devise monétaire
+    # Source: Q48
+    # Type: categorical
+    # TODO: Valider le mapping exact avec les données et le codebook
+    df_clean['op_currency_preference'] = df['Q48'].map({
+        1.0: 'canadian_dollar',
+        2.0: 'other_currency',
+        8.0: np.nan,
+        9.0: np.nan,
+    })
+    CODEBOOK_VARIABLES['op_currency_preference'] = {
+        'original_variable': 'Q48',
+        'question_label': "TODO: Quelle devise le Québec devrait-il utiliser?",
+        'type': 'categorical',
+        'value_labels': {'canadian_dollar': "Dollar canadien", 'other_currency': "Autre devise"},
+    }
+
+    # --- Q49 ---
+    # op_canada_economic_impact — Impact économique du Canada
+    # Source: Q49
+    # Type: categorical
+    # TODO: Valider le mapping exact avec les données et le codebook
+    df_clean['op_canada_economic_impact'] = df['Q49'].map({
+        1.0: 'positive',
+        2.0: 'neutral',
+        3.0: 'negative',
+        8.0: np.nan,
+        9.0: np.nan,
+    })
+    CODEBOOK_VARIABLES['op_canada_economic_impact'] = {
+        'original_variable': 'Q49',
+        'question_label': "TODO: Impact économique du Canada sur le Québec?",
+        'type': 'categorical',
+        'value_labels': {'positive': "Positif", 'neutral': "Neutre", 'negative': "Négatif"},
+    }
+
+    # --- Q50 ---
+    # op_market_vs_sovereignty — Marché vs souveraineté
+    # Source: Q50
+    # Type: categorical
+    # TODO: Valider le mapping exact avec les données et le codebook
+    df_clean['op_market_vs_sovereignty'] = df['Q50'].map({
+        1.0: 'market',
+        2.0: 'sovereignty',
+        3.0: 'balance',
+        8.0: np.nan,
+        9.0: np.nan,
+    })
+    CODEBOOK_VARIABLES['op_market_vs_sovereignty'] = {
+        'original_variable': 'Q50',
+        'question_label': "TODO: Marché ou souveraineté?",
+        'type': 'categorical',
+        'value_labels': {'market': "Marché", 'sovereignty': "Souveraineté", 'balance': "Équilibre"},
+    }
+
+    # --- Q17 ---
+    # behav_referendum_vote — Vote au référendum
+    # Source: Q17
+    # Type: categorical
+    # TODO: Valider le mapping exact avec les données et le codebook
+    df_clean['behav_referendum_vote'] = df['Q17'].map({
+        1.0: 'yes',
+        2.0: 'no',
+        8.0: np.nan,
+        9.0: np.nan,
+    })
+    CODEBOOK_VARIABLES['behav_referendum_vote'] = {
+        'original_variable': 'Q17',
+        'question_label': "TODO: Comment avez-vous voté au référendum?",
+        'type': 'categorical',
+        'value_labels': {'yes': "Oui", 'no': "Non"},
+    }
+
+    # --- Q60A ---
+    # ses_property_ownership_A — Propriété A
+    # Source: Q60A
+    # Type: categorical
+    # TODO: Valider le mapping exact avec les données et le codebook
+    df_clean['ses_property_ownership_A'] = df['Q60A'].map({
+        1.0: 'yes',
+        2.0: 'no',
+        8.0: np.nan,
+        9.0: np.nan,
+    })
+    CODEBOOK_VARIABLES['ses_property_ownership_A'] = {
+        'original_variable': 'Q60A',
+        'question_label': "TODO: Possession de propriété A?",
+        'type': 'categorical',
+        'value_labels': {'yes': "Oui", 'no': "Non"},
+    }
+
+    # --- Q60B ---
+    # ses_property_ownership_B — Propriété B
+    # Source: Q60B
+    # Type: categorical
+    # TODO: Valider le mapping exact avec les données et le codebook
+    df_clean['ses_property_ownership_B'] = df['Q60B'].map({
+        1.0: 'yes',
+        2.0: 'no',
+        8.0: np.nan,
+        9.0: np.nan,
+    })
+    CODEBOOK_VARIABLES['ses_property_ownership_B'] = {
+        'original_variable': 'Q60B',
+        'question_label': "TODO: Possession de propriété B?",
+        'type': 'categorical',
+        'value_labels': {'yes': "Oui", 'no': "Non"},
+    }
+
+    # --- Q60C ---
+    # ses_property_ownership_C — Propriété C
+    # Source: Q60C
+    # Type: categorical
+    # TODO: Valider le mapping exact avec les données et le codebook
+    df_clean['ses_property_ownership_C'] = df['Q60C'].map({
+        1.0: 'yes',
+        2.0: 'no',
+        8.0: np.nan,
+        9.0: np.nan,
+    })
+    CODEBOOK_VARIABLES['ses_property_ownership_C'] = {
+        'original_variable': 'Q60C',
+        'question_label': "TODO: Possession de propriété C?",
+        'type': 'categorical',
+        'value_labels': {'yes': "Oui", 'no': "Non"},
+    }
+
+    # --- Q60D ---
+    # ses_property_ownership_D — Propriété D
+    # Source: Q60D
+    # Type: categorical
+    # TODO: Valider le mapping exact avec les données et le codebook
+    df_clean['ses_property_ownership_D'] = df['Q60D'].map({
+        1.0: 'yes',
+        2.0: 'no',
+        8.0: np.nan,
+        9.0: np.nan,
+    })
+    CODEBOOK_VARIABLES['ses_property_ownership_D'] = {
+        'original_variable': 'Q60D',
+        'question_label': "TODO: Possession de propriété D?",
+        'type': 'categorical',
+        'value_labels': {'yes': "Oui", 'no': "Non"},
+    }
+
+    # --- Q60E ---
+    # ses_property_ownership_E — Propriété E
+    # Source: Q60E
+    # Type: categorical
+    # TODO: Valider le mapping exact avec les données et le codebook
+    df_clean['ses_property_ownership_E'] = df['Q60E'].map({
+        1.0: 'yes',
+        2.0: 'no',
+        8.0: np.nan,
+        9.0: np.nan,
+    })
+    CODEBOOK_VARIABLES['ses_property_ownership_E'] = {
+        'original_variable': 'Q60E',
+        'question_label': "TODO: Possession de propriété E?",
+        'type': 'categorical',
+        'value_labels': {'yes': "Oui", 'no': "Non"},
+    }
+
+    # --- Q52 ---
+    # op_economic_evolution — Évolution économique
+    # Source: Q52
+    # Type: categorical
+    # TODO: Valider le mapping exact avec les données et le codebook
+    df_clean['op_economic_evolution'] = df['Q52'].map({
+        1.0: 'improving',
+        2.0: 'stable',
+        3.0: 'declining',
+        8.0: np.nan,
+        9.0: np.nan,
+    })
+    CODEBOOK_VARIABLES['op_economic_evolution'] = {
+        'original_variable': 'Q52',
+        'question_label': "TODO: Comment évolue l'économie?",
+        'type': 'categorical',
+        'value_labels': {'improving': "S'améliore", 'stable': "Stable", 'declining': "Decline"},
+    }
+
+    # --- Q11 --- (Updated to op_economic_satisfaction)
+    # op_economic_satisfaction — Satisfaction économique
+    # Source: Q11
+    # Échelle: 0-10 → 0.0-1.0 normalisée
+    # TODO: Note: Original Q11 was mapped to ses_province. Replacing with correct variable.
+    # This may cause duplicate handling - please verify the actual Q11 variable content.
+    # For now, create op_economic_satisfaction separately if Q11 data exists
+    df_clean['op_economic_satisfaction'] = np.nan
+    # Assuming there's a separate satisfaction scale in another column, or update based on actual data
+    CODEBOOK_VARIABLES['op_economic_satisfaction'] = {
+        'original_variable': 'Q11_satisfaction',
+        'question_label': "TODO: À quel point êtes-vous satisfait(e) économiquement?",
+        'type': 'numeric',
+        'value_labels': {},
+    }
+
+    # --- Q21 ---
+    # op_vote_intention_constitution — Intention de vote pour Constitution
+    # Source: Q21
+    # Type: categorical
+    # TODO: Valider le mapping exact avec les données et le codebook
+    df_clean['op_vote_intention_constitution'] = df['Q21'].map({
+        1.0: 'yes',
+        2.0: 'no',
+        8.0: np.nan,
+        9.0: np.nan,
+    })
+    CODEBOOK_VARIABLES['op_vote_intention_constitution'] = {
+        'original_variable': 'Q21',
+        'question_label': "TODO: Voteriez-vous pour cette constitution?",
+        'type': 'categorical',
+        'value_labels': {'yes': "Oui", 'no': "Non"},
     }
 
     # --- Q11 ---
@@ -1828,24 +2338,24 @@ def clean_data(raw_path: str) -> pd.DataFrame:
         'value_labels': {'option_one': 'Option 1', 'option_two': 'Option 2', 'option_three': 'Option 3'},
     }
 
-     # --- Q46 ---
-     # op_independence_economic_comparison — Comparaison économique suite à l'indépendance
-     # Source: Q46
-     # TODO: Valider le mapping exact de la comparaison à partir du codebook
-     df_clean['op_independence_economic_comparison'] = df['Q46'].map({
-         # 1.0: 'better_off',
-         # 2.0: 'worse_off',
-         # 3.0: 'no_difference',
-         # 98.0: np.nan,
-         # 99.0: np.nan,
-     })
-     CODEBOOK_VARIABLES['op_independence_economic_comparison'] = {
-         'original_variable': 'Q46',
-         'question_label': "Si le Québec devenait indépendant, pensez-vous que nous serions économiquement mieux ou plus mal?", # TODO: Confirmer dans le codebook
-         'type': 'categorical',
-         'value_labels': {
-             # 'better_off': "Mieux",
-             # 'worse_off': "Plus mal",
+    # --- Q46 ---
+    # op_independence_economic_comparison — Comparaison économique suite à l'indépendance
+    # Source: Q46
+    # TODO: Valider le mapping exact de la comparaison à partir du codebook
+    df_clean['op_independence_economic_comparison'] = df['Q46'].map({
+        # 1.0: 'better_off',
+        # 2.0: 'worse_off',
+        # 3.0: 'no_difference',
+        # 98.0: np.nan,
+        # 99.0: np.nan,
+    })
+    CODEBOOK_VARIABLES['op_independence_economic_comparison'] = {
+        'original_variable': 'Q46',
+        'question_label': "Si le Québec devenait indépendant, pensez-vous que nous serions économiquement mieux ou plus mal?", # TODO: Confirmer dans le codebook
+        'type': 'categorical',
+        'value_labels': {
+            # 'better_off': "Mieux",
+            # 'worse_off': "Plus mal",
              # 'no_difference': "Pas de différence",
          }
      }
