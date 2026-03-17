@@ -160,6 +160,29 @@ def clean_data(df):
         'value_labels': {}
     }
 
+    # --- cps_ideoparty_DO_5 ---
+    # cps_ideoparty_DO_5 — Display order for Coalition avenir Québec in cps_ideoparty
+    # Source: cps_ideoparty_DO_5
+    df_clean['cps_ideoparty_DO_5'] = df['cps_ideoparty_DO_5'].map({
+        1.0: 'first',
+        2.0: 'second',
+        3.0: 'third',
+        4.0: 'fourth',
+        5.0: 'fifth'
+    })
+    CODEBOOK_VARIABLES['cps_ideoparty_DO_5'] = {
+        'original_variable': 'cps_ideoparty_DO_5',
+        'question_label': "Display order for Coalition avenir Québec in cps_ideoparty",
+        'type': 'ordinal',
+        'value_labels': {
+            'first': "premier",
+            'second': "deuxième",
+            'third': "troisième",
+            'fourth': "quatrième",
+            'fifth': "cinquième"
+        }
+    }
+
     # --- cps_impissue_matrix_DO_1 ---
     # cps_impissue_matrix_DO_1 — Display order for first issue option in cps_impissue_matrix
     # Source: cps_impissue_matrix_DO_1
@@ -540,6 +563,28 @@ def clean_data(df):
         }
     }
 
+    # --- cps_intelligent_4 ---
+    # cps_intelligent_4 — Pour chacun(e) des chef(fe)s de parti suivant(e)s, indiquez si vous êtes en
+    # Source: cps_intelligent
+    df_clean['cps_intelligent_4'] = df['cps_intelligent_4'].map({
+        1.0: 'strongly_disagree',
+        2.0: 'rather_disagree',
+        3.0: 'neutral',
+        4.0: 'rather_agree',
+        5.0: 'strongly_agree'
+    })
+    CODEBOOK_VARIABLES['cps_intelligent_4'] = {
+        'original_variable': 'cps_intelligent_4',
+        'question_label': "Pour chacun(e) des chef(fe)s de parti suivant(e)s, indiquez si vous êtes en accord ou en désaccord avec cette personne: Gabriel Nadeau-Dubois",
+        'type': 'categorical',
+        'value_labels': {
+            'strongly_disagree': "Fortement en désaccord",
+            'rather_disagree': "Plutôt en désaccord",
+            'neutral': "Ni en accord, ni en désaccord",
+            'rather_agree': "Plutôt en accord",
+            'strongly_agree': "Fortement en accord"
+        }
+    }
 
     # --- cps_income2 ---
     # cps_income2 — Revenu du ménage (catégories)
