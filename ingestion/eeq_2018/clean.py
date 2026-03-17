@@ -3416,7 +3416,8 @@ def clean_data(df):
         'value_labels': {
             'yes_several_times': "Oui, plusieurs fois",
             'yes_once': "Oui, une fois",
-            'no_never': "Non, jamais"
+            'no_never': "Non, jamais",
+            np.nan: "Je préfère ne pas répondre"
         }
     }
 
