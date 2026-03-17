@@ -632,6 +632,52 @@ def clean_data(df):
         }
     }
 
+    # --- cps_intelligent_DO_1 ---
+    # cps_intelligent_DO_1 — Display order for first leader option in cps_intelligent
+    # Source: cps_intelligent_DO_1
+    df_clean['cps_intelligent_DO_1'] = df['cps_intelligent_DO_1'].map({
+        1.0: 'first',
+        2.0: 'second',
+        3.0: 'third',
+        4.0: 'fourth',
+        5.0: 'fifth'
+    })
+    CODEBOOK_VARIABLES['cps_intelligent_DO_1'] = {
+        'original_variable': 'cps_intelligent_DO_1',
+        'question_label': "Display order for first leader option in cps_intelligent",
+        'type': 'ordinal',
+        'value_labels': {
+            'first': "premier",
+            'second': "deuxième",
+            'third': "troisième",
+            'fourth': "quatrième",
+            'fifth': "cinquième"
+        }
+    }
+
+    # --- cps_intelligent_DO_2 ---
+    # cps_intelligent_DO_2 — Display order for second leader (François Legault) in cps_intelligent
+    # Source: cps_intelligent_DO_2
+    df_clean['cps_intelligent_DO_2'] = df['cps_intelligent_DO_2'].map({
+        1.0: 'first',
+        2.0: 'second',
+        3.0: 'third',
+        4.0: 'fourth',
+        5.0: 'fifth'
+    })
+    CODEBOOK_VARIABLES['cps_intelligent_DO_2'] = {
+        'original_variable': 'cps_intelligent_DO_2',
+        'question_label': "Display order for François Legault in cps_intelligent",
+        'type': 'ordinal',
+        'value_labels': {
+            'first': "premier",
+            'second': "deuxième",
+            'third': "troisième",
+            'fourth': "quatrième",
+            'fifth': "cinquième"
+        }
+    }
+
     # --- cps_income2 ---
     # cps_income2 — Revenu du ménage (catégories)
     # Source: cps_income2
