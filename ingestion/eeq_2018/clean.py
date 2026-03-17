@@ -4309,6 +4309,71 @@ def clean_data(df):
     # This is an incomplete version. Need to add all 200+ variables.
     # ========================================================================
 
+    # =========================================================================
+    # STRATES CANONIQUES
+    # =========================================================================
+
+    # strate_age_group — depuis agenum (âge en années)
+    age = pd.to_numeric(df['agenum'].replace({999.0: np.nan}), errors='coerce')
+    df_clean['strate_age_group'] = pd.cut(
+        age,
+        bins=[17, 34, 54, np.inf],
+        labels=['18-34', '35-54', '55+']
+    ).astype(object).where(age.notna())
+
+    # strate_genre — depuis qsexe
+    df_clean['strate_genre'] = df['qsexe'].map({
+        1.0: 'homme',
+        2.0: 'femme',
+    })
+
+    # strate_langue — depuis qlangue (langue maternelle principale)
+    df_clean['strate_langue'] = df['qlangue'].map({
+        1.0:  'francophone',  # Français
+        2.0:  'anglo_autre',  # Anglais
+        96.0: 'anglo_autre',  # Autre
+    })
+
+    # strate_region — 4 strates depuis q0qc (17 régions administratives)
+    df_clean['strate_region'] = df['q0qc'].map({
+        6.0:  'montreal',   # Montréal
+        13.0: 'montreal',   # Laval
+        14.0: 'couronne',   # Lanaudière
+        15.0: 'couronne',   # Laurentides
+        16.0: 'couronne',   # Montérégie
+        3.0:  'quebec',     # Capitale-Nationale
+        1.0:  'regions',    # Bas-Saint-Laurent
+        2.0:  'regions',    # Saguenay-Lac-Saint-Jean
+        4.0:  'regions',    # Mauricie
+        5.0:  'regions',    # Estrie
+        7.0:  'regions',    # Outaouais
+        8.0:  'regions',    # Abitibi-Témiscamingue
+        9.0:  'regions',    # Côte-Nord
+        10.0: 'regions',    # Nord-du-Québec
+        11.0: 'regions',    # Gaspésie-Îles-de-la-Madeleine
+        12.0: 'regions',    # Chaudière-Appalaches
+        17.0: 'regions',    # Centre-du-Québec
+    })
+
+    # strate_education — depuis qscol (15 niveaux → 3 strates)
+    df_clean['strate_education'] = df['qscol'].map({
+        1.0:  'sans_diplome_sec',   # Aucune scolarité
+        2.0:  'sans_diplome_sec',   # Primaire incomplet
+        3.0:  'sans_diplome_sec',   # Primaire complété
+        4.0:  'sans_diplome_sec',   # Secondaire 1
+        5.0:  'sans_diplome_sec',   # Secondaire 2
+        6.0:  'sans_diplome_sec',   # Secondaire 3
+        7.0:  'sans_diplome_sec',   # Secondaire 4
+        8.0:  'diplome_sec_cegep',  # DES
+        9.0:  'diplome_sec_cegep',  # DEP
+        10.0: 'diplome_sec_cegep',  # CÉGEP incomplet
+        11.0: 'diplome_sec_cegep',  # DEC
+        12.0: 'diplome_sec_cegep',  # CÉGEP technique
+        13.0: 'universite',         # Université non complétée
+        14.0: 'universite',         # Baccalauréat
+        15.0: 'universite',         # Maîtrise ou doctorat
+    })
+
     return df_clean
 
 def get_metadata():

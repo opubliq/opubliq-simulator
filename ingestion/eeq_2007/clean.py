@@ -2292,6 +2292,21 @@ def map_strates_canoniques(df_clean: pd.DataFrame) -> pd.DataFrame:
     # --- strate_genre ---
     df_clean['strate_genre'] = df_clean['ses_gender']
 
+    # --- strate_education ---
+    df_clean['strate_education'] = df_clean['ses_education'].map({
+        'aucune_scolarite':            'sans_diplome_sec',
+        'primaire_sans_diplome':       'sans_diplome_sec',
+        'primaire_avec_diplome':       'sans_diplome_sec',
+        'secondaire_sans_diplome':     'sans_diplome_sec',
+        'secondaire_avec_diplome':     'diplome_sec_cegep',
+        'technique_cegep_sans_diplome':'diplome_sec_cegep',
+        'technique_cegep_avec_diplome':'diplome_sec_cegep',
+        'universite_non_complete':     'universite',
+        'baccalaureat':                'universite',
+        'maitrise':                    'universite',
+        'doctorat_professionnel':      'universite',
+    })
+
     return df_clean
 
 

@@ -3560,6 +3560,72 @@ def clean_data(raw_path: str) -> pd.DataFrame:
         'value_labels': {'19': "19", '20': "20", '21': "21", '22': "22", '23': "23", '24': "24", '25': "25", '26': "26", '27': "27", '28': "28", '29': "29", '30': "30", '31': "31", '32': "32", '33': "33", '34': "34", '35': "35", '36': "36", '37': "37", '38': "38", '39': "39", '40': "40", '41': "41", '42': "42", '43': "43"},
     }
 
+    # =========================================================================
+    # STRATES CANONIQUES
+    # =========================================================================
+
+    # strate_age_group — depuis CLAGE (catégories d'âge)
+    df_clean['strate_age_group'] = df['CLAGE'].map({
+        2.0: '18-34',  # 18-24
+        3.0: '18-34',  # 25-34
+        4.0: '35-54',  # 35-44
+        5.0: '35-54',  # 45-54
+        6.0: '55+',    # 55-64
+        7.0: '55+',    # 65-74
+        8.0: '55+',    # 75+
+    })
+
+    # strate_genre — depuis QSEXE
+    df_clean['strate_genre'] = df['QSEXE'].map({
+        1.0: 'homme',
+        2.0: 'femme',
+    })
+
+    # strate_langue — depuis QLANG (première langue apprise)
+    df_clean['strate_langue'] = df['QLANG'].map({
+        1.0: 'francophone',  # Français
+        2.0: 'anglo_autre',  # Anglais
+        3.0: 'francophone',  # Français et anglais → francophone
+        4.0: 'anglo_autre',  # Autre
+        5.0: 'francophone',  # Français et autre → francophone
+        6.0: 'anglo_autre',  # Anglais et autre
+    })
+
+    # strate_region — 4 strates depuis QREGION (17 régions administratives)
+    df_clean['strate_region'] = df['QREGION'].map({
+        6.0:  'montreal',   # Montréal
+        13.0: 'montreal',   # Laval
+        14.0: 'couronne',   # Lanaudière
+        15.0: 'couronne',   # Laurentides
+        16.0: 'couronne',   # Montérégie
+        3.0:  'quebec',     # Capitale-Nationale
+        1.0:  'regions',    # Bas-Saint-Laurent
+        2.0:  'regions',    # Saguenay-Lac-Saint-Jean
+        4.0:  'regions',    # Mauricie
+        5.0:  'regions',    # Estrie
+        7.0:  'regions',    # Outaouais
+        8.0:  'regions',    # Abitibi-Témiscamingue
+        9.0:  'regions',    # Côte-Nord
+        10.0: 'regions',    # Nord-du-Québec
+        11.0: 'regions',    # Gaspésie-Îles-de-la-Madeleine
+        12.0: 'regions',    # Chaudière-Appalaches
+        17.0: 'regions',    # Centre-du-Québec
+    })
+
+    # strate_education — depuis QSCOL (11 niveaux → 3 strates)
+    df_clean['strate_education'] = df['QSCOL'].map({
+        1.0:  'sans_diplome_sec',   # Aucune scolarité
+        2.0:  'sans_diplome_sec',   # Primaire sans diplôme
+        3.0:  'sans_diplome_sec',   # Primaire avec diplôme
+        4.0:  'sans_diplome_sec',   # Secondaire sans diplôme
+        5.0:  'diplome_sec_cegep',  # Secondaire avec diplôme
+        6.0:  'diplome_sec_cegep',  # CÉGEP sans diplôme
+        7.0:  'diplome_sec_cegep',  # CÉGEP avec diplôme
+        8.0:  'diplome_sec_cegep',  # Cours technique
+        9.0:  'universite',         # Université non complétée
+        10.0: 'universite',         # Baccalauréat
+        11.0: 'universite',         # Maîtrise ou doctorat
+    })
 
     return df_clean
 

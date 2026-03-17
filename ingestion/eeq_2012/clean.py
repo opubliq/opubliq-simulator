@@ -3978,12 +3978,41 @@ def map_strates_canoniques(df: pd.DataFrame) -> pd.DataFrame:
         labels=['18-34', '35-54', '55+']
     )
 
-    # Région
-    # Utilise REGIO qui contient les régions métropolitaines de recensement
-    df_strata['region'] = df['REGIO'].map({
-        1.0: 'mtl',
-        2.0: 'qc',
-        3.0: 'regions',
+    # strate_region — 4 strates depuis Q0QC (17 régions administratives)
+    df_strata['strate_region'] = df['Q0QC'].map({
+        6.0:  'montreal',   # Montréal
+        13.0: 'montreal',   # Laval
+        14.0: 'couronne',   # Lanaudière
+        15.0: 'couronne',   # Laurentides
+        16.0: 'couronne',   # Montérégie
+        3.0:  'quebec',     # Capitale-Nationale
+        1.0:  'regions',    # Bas-Saint-Laurent
+        2.0:  'regions',    # Saguenay-Lac-Saint-Jean
+        4.0:  'regions',    # Mauricie
+        5.0:  'regions',    # Estrie
+        7.0:  'regions',    # Outaouais
+        8.0:  'regions',    # Abitibi-Témiscamingue
+        9.0:  'regions',    # Côte-Nord
+        10.0: 'regions',    # Nord-du-Québec
+        11.0: 'regions',    # Gaspésie-Îles-de-la-Madeleine
+        12.0: 'regions',    # Chaudière-Appalaches
+        17.0: 'regions',    # Centre-du-Québec
+    })
+
+    # strate_education — depuis SCOL (12 niveaux → 3 strates)
+    df_strata['strate_education'] = df['SCOL'].map({
+        1.0:  'sans_diplome_sec',   # Primaire
+        2.0:  'sans_diplome_sec',   # Secondaire 1
+        3.0:  'sans_diplome_sec',   # Secondaire 2
+        4.0:  'sans_diplome_sec',   # Secondaire 3
+        5.0:  'sans_diplome_sec',   # Secondaire 4
+        6.0:  'diplome_sec_cegep',  # Secondaire 5 (DES)
+        7.0:  'diplome_sec_cegep',  # Post-secondaire 1
+        8.0:  'diplome_sec_cegep',  # Post-secondaire 2
+        9.0:  'diplome_sec_cegep',  # Post-secondaire 3
+        10.0: 'universite',         # Université 1
+        11.0: 'universite',         # Université 2
+        12.0: 'universite',         # Université 3+
     })
 
     return df_strata

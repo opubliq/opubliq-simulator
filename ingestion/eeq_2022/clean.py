@@ -1560,7 +1560,69 @@ def clean_data(df):
         },
         'range_min': 0,
         'range_max': 100
-    }
+     }
+
+     # --- cps_cares_DO_1 ---
+     # cps_cares_DO_1 — Display order for first leader option in cps_cares
+     # Source: cps_cares_DO_1
+     df_clean['cps_cares_DO_1'] = df['cps_cares_DO_1'].map({
+         1.0: 'first',
+         2.0: 'second',
+         3.0: 'third'
+     })
+     CODEBOOK_VARIABLES['cps_cares_DO_1'] = {
+         'original_variable': 'cps_cares_DO_1',
+         'question_label': "Display order for first leader option in cps_cares",
+         'type': 'ordinal',
+         'value_labels': {
+             'first': "premier",
+             'second': "deuxième",
+             'third': "troisième"
+         },
+         'missing_codes': []
+     }
+
+    # =========================================================================
+    # STRATES CANONIQUES
+    # =========================================================================
+
+    # strate_age_group — depuis cps_age_in_years (continu)
+    age = pd.to_numeric(df['cps_age_in_years'], errors='coerce')
+    df_clean['strate_age_group'] = pd.cut(
+        age,
+        bins=[17, 34, 54, np.inf],
+        labels=['18-34', '35-54', '55+']
+    ).astype(object).where(age.notna())
+
+    # strate_genre — depuis cps_genderid
+    df_clean['strate_genre'] = df['cps_genderid'].map({
+        1.0: 'homme',
+        2.0: 'femme',
+        3.0: 'non_binaire',
+        4.0: 'autre',
+    })
+
+    # strate_langue — depuis cps_lang_2 (français) et cps_lang_1 (anglais)
+    # cps_lang_2 = 1 → français sélectionné; cps_lang_1 = 1 → anglais sélectionné
+    lang_fr = pd.to_numeric(df['cps_lang_2'], errors='coerce') == 1.0
+    df_clean['strate_langue'] = lang_fr.map({True: 'francophone', False: 'anglo_autre'})
+
+    # strate_education — depuis cps_edu (11 niveaux → 3 strates)
+    df_clean['strate_education'] = df['cps_edu'].map({
+        1.0:  'sans_diplome_sec',   # Aucune scolarité
+        2.0:  'sans_diplome_sec',   # Quelques années primaire
+        3.0:  'sans_diplome_sec',   # Primaire terminé
+        4.0:  'sans_diplome_sec',   # Quelques années secondaire
+        5.0:  'diplome_sec_cegep',  # École secondaire terminée
+        6.0:  'diplome_sec_cegep',  # Quelques années cégep
+        7.0:  'diplome_sec_cegep',  # Cégep terminé
+        8.0:  'universite',         # Quelques années université
+        9.0:  'universite',         # Baccalauréat
+        10.0: 'universite',         # Maîtrise
+        11.0: 'universite',         # Doctorat/professionnel
+    })
+
+    # strate_region → voir issue opubliq-simulator-3gh (mapping code postal → région)
 
     return df_clean
 
