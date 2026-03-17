@@ -127,6 +127,17 @@ def clean_data(df):
         }
     }
 
+    # --- cps_income ---
+    # cps_income — Revenu total du ménage avant impôts en 2021
+    # Source: cps_income
+    df_clean['cps_income'] = df['cps_income']
+    CODEBOOK_VARIABLES['cps_income'] = {
+        'original_variable': 'cps_income',
+        'question_label': "Quel est le revenu total de votre ménage avant impôts en 2021? Cela doit inclure",
+        'type': 'continuous',
+        'value_labels': {}
+    }
+
     # --- cps_ideoparty_DO_1 ---
     # cps_ideoparty_DO_1 — Display order for Parti libéral du Québec in cps_ideoparty
     # Source: cps_ideoparty_DO_1
@@ -470,6 +481,35 @@ def clean_data(df):
         'question_label': "Display order for gun violence option in cps_impissue_matrix",
         'type': 'continuous',
         'value_labels': {}
+    }
+
+    # --- cps_income2 ---
+    # cps_income2 — Revenu du ménage (catégories)
+    # Source: cps_income2
+    df_clean['cps_income2'] = df['cps_income2'].map({
+        1.0: 'no_income',
+        2.0: '1_to_30k',
+        3.0: '30k_to_60k',
+        4.0: '60k_to_90k',
+        5.0: '90k_to_110k',
+        6.0: '110k_to_150k',
+        7.0: '150k_to_200k',
+        8.0: 'over_200k'
+    })
+    CODEBOOK_VARIABLES['cps_income2'] = {
+        'original_variable': 'cps_income2',
+        'question_label': "Nous n'avons pas besoin du montant exact; le revenu de votre ménage se situet-il dans l'une des catégories suivantes?",
+        'type': 'categorical',
+        'value_labels': {
+            'no_income': "Aucun revenu",
+            '1_to_30k': "1$ à 30 000$",
+            '30k_to_60k': "30 001$ à 60 000$",
+            '60k_to_90k': "60 001$ à 90 000$",
+            '90k_to_110k': "90 001$ à 110 000$",
+            '110k_to_150k': "110 001$ à 150 000$",
+            '150k_to_200k': "150 001$ à 200 000$",
+            'over_200k': "Plus de 200 000$"
+        }
     }
 
     return df_clean
