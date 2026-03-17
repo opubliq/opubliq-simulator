@@ -194,80 +194,35 @@ def clean_data(raw_path: str) -> pd.DataFrame:
     # }
 
     # --- AGE ---
-    # ses_age — Age in years
+    # ses_age — Age in years (derived from Q97: year of birth)
     # Source: AGE
-    # Assumption: All observed years mapped to concise string labels. Unseen years will map to np.nan.
-    df_clean['ses_age'] = df['AGE'].map({
-        18.0: '18',
-        19.0: '19',
-        20.0: '20',
-        21.0: '21',
-        22.0: '22',
-        23.0: '23',
-        24.0: '24',
-        25.0: '25',
-        26.0: '26',
-        27.0: '27',
-        28.0: '28',
-        29.0: '29',
-        30.0: '30',
-        31.0: '31',
-        32.0: '32',
-        33.0: '33',
-        34.0: '34',
-        35.0: '35',
-        36.0: '36',
-        37.0: '37',
-        38.0: '38',
-        39.0: '39',
-        40.0: '40',
-        41.0: '41',
-        42.0: '42',
-    })
+    # Note: Stored as numeric (integer) since age in years is continuous demographic data
+    # This field is derived from the birth year question (Q97: "En quelle année êtes-vous né(e)?")
+    df_clean['ses_age'] = df['AGE'].astype('Int64', errors='ignore')
+    # Treat invalid/missing values (likely 0 or 999) as NaN
+    df_clean.loc[df_clean['ses_age'] < 18, 'ses_age'] = np.nan
+    
     CODEBOOK_VARIABLES['ses_age'] = {
         'original_variable': 'AGE',
-        'question_label': "Age of respondent",
-        'type': 'categorical',
-        'value_labels': {'18': "18", '19': "19", '20': "20", '21': "21", '22': "22", '23': "23", '24': "24", '25': "25", '26': "26", '27': "27", '28': "28", '29': "29", '30': "30", '31': "31", '32': "32", '33': "33", '34': "34", '35': "35", '36': "36", '37': "37", '38': "38", '39': "39", '40': "40", '41': "41", '42': "42"},
+        'question_label': "En quelle année êtes-vous né(e)? (Derived age in years from Q97)",
+        'type': 'numeric',
+        'value_labels': {},
     }
 
     # --- AGEX ---
     # ses_year_of_birth — Year of birth
     # Source: AGEX
-    # Note: Values mapped directly from float64 to string representation of year, treating as categorical.
-    df_clean['ses_year_of_birth'] = df['AGEX'].map({
-        1928.0: '1928',
-        1929.0: '1929',
-        1930.0: '1930',
-        1932.0: '1932',
-        1933.0: '1933',
-        1934.0: '1934',
-        1935.0: '1935',
-        1936.0: '1936',
-        1937.0: '1937',
-        1938.0: '1938',
-        1939.0: '1939',
-        1940.0: '1940',
-        1941.0: '1941',
-        1942.0: '1942',
-        1943.0: '1943',
-        1944.0: '1944',
-        1945.0: '1945',
-        1946.0: '1946',
-        1947.0: '1947',
-        1948.0: '1948',
-        1949.0: '1949',
-        1950.0: '1950',
-        1951.0: '1951',
-        1952.0: '1952',
-        1953.0: '1953',
-        9999.0: np.nan,
-    })
+    # Note: Stored as numeric (integer) since year is continuous demographic data
+    df_clean['ses_year_of_birth'] = df['AGEX'].astype('Int64', errors='ignore')
+    # Treat invalid/missing values (9999 placeholder, future years, etc.) as NaN
+    df_clean.loc[df_clean['ses_year_of_birth'] > 2012, 'ses_year_of_birth'] = np.nan
+    df_clean.loc[df_clean['ses_year_of_birth'] < 1900, 'ses_year_of_birth'] = np.nan
+    
     CODEBOOK_VARIABLES['ses_year_of_birth'] = {
         'original_variable': 'AGEX',
-        'question_label': "In what year were you born? / Enter year of birth",
-        'type': 'categorical',
-        'value_labels': {'1928': "1928", '1929': "1929", '1930': "1930", '1932': "1932", '1933': "1933", '1934': "1934", '1935': "1935", '1936': "1936", '1937': "1937", '1938': "1938", '1939': "1939", '1940': "1940", '1941': "1941", '1942': "1942", '1943': "1943", '1944': "1944", '1945': "1945", '1946': "1946", '1947': "1947", '1948': "1948", '1949': "1949", '1950': "1950", '1951': "1951", '1952': "1952", '1953': "1953"},
+        'question_label': "En quelle année êtes-vous né(e)? (In what year were you born?)",
+        'type': 'numeric',
+        'value_labels': {},
     }
 
     # --- LANGU ---
@@ -277,51 +232,75 @@ def clean_data(raw_path: str) -> pd.DataFrame:
         1.0: 'french',
         2.0: 'english',
         3.0: 'other',
+        4.0: 'french_and_english',
+        5.0: 'french_and_other',
+        6.0: 'english_and_other',
+        8.0: np.nan,
         9.0: np.nan,
     })
     CODEBOOK_VARIABLES['ses_language'] = {
         'original_variable': 'LANGU',
-        'question_label': "What is the language you first learned at home in your childhood and that you still understand?",
+        'question_label': "Quelle est la langue que vous avez apprise en premier lieu à la maison dans votre enfance et que vous comprenez toujours?",
         'type': 'categorical',
-        'value_labels': {'french': "French", 'english': "English", 'other': "Other"},
+        'value_labels': {
+            'french': "Français",
+            'english': "Anglais",
+            'other': "Autre",
+            'french_and_english': "Français et anglais",
+            'french_and_other': "Français et autre",
+            'english_and_other': "Anglais et autre",
+        },
     }
 
-    # --- OCCUP ---
-    # ses_occupation — Occupation principale
+     # --- OCCUP ---
+    # ses_occupation — Occupation principale (Q101)
     # Source: OCCUP
-    # Assumption: codes 96 and 99 treated as missing (unlabelled in codebook)
     df_clean['ses_occupation'] = df['OCCUP'].map({
-        1.0: 'employed_full_time',
-        2.0: 'employed_part_time',
-        3.0: 'self_employed',
+        1.0: 'self_employed',
+        2.0: 'employed_salaried',
+        3.0: 'retired',
         4.0: 'unemployed',
         5.0: 'student',
-        6.0: 'retired',
-        7.0: 'homemaker',
-        8.0: 'not_in_labour_force',
-        9.0: 'employed_other',
-        10.0: 'other_unspecified',
-        11.0: 'not_stated_or_refused',
-        96.0: np.nan,
+        6.0: 'homemaker',
+        7.0: 'disabled',
+        8.0: 'multiple_jobs',
+        9.0: 'student_and_salaried',
+        10.0: 'homemaker_and_salaried',
+        11.0: 'retired_and_salaried',
+        12.0: 'other',
         99.0: np.nan,
     })
     CODEBOOK_VARIABLES['ses_occupation'] = {
         'original_variable': 'OCCUP',
-        'question_label': "Occupation principale",
+        'question_label': "Travaillez-vous actuellement à votre compte, êtes-vous salarié(e), avez-vous pris votre retraite, êtes-vous au chômage ou cherchez-vous du travail, êtes-vous étudiant(e), ménager(ère), ou quelque chose d'autre?",
         'type': 'categorical',
-        'value_labels': {'employed_full_time': "Employed (Full-Time)", 'employed_part_time': "Employed (Part-Time)", 'self_employed': "Self-Employed", 'unemployed': "Unemployed", 'student': "Student", 'retired': "Retired", 'homemaker': "Homemaker", 'not_in_labour_force': "Not in Labour Force", 'employed_other': "Employed (Other)", 'other_unspecified': "Other/Unspecified", 'not_stated_or_refused': "Not Stated/Refused"},
+        'value_labels': {
+            'self_employed': "Travaille à son compte (avec ou sans employés)",
+            'employed_salaried': "Travaille pour un salaire (à temps plein ou à temps partiel, inclut congé payé)",
+            'retired': "Retraité(e)",
+            'unemployed': "Au chômage/cherche du travail",
+            'student': "Étudiant(e)",
+            'homemaker': "Ménager(ère)",
+            'disabled': "Handicapé(e)",
+            'multiple_jobs': "Occupe deux ou plus de deux emplois rémunérés",
+            'student_and_salaried': "Étudiant(e) et salarié(e)",
+            'homemaker_and_salaried': "Ménager(ère) et salarié(e)",
+            'retired_and_salaried': "Retraité(e) et salarié(e)",
+            'other': "Autre",
+        },
     }
 
-    # --- POND ---
-    # ses_weight — Survey sampling weight, normalized
+     # --- POND ---
+    # ses_weight — Survey sampling weight, normalized to 0-1
     # Source: POND
-    # Assumption: Max observed value 0.580105 used for normalization.
-    df_clean['ses_weight'] = df['POND'] / 0.580105
+    # Note: Normalized by dividing by the maximum observed value in the dataset
+    pond_max = df['POND'].max()
+    df_clean['ses_weight'] = df['POND'] / pond_max if pond_max > 0 else np.nan
     CODEBOOK_VARIABLES['ses_weight'] = {
         'original_variable': 'POND',
-        'question_label': "Survey sampling weight (normalized 0-1)",
+        'question_label': "Pondération d'échantillonnage du sondage (normalisée 0-1)",
         'type': 'numeric',
-        'value_labels': {'0.0_to_1.0': "Normalized sampling weight (0.0 to 1.0)"},
+        'value_labels': {},
     }
 
     # --- Q0QC ---
