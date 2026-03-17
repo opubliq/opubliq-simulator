@@ -1390,6 +1390,29 @@ def clean_data(df):
             'fourth': "quatrième",
             'fifth': "cinquième"
         }
+     }
+
+    # --- cps_candtherm_DO_29 ---
+    # cps_candtherm_DO_29 — Display order for Candidat(e) solidaire dans votre circonscription in cps_candtherm
+    # Source: cps_candtherm_DO_29
+    df_clean['cps_candtherm_DO_29'] = df['cps_candtherm_DO_29'].map({
+        1.0: 'first',
+        2.0: 'second',
+        3.0: 'third',
+        4.0: 'fourth',
+        5.0: 'fifth'
+    })
+    CODEBOOK_VARIABLES['cps_candtherm_DO_29'] = {
+        'original_variable': 'cps_candtherm_DO_29',
+        'question_label': "Display order for Candidat(e) solidaire dans votre circonscription in cps_candtherm",
+        'type': 'ordinal',
+        'value_labels': {
+            'first': "premier",
+            'second': "deuxième",
+            'third': "troisième",
+            'fourth': "quatrième",
+            'fifth': "cinquième"
+        }
     }
 
     # --- cps_candtherm_29 ---
@@ -1399,6 +1422,45 @@ def clean_data(df):
     CODEBOOK_VARIABLES['cps_candtherm_29'] = {
         'original_variable': 'cps_candtherm_29',
         'question_label': "Sur la même échelle, que pensez-vous des candidat(e)s dans votre circonscription? (Candidat(e) solidaire)",
+        'type': 'ordinal',
+        'value_labels': {},
+        'missing_codes': {
+            -99: "Je ne connais pas le/la candidat"
+        },
+        'range_min': 0,
+        'range_max': 100
+    }
+
+    # --- cps_candtherm_DO_30 ---
+    # cps_candtherm_DO_30 — Display order for Candidat(e) conservateur(trice) in cps_candtherm
+    # Source: cps_candtherm_DO_30
+    df_clean['cps_candtherm_DO_30'] = df['cps_candtherm_DO_30'].map({
+        1.0: 'first',
+        2.0: 'second',
+        3.0: 'third',
+        4.0: 'fourth',
+        5.0: 'fifth'
+    })
+    CODEBOOK_VARIABLES['cps_candtherm_DO_30'] = {
+        'original_variable': 'cps_candtherm_DO_30',
+        'question_label': "Display order for Candidat(e) conservateur(trice) dans votre circonscription in cps_candtherm",
+        'type': 'ordinal',
+        'value_labels': {
+            'first': "premier",
+            'second': "deuxième",
+            'third': "troisième",
+            'fourth': "quatrième",
+            'fifth': "cinquième"
+        }
+    }
+
+    # --- cps_candtherm_30 ---
+    # cps_candtherm_30 — Candidat(e) conservateur(trice) dans votre circonscription
+    # Source: cps_candtherm_30 (feeling thermometer)
+    df_clean['cps_candtherm_30'] = df['cps_candtherm_30']
+    CODEBOOK_VARIABLES['cps_candtherm_30'] = {
+        'original_variable': 'cps_candtherm_30',
+        'question_label': "Sur la même échelle, que pensez-vous des candidat(e)s dans votre circonscription? (Candidat(e) conservateur(trice))",
         'type': 'ordinal',
         'value_labels': {},
         'missing_codes': {
