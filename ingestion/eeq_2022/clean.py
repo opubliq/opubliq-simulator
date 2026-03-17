@@ -249,12 +249,12 @@ def clean_data(df):
     }
 
     # --- cps_impissue_matrix_DO_11 ---
-    # cps_impissue_matrix_DO_11 — Display order for eleventh issue option in cps_impissue_matrix
+    # cps_impissue_matrix_DO_11 — Display order for immigration option in cps_impissue_matrix
     # Source: cps_impissue_matrix_DO_11
     df_clean['cps_impissue_matrix_DO_11'] = df['cps_impissue_matrix_DO_11']
     CODEBOOK_VARIABLES['cps_impissue_matrix_DO_11'] = {
         'original_variable': 'cps_impissue_matrix_DO_11',
-        'question_label': "Display order for eleventh issue option in cps_impissue_matrix",
+        'question_label': "Display order for immigration option in cps_impissue_matrix",
         'type': 'continuous',
         'value_labels': {}
     }

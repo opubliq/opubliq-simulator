@@ -149,6 +149,32 @@ def clean_data(df):
         'value_labels': {}
     }
 
+    # --- AGE ---
+    # ses_age_group — Groupe d'âge
+    # Source: AGE
+    df_clean['ses_age_group'] = df['age'].map({
+        0.0: 'under_16',
+        1.0: 'gen_z',
+        2.0: 'millennials',
+        3.0: 'gen_x',
+        4.0: 'baby_boomers',
+        5.0: 'pre_baby_boomers',
+        9.0: np.nan  # Je préfère ne pas répondre
+    })
+    CODEBOOK_VARIABLES['ses_age_group'] = {
+        'original_variable': 'age',
+        'question_label': "Quel âge avez-vous ?",
+        'type': 'categorical',
+        'value_labels': {
+            'under_16': "Moins de 16 ans",
+            'gen_z': "Génération Z (nés après 1999)",
+            'millennials': "Milléniaux (nés entre 1980 et 1999)",
+            'gen_x': "Génération X (nés entre 1960 et 1979)",
+            'baby_boomers': "Baby-boomers (nés entre 1945 et 1959)",
+            'pre_baby_boomers': "Pré-baby-boomers (nés avant 1945)"
+        }
+    }
+
     # --- QPARENTS ---
     # ses_live_with_parents — Demeure chez ses parents
     # Source: QPARENTS
@@ -551,6 +577,44 @@ def clean_data(df):
     CODEBOOK_VARIABLES['ses_financial_assets_rrsp'] = {
         'original_variable': 'q63b_2',
         'question_label': "REER (Régime enregistré d'épargne-retraite)",
+        'type': 'binary',
+        'value_labels': {
+            'yes': "Oui",
+            'no': "Non"
+        }
+    }
+
+    # --- Q63A_2 ---
+    # ses_financial_assets_checking_account — Détient un compte chèque
+    # Source: Q63A_2
+    df_clean['ses_financial_assets_checking_account'] = df['q63a_2'].map({
+        1.0: 'yes',
+        2.0: 'no',
+        98.0: np.nan,  # Je ne sais pas
+        99.0: np.nan   # Je préfère ne pas répondre
+    })
+    CODEBOOK_VARIABLES['ses_financial_assets_checking_account'] = {
+        'original_variable': 'q63a_2',
+        'question_label': "Compte chèque dans une banque",
+        'type': 'binary',
+        'value_labels': {
+            'yes': "Oui",
+            'no': "Non"
+        }
+    }
+
+    # --- Q63A_3 ---
+    # ses_financial_assets_government_bonds — Détient des obligations du gouvernement
+    # Source: Q63A_3
+    df_clean['ses_financial_assets_government_bonds'] = df['q63a_3'].map({
+        1.0: 'yes',
+        2.0: 'no',
+        98.0: np.nan,  # Je ne sais pas
+        99.0: np.nan   # Je préfère ne pas répondre
+    })
+    CODEBOOK_VARIABLES['ses_financial_assets_government_bonds'] = {
+        'original_variable': 'q63a_3',
+        'question_label': "Obligations du gouvernement (bons du Trésor, etc.)",
         'type': 'binary',
         'value_labels': {
             'yes': "Oui",

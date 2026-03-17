@@ -425,13 +425,11 @@ def clean_data(raw_path: str) -> pd.DataFrame:
     # --- q11 ---
     # q11 variable definition as per context provided for validation
     CODEBOOK_VARIABLES['q11'] = {
-        "question": "Rôle de l'économie comme enjeu électoral",
-        "type": "likert",
+        "question": "Avez-vous voté à cette election provinciale?",
+        "type": "binary",
         "values": {
-            "1": "très important",
-            "2": "assez important",
-            "3": "peu important",
-            "4": "pas du tout important"
+            "1": "Oui",
+            "2": "Non"
         },
         "missing_codes": [8, 9]
     }
@@ -871,7 +869,7 @@ def clean_data(raw_path: str) -> pd.DataFrame:
     CODEBOOK_VARIABLES['op_government_directed'] = {
         'original_variable': 'q26',
         'question_label': "En général, diriez-vous que les gouvernements sont dirigés pour le bénéfice des intérêts de quelques personnes ou pour le bénéfice de tous?",
-        'type': 'likert',
+        'type': 'binary',
         'value_labels': {0.0: "Intérêts de quelques personnes", 1.0: "Bénéfice de tous"},
     }
 
@@ -1150,7 +1148,7 @@ def clean_data(raw_path: str) -> pd.DataFrame:
     CODEBOOK_VARIABLES['op_electoral_reform_favorable'] = {
         'original_variable': 'q35',
         'question_label': "Récemment, le gouvernement du Québec a commencé à envisager la possibilité de modifier le mode de scrutin. Êtes-vous favorable ou défavorable?",
-        'type': 'likert',
+        'type': 'binary',
         'value_labels': {1.0: "Favorable", 0.0: "Défavorable"},
     }
 
@@ -1823,8 +1821,8 @@ def clean_data(raw_path: str) -> pd.DataFrame:
     CODEBOOK_VARIABLES['op_same_sex_marriage'] = {
         'original_variable': 'q66',
         'question_label': "Êtes-vous pour ou contre le mariage entre personnes de même sexe?",
-        'type': 'likert',
-        'value_labels': {'intention_a': "Intention Parti A", 'intention_b': "Intention Parti B"},
+        'type': 'binary',
+        'value_labels': {1.0: "Pour", 0.0: "Contre"},
     }
 
     # --- q67 ---
