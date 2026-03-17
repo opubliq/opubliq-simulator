@@ -131,6 +131,25 @@ def clean_data(df):
         }
     }
 
+    # --- cps_spendedu ---
+    # cps_spendedu — Opinion sur les dépenses pour l'éducation
+    # Source: cps_spendedu
+    df_clean['cps_spendedu'] = df['cps_spendedu'].map({
+        1.0: 'spend_less',
+        2.0: 'spend_about_same',
+        3.0: 'spend_more'
+    })
+    CODEBOOK_VARIABLES['cps_spendedu'] = {
+        'original_variable': 'cps_spendedu',
+        'question_label': "Combien le gouvernement provincial devrait-il dépense en éducation?",
+        'type': 'categorical',
+        'value_labels': {
+            'spend_less': "Dépenser moins",
+            'spend_about_same': "Dépenser à peu près autant",
+            'spend_more': "Dépenser plus"
+        }
+    }
+
     # --- cps_immig ---
     # cps_immig — Opinion sur le niveau d'immigration au Canada
     # Source: cps_immig
@@ -375,14 +394,44 @@ def clean_data(df):
     }
 
     # --- cps_impissue_matrix_DO_6 ---
-    # cps_impissue_matrix_DO_6 — Display order for sixth issue option in cps_impissue_matrix
+    # cps_impissue_matrix_DO_6 — Display order for sixth issue option (La crise du logement) in cps_impissue_matrix
     # Source: cps_impissue_matrix_DO_6
-    df_clean['cps_impissue_matrix_DO_6'] = df['cps_impissue_matrix_DO_6']
+    df_clean['cps_impissue_matrix_DO_6'] = df['cps_impissue_matrix_DO_6'].map({
+        1.0: 'first',
+        2.0: 'second',
+        3.0: 'third',
+        4.0: 'fourth',
+        5.0: 'fifth',
+        6.0: 'sixth',
+        7.0: 'seventh',
+        8.0: 'eighth',
+        9.0: 'ninth',
+        10.0: 'tenth',
+        11.0: 'eleventh',
+        12.0: 'twelfth',
+        13.0: 'thirteenth',
+        14.0: 'fourteenth'
+    })
     CODEBOOK_VARIABLES['cps_impissue_matrix_DO_6'] = {
         'original_variable': 'cps_impissue_matrix_DO_6',
-        'question_label': "Display order for sixth issue option in cps_impissue_matrix",
-        'type': 'continuous',
-        'value_labels': {}
+        'question_label': "Display order for sixth issue option (La crise du logement) in cps_impissue_matrix",
+        'type': 'ordinal',
+        'value_labels': {
+            'first': "premier",
+            'second': "deuxième",
+            'third': "troisième",
+            'fourth': "quatrième",
+            'fifth': "cinquième",
+            'sixth': "sixième",
+            'seventh': "septième",
+            'eighth': "huitième",
+            'ninth': "neuvième",
+            'tenth': "dixième",
+            'eleventh': "onzième",
+            'twelfth': "douzième",
+            'thirteenth': "treizième",
+            'fourteenth': "quatorzième"
+        }
     }
 
     # --- cps_impissue_matrix_DO_7 ---
@@ -656,7 +705,7 @@ def clean_data(df):
     }
 
     # --- cps_intelligent_DO_2 ---
-    # cps_intelligent_DO_2 — Display order for second leader (François Legault) in cps_intelligent
+    # cps_intelligent_DO_2 — Display order for François Legault in cps_intelligent
     # Source: cps_intelligent_DO_2
     df_clean['cps_intelligent_DO_2'] = df['cps_intelligent_DO_2'].map({
         1.0: 'first',
@@ -668,6 +717,29 @@ def clean_data(df):
     CODEBOOK_VARIABLES['cps_intelligent_DO_2'] = {
         'original_variable': 'cps_intelligent_DO_2',
         'question_label': "Display order for François Legault in cps_intelligent",
+        'type': 'ordinal',
+        'value_labels': {
+            'first': "premier",
+            'second': "deuxième",
+            'third': "troisième",
+            'fourth': "quatrième",
+            'fifth': "cinquième"
+        }
+    }
+
+    # --- cps_intelligent_DO_3 ---
+    # cps_intelligent_DO_3 — Display order for Paul St-Pierre Plamondon in cps_intelligent
+    # Source: cps_intelligent_DO_3
+    df_clean['cps_intelligent_DO_3'] = df['cps_intelligent_DO_3'].map({
+        1.0: 'first',
+        2.0: 'second',
+        3.0: 'third',
+        4.0: 'fourth',
+        5.0: 'fifth'
+    })
+    CODEBOOK_VARIABLES['cps_intelligent_DO_3'] = {
+        'original_variable': 'cps_intelligent_DO_3',
+        'question_label': "Display order for Paul St-Pierre Plamondon in cps_intelligent",
         'type': 'ordinal',
         'value_labels': {
             'first': "premier",
