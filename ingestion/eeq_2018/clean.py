@@ -3210,7 +3210,7 @@ def clean_data(df):
         'question_label': "De quelle origine ethnique êtes-vous? Autochtone (Amérindienne, Premières nations)",
         'type': 'binary',
         'value_labels': {
-            'selected': "Sélectionné"
+            'selected': "Autochtone"
         }
     }
 
