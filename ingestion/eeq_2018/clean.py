@@ -141,7 +141,7 @@ def clean_data(df):
     # --- AGENUM ---
     # ses_age — Âge en années
     # Source: AGENUM
-    df_clean['ses_age'] = pd.to_numeric(df['agenum'], errors='coerce')
+    df_clean['ses_age'] = pd.to_numeric(df['agenum'].replace({999.0: np.nan}), errors='coerce')
     CODEBOOK_VARIABLES['ses_age'] = {
         'original_variable': 'agenum',
         'question_label': "Quel âge avez-vous ?",
