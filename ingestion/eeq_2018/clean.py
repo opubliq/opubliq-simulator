@@ -3172,7 +3172,8 @@ def clean_data(df):
             'often': "Souvent",
             'sometimes': 'Parfois',
             'rarely': "Rarement",
-            'never': "Jamais"
+            'never': "Jamais",
+            np.nan: "Je préfère ne pas répondre"
         }
     }
 
