@@ -149,11 +149,11 @@ def clean_data(raw_path: str) -> pd.DataFrame:
     }
 
     # --- pond ---
-    # wgt_respondent — Respondent sampling weight
+    # meta_weight — Respondent sampling weight
     # Source: pond
     # Note: Variable is a continuous numeric weight; no explicit transformation (divide by max) or code mapping was performed as max value is unknown and no missing codes were documented.
-    df_clean['wgt_respondent'] = df['pond']
-    CODEBOOK_VARIABLES['wgt_respondent'] = {
+    df_clean['meta_weight'] = df['pond']
+    CODEBOOK_VARIABLES['meta_weight'] = {
         'original_variable': 'pond',
         'question_label': "Respondent sampling weight",
         'type': 'numeric',
@@ -161,11 +161,11 @@ def clean_data(raw_path: str) -> pd.DataFrame:
     }
 
     # --- pondx ---
-    # wgt_respondent_x — Respondent sampling weight with turnout
+    # meta_weight_with_turnout — Respondent sampling weight with turnout
     # Source: pondx
     # Numeric weight variable - copy directly
-    df_clean['wgt_respondent_x'] = df['pondx']
-    CODEBOOK_VARIABLES['wgt_respondent_x'] = {
+    df_clean['meta_weight_with_turnout'] = df['pondx']
+    CODEBOOK_VARIABLES['meta_weight_with_turnout'] = {
         'original_variable': 'pondx',
         'question_label': "avec taux de participation",
         'type': 'numeric',
@@ -1576,8 +1576,8 @@ def clean_data(raw_path: str) -> pd.DataFrame:
     # STRATES CANONIQUES
     # =========================================================================
 
-    # strate_age_group — depuis q0age (catégories d'âge)
-    df_clean['strate_age_group'] = df['q0age'].map({
+    # meta_strate_age_group — depuis q0age (catégories d'âge)
+    df_clean['meta_strate_age_group'] = df['q0age'].map({
         2.0: '18-34',  # 18-24
         3.0: '18-34',  # 25-34
         4.0: '35-54',  # 35-44
@@ -1587,14 +1587,14 @@ def clean_data(raw_path: str) -> pd.DataFrame:
         8.0: '55+',    # 75+
     })
 
-    # strate_genre — depuis q76 (lowercase dans le .sav)
-    df_clean['strate_genre'] = df['q76'].map({
+    # meta_strate_genre — depuis q76 (lowercase dans le .sav)
+    df_clean['meta_strate_genre'] = df['q76'].map({
         1.0: 'homme',
         2.0: 'femme',
     })
 
-    # strate_langue — depuis langu (première langue apprise)
-    df_clean['strate_langue'] = df['langu'].map({
+    # meta_strate_langue — depuis langu (première langue apprise)
+    df_clean['meta_strate_langue'] = df['langu'].map({
         1.0: 'francophone',
         2.0: 'anglo_autre',
         3.0: 'anglo_autre',
@@ -1604,19 +1604,19 @@ def clean_data(raw_path: str) -> pd.DataFrame:
         7.0: 'francophone',  # français et anglais → francophone
     })
 
-    # strate_region — depuis regio (3 catégories; Q0QC et sous-variables de ville
+    # meta_strate_region — depuis regio (3 catégories; Q0QC et sous-variables de ville
     # absents du .sav distribué, confirmé via R/haven).
     # MTL RMR (1) couvre l'île + Laval + couronne sans distinction possible.
     # On assigne 'montreal' — la prédiction est identique pour montreal et couronne
     # dans le simulateur, donc la perte de granularité n'affecte pas les résultats.
-    df_clean['strate_region'] = df['regio'].map({
+    df_clean['meta_strate_region'] = df['regio'].map({
         1.0: 'montreal',
         2.0: 'quebec',
         3.0: 'regions',
     })
 
-    # strate_education — depuis q77 (lowercase, 11 niveaux → 3 strates)
-    df_clean['strate_education'] = df['q77'].map({
+    # meta_strate_education — depuis q77 (lowercase, 11 niveaux → 3 strates)
+    df_clean['meta_strate_education'] = df['q77'].map({
         1.0:  'sans_diplome_sec',   # Aucune scolarité
         2.0:  'sans_diplome_sec',   # Primaire sans diplôme
         3.0:  'sans_diplome_sec',   # Primaire avec diplôme

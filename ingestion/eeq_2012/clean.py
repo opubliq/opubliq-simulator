@@ -290,12 +290,12 @@ def clean_data(raw_path: str) -> pd.DataFrame:
     }
 
      # --- POND ---
-    # ses_weight — Survey sampling weight, normalized to 0-1
+    # meta_weight — Survey sampling weight, normalized to 0-1
     # Source: POND
     # Note: Normalized by dividing by the maximum observed value in the dataset
     pond_max = df['POND'].max()
-    df_clean['ses_weight'] = df['POND'] / pond_max if pond_max > 0 else np.nan
-    CODEBOOK_VARIABLES['ses_weight'] = {
+    df_clean['meta_weight'] = df['POND'] / pond_max if pond_max > 0 else np.nan
+    CODEBOOK_VARIABLES['meta_weight'] = {
         'original_variable': 'POND',
         'question_label': "Pondération d'échantillonnage du sondage (normalisée 0-1)",
         'type': 'numeric',
@@ -3957,14 +3957,14 @@ def map_strates_canoniques(df: pd.DataFrame) -> pd.DataFrame:
     """
     df_strata = pd.DataFrame(index=df.index)
 
-    # strate_genre
-    df_strata['strate_genre'] = df['SEXE'].map({
+    # meta_strate_genre
+    df_strata['meta_strate_genre'] = df['SEXE'].map({
         1.0: 'homme',
         2.0: 'femme',
     })
 
-    # strate_langue
-    df_strata['strate_langue'] = df['LANGU'].map({
+    # meta_strate_langue
+    df_strata['meta_strate_langue'] = df['LANGU'].map({
         1.0: 'francophone',
         2.0: 'anglo_autre',
         3.0: 'anglo_autre',
@@ -3973,16 +3973,16 @@ def map_strates_canoniques(df: pd.DataFrame) -> pd.DataFrame:
         6.0: 'anglo_autre',  # anglais et autre
     })
 
-    # strate_age_group
+    # meta_strate_age_group
     age = pd.to_numeric(df['AGE'], errors='coerce')
-    df_strata['strate_age_group'] = pd.cut(
+    df_strata['meta_strate_age_group'] = pd.cut(
         age,
         bins=[17, 34, 54, np.inf],
         labels=['18-34', '35-54', '55+']
     ).astype(object).where(age.notna())
 
-    # strate_region — 4 strates depuis Q0QC (17 régions administratives)
-    df_strata['strate_region'] = df['Q0QC'].map({
+    # meta_strate_region — 4 strates depuis Q0QC (17 régions administratives)
+    df_strata['meta_strate_region'] = df['Q0QC'].map({
         6.0:  'montreal',   # Montréal
         13.0: 'montreal',   # Laval
         14.0: 'couronne',   # Lanaudière
@@ -4002,8 +4002,8 @@ def map_strates_canoniques(df: pd.DataFrame) -> pd.DataFrame:
         17.0: 'regions',    # Centre-du-Québec
     })
 
-    # strate_education — depuis SCOL (12 niveaux → 3 strates)
-    df_strata['strate_education'] = df['SCOL'].map({
+    # meta_strate_education — depuis SCOL (12 niveaux → 3 strates)
+    df_strata['meta_strate_education'] = df['SCOL'].map({
         1.0:  'sans_diplome_sec',   # Primaire
         2.0:  'sans_diplome_sec',   # Secondaire 1
         3.0:  'sans_diplome_sec',   # Secondaire 2

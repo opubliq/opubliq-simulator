@@ -162,9 +162,9 @@ def upsert_survey(client, survey_id: str, df: pd.DataFrame, metadata: dict):
     print(f"  Inserted {inserted_questions} questions")
 
     # 4. Batch insert respondents
-    # strate_* columns → strate_canonical JSONB; rest → responses JSONB
-    strate_cols = [c for c in df.columns if c.startswith("strate_")]
-    other_cols = [c for c in df.columns if not c.startswith("strate_")]
+    # meta_strate_* columns → strate_canonical JSONB; rest → responses JSONB
+    strate_cols = [c for c in df.columns if c.startswith("meta_strate_")]
+    other_cols = [c for c in df.columns if not c.startswith("meta_strate_")]
 
     records = df_to_records(df)
     respondent_rows = []

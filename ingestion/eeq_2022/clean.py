@@ -1671,28 +1671,28 @@ def clean_data(df):
     # STRATES CANONIQUES
     # =========================================================================
 
-    # strate_age_group — depuis cps_age_in_years (continu)
+    # meta_strate_age_group — depuis cps_age_in_years (continu)
     age = pd.to_numeric(df['cps_age_in_years'], errors='coerce')
-    df_clean['strate_age_group'] = pd.cut(
+    df_clean['meta_strate_age_group'] = pd.cut(
         age,
         bins=[17, 34, 54, np.inf],
         labels=['18-34', '35-54', '55+']
     ).astype(object).where(age.notna())
 
-    # strate_genre — depuis cps_genderid (valeurs string dans le .dta)
-    df_clean['strate_genre'] = df['cps_genderid'].map({
+    # meta_strate_genre — depuis cps_genderid (valeurs string dans le .dta)
+    df_clean['meta_strate_genre'] = df['cps_genderid'].map({
         'A man':                            'homme',
         'A woman':                          'femme',
         'Non-binary':                       'non_binaire',
         'Another gender, please specify:':  'autre',
     })
 
-    # strate_langue — depuis cps_lang_2 (French sélectionné = 'French')
+    # meta_strate_langue — depuis cps_lang_2 (French sélectionné = 'French')
     lang_fr = df['cps_lang_2'] == 'French'
-    df_clean['strate_langue'] = lang_fr.map({True: 'francophone', False: 'anglo_autre'})
+    df_clean['meta_strate_langue'] = lang_fr.map({True: 'francophone', False: 'anglo_autre'})
 
-    # strate_education — depuis cps_edu (valeurs string → 3 strates)
-    df_clean['strate_education'] = df['cps_edu'].map({
+    # meta_strate_education — depuis cps_edu (valeurs string → 3 strates)
+    df_clean['meta_strate_education'] = df['cps_edu'].map({
         'No schooling':                                                          'sans_diplome_sec',
         'Some elementary school':                                                'sans_diplome_sec',
         'Completed elementary school':                                           'sans_diplome_sec',
@@ -1706,15 +1706,15 @@ def clean_data(df):
         'Professional degree or doctorate':                                      'universite',
     })
 
-    # strate_region — depuis feduid (circonscription fédérale → région admin → strate)
+    # meta_strate_region — depuis feduid (circonscription fédérale → région admin → strate)
     # cps_postal absent du .dta v1 (retiré pour confidentialité); feduid est dérivé
     # du PCCF par les auteurs de l'étude et couvre tous les répondants.
     # Référence : data/feduid_region_qc.csv (généré par jointure spatiale CEF × RA via ISQ)
     # Cohérent avec le mapping région admin → strate utilisé dans eeq_2018/clean.py
     _fed_csv = os.path.join(os.path.dirname(__file__), '..', '..', 'data', 'feduid_region_qc.csv')
     _fed_map = pd.read_csv(_fed_csv, usecols=['feduid', 'strate_region']).set_index('feduid')['strate_region'].to_dict()
-    df_clean['strate_region'] = pd.to_numeric(df['feduid'], errors='coerce').map(_fed_map)
-    CODEBOOK_VARIABLES['strate_region'] = {
+    df_clean['meta_strate_region'] = pd.to_numeric(df['feduid'], errors='coerce').map(_fed_map)
+    CODEBOOK_VARIABLES['meta_strate_region'] = {
         'original_variable': 'feduid',
         'question_label': "Région de résidence (strate canonique)",
         'type': 'categorical',

@@ -204,18 +204,18 @@ def clean_data(raw_path: str) -> pd.DataFrame:
     }
 
     # --- codep ---
-    # geo_postal_code — CODE POSTAL (Postal code)
+     # meta_postal_code — CODE POSTAL (Postal code)
     # Source: codep
     # Note: Variable is text/string containing Canadian postal codes (FSA format: 1 letter, 1 digit, 1 letter)
     # Assumption: code '999' treated as missing (standard missing indicator)
     # 39 records have code 999, treated as missing values
-    df_clean['geo_postal_code'] = df['codep'].map(
+    df_clean['meta_postal_code'] = df['codep'].map(
         lambda x: x.lower() if x != '999' else None
     )
     # Convert None to np.nan for consistency
-    df_clean['geo_postal_code'] = df_clean['geo_postal_code'].where(df_clean['geo_postal_code'].notna(), np.nan)
+    df_clean['meta_postal_code'] = df_clean['meta_postal_code'].where(df_clean['meta_postal_code'].notna(), np.nan)
 
-    CODEBOOK_VARIABLES['geo_postal_code'] = {
+    CODEBOOK_VARIABLES['meta_postal_code'] = {
         'original_variable': 'codep',
         'question_label': 'CODEP. CODE POSTAL',
         'type': 'categorical',
@@ -319,11 +319,11 @@ def clean_data(raw_path: str) -> pd.DataFrame:
     }
 
     # --- pond ---
-    # ses_weight — Survey weight variable
+    # meta_weight — Survey weight variable
     # Source: pond
     # Assumption: Treating as numeric weight variable, normalized by maximum observed value (5.990714).
-    df_clean['ses_weight'] = df['pond'] / 5.990714
-    CODEBOOK_VARIABLES['ses_weight'] = {
+    df_clean['meta_weight'] = df['pond'] / 5.990714
+    CODEBOOK_VARIABLES['meta_weight'] = {
         'original_variable': 'pond',
         'question_label': "Survey weight (inferred)",
         'type': 'numeric',
@@ -2225,11 +2225,11 @@ def clean_data(raw_path: str) -> pd.DataFrame:
     }
 
     # --- quest ---
-    # id_respondent — Questionnaire identifier / Numéro de questionnaire
+    # meta_respondent_id — Questionnaire identifier / Numéro de questionnaire
     # Source: quest
     # Note: Sequential numeric ID (1-2175), stored as string in SPSS file
-    df_clean['id_respondent'] = pd.to_numeric(df['quest'], errors='coerce')
-    CODEBOOK_VARIABLES['id_respondent'] = {
+    df_clean['meta_respondent_id'] = pd.to_numeric(df['quest'], errors='coerce')
+    CODEBOOK_VARIABLES['meta_respondent_id'] = {
         'original_variable': 'quest',
         'question_label': "Questionnaire identifier",
         'type': 'numeric',
@@ -2264,36 +2264,36 @@ def map_strates_canoniques(df_clean: pd.DataFrame) -> pd.DataFrame:
     """Ajoute les 4 colonnes de strates canoniques standardisées.
 
     Sources:
-        - age_group: ses_age_year (q75) → année naissance → groupe d'âge (2007 comme référence)
-        - langue: ses_language (langu) → francophone / anglo_autre
-        - region: ses_region (nomx) → déjà en format canonique (montreal/quebec/couronne/regions)
-        - genre: ses_gender (q76) → homme / femme
+        - meta_strate_age_group: ses_age_year (q75) → année naissance → groupe d'âge (2007 comme référence)
+        - meta_strate_langue: ses_language (langu) → francophone / anglo_autre
+        - meta_strate_region: ses_region (nomx) → déjà en format canonique (montreal/quebec/couronne/regions)
+        - meta_strate_genre: ses_gender (q76) → homme / femme
 
     Returns:
-        pd.DataFrame: df_clean avec colonnes strate_age_group, strate_langue, strate_region, strate_genre ajoutées
+        pd.DataFrame: df_clean avec colonnes meta_strate_age_group, meta_strate_langue, meta_strate_region, meta_strate_genre ajoutées
     """
-    # --- strate_age_group (depuis année de naissance, enquête 2007) ---
+    # --- meta_strate_age_group (depuis année de naissance, enquête 2007) ---
     ANNEE_ENQUETE = 2007
     age = ANNEE_ENQUETE - df_clean['ses_age_year']
-    df_clean['strate_age_group'] = pd.Series(dtype='object', index=df_clean.index)
-    df_clean.loc[(age >= 18) & (age <= 34), 'strate_age_group'] = '18-34'
-    df_clean.loc[(age >= 35) & (age <= 54), 'strate_age_group'] = '35-54'
-    df_clean.loc[age >= 55, 'strate_age_group'] = '55+'
+    df_clean['meta_strate_age_group'] = pd.Series(dtype='object', index=df_clean.index)
+    df_clean.loc[(age >= 18) & (age <= 34), 'meta_strate_age_group'] = '18-34'
+    df_clean.loc[(age >= 35) & (age <= 54), 'meta_strate_age_group'] = '35-54'
+    df_clean.loc[age >= 55, 'meta_strate_age_group'] = '55+'
 
-    # --- strate_langue (depuis langue maternelle) ---
-    df_clean['strate_langue'] = df_clean['ses_language'].map({
+    # --- meta_strate_langue (depuis langue maternelle) ---
+    df_clean['meta_strate_langue'] = df_clean['ses_language'].map({
         'french': 'francophone',
         'english': 'anglo_autre',
     })
 
-    # --- strate_region (déjà canonique depuis nomx) ---
-    df_clean['strate_region'] = df_clean['ses_region']
+    # --- meta_strate_region (déjà canonique depuis nomx) ---
+    df_clean['meta_strate_region'] = df_clean['ses_region']
 
-    # --- strate_genre ---
-    df_clean['strate_genre'] = df_clean['ses_gender']
+    # --- meta_strate_genre ---
+    df_clean['meta_strate_genre'] = df_clean['ses_gender']
 
-    # --- strate_education ---
-    df_clean['strate_education'] = df_clean['ses_education'].map({
+    # --- meta_strate_education ---
+    df_clean['meta_strate_education'] = df_clean['ses_education'].map({
         'aucune_scolarite':            'sans_diplome_sec',
         'primaire_sans_diplome':       'sans_diplome_sec',
         'primaire_avec_diplome':       'sans_diplome_sec',

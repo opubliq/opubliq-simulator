@@ -340,10 +340,10 @@ def clean_data(df):
     }
 
     # --- POND ---
-    # ses_weight — Poids d'échantillonnage
+    # meta_weight — Poids d'échantillonnage
     # Source: POND
-    df_clean['ses_weight'] = df['pond']
-    CODEBOOK_VARIABLES['ses_weight'] = {
+    df_clean['meta_weight'] = df['pond']
+    CODEBOOK_VARIABLES['meta_weight'] = {
         'original_variable': 'pond',
         'question_label': "Pondération de l'échantillon",
         'type': 'numeric',
@@ -4313,30 +4313,30 @@ def clean_data(df):
     # STRATES CANONIQUES
     # =========================================================================
 
-    # strate_age_group — depuis agecalc (âge calculé, plus fiable que agenum)
+    # meta_strate_age_group — depuis agecalc (âge calculé, plus fiable que agenum)
     age = pd.to_numeric(df['agecalc'], errors='coerce')
     age = age.where(age >= 18)  # exclure les moins de 18 ans
-    df_clean['strate_age_group'] = pd.cut(
+    df_clean['meta_strate_age_group'] = pd.cut(
         age,
         bins=[17, 34, 54, np.inf],
         labels=['18-34', '35-54', '55+']
     ).astype(object).where(age.notna())
 
-    # strate_genre — depuis qsexe
-    df_clean['strate_genre'] = df['qsexe'].map({
+    # meta_strate_genre — depuis qsexe
+    df_clean['meta_strate_genre'] = df['qsexe'].map({
         1.0: 'homme',
         2.0: 'femme',
     })
 
-    # strate_langue — depuis qlangue (langue maternelle principale)
-    df_clean['strate_langue'] = df['qlangue'].map({
+    # meta_strate_langue — depuis qlangue (langue maternelle principale)
+    df_clean['meta_strate_langue'] = df['qlangue'].map({
         1.0:  'francophone',  # Français
         2.0:  'anglo_autre',  # Anglais
         96.0: 'anglo_autre',  # Autre
     })
 
-    # strate_region — 4 strates depuis q0qc (17 régions administratives)
-    df_clean['strate_region'] = df['q0qc'].map({
+    # meta_strate_region — 4 strates depuis q0qc (17 régions administratives)
+    df_clean['meta_strate_region'] = df['q0qc'].map({
         6.0:  'montreal',   # Montréal
         13.0: 'montreal',   # Laval
         14.0: 'couronne',   # Lanaudière
@@ -4356,8 +4356,8 @@ def clean_data(df):
         17.0: 'regions',    # Centre-du-Québec
     })
 
-    # strate_education — depuis qscol (15 niveaux → 3 strates)
-    df_clean['strate_education'] = df['qscol'].map({
+    # meta_strate_education — depuis qscol (15 niveaux → 3 strates)
+    df_clean['meta_strate_education'] = df['qscol'].map({
         1.0:  'sans_diplome_sec',   # Aucune scolarité
         2.0:  'sans_diplome_sec',   # Primaire incomplet
         3.0:  'sans_diplome_sec',   # Primaire complété
@@ -4392,7 +4392,7 @@ def map_strates_canoniques(df):
     strata_cols = [
         'ses_age', 'ses_gender', 'ses_language', 'ses_education',
         'ses_occupation', 'ses_region_qc', 'ses_region_rmr',
-        'ses_marital_status', 'ses_has_children', 'ses_weight',
+        'ses_marital_status', 'ses_has_children', 'meta_weight',
         'ses_birth_place', 'ses_religious_affiliation',
         'ses_religious_practice', 'ses_income', 'ses_mother_education',
         'ses_father_education', 'ses_home_language', 'ses_live_with_parents'

@@ -316,12 +316,12 @@ def clean_data(raw_path: str) -> pd.DataFrame:
     }
 
     # --- POND ---
-    # ses_weight — Sampling weight (POND)
+    # meta_weight — Sampling weight (POND)
     # Source: POND
     # Assumption: Value 99.0 from codebook is treated as missing. All other values are preserved as weights.
     # Strategy: Explicitly map the missing code 99.0 to np.nan, then use the original column for all other values.
-    df_clean['ses_weight'] = df['POND'].where(df['POND'] != 99.0, other=np.nan)
-    CODEBOOK_VARIABLES['ses_weight'] = {
+    df_clean['meta_weight'] = df['POND'].where(df['POND'] != 99.0, other=np.nan)
+    CODEBOOK_VARIABLES['meta_weight'] = {
         'original_variable': 'POND',
         'question_label': "Sampling Weight",
         'type': 'numeric',
@@ -597,11 +597,12 @@ def clean_data(raw_path: str) -> pd.DataFrame:
     }
 
     # --- POND ---
-    # sample_weight — Poids d'échantillonnage
+    # meta_weight_calibrated — Poids d'échantillonnage calibré
     # Source: POND
     # Type: numeric
-    df_clean['sample_weight'] = df['POND'].where(df['POND'] != 99.0, other=np.nan)
-    CODEBOOK_VARIABLES['sample_weight'] = {
+    # Note: Second weight assignment from POND in a different section of the questionnaire.
+    df_clean['meta_weight_calibrated'] = df['POND'].where(df['POND'] != 99.0, other=np.nan)
+    CODEBOOK_VARIABLES['meta_weight_calibrated'] = {
         'original_variable': 'POND',
         'question_label': "Poids d'échantillonnage",
         'type': 'numeric',
@@ -3576,8 +3577,8 @@ def clean_data(raw_path: str) -> pd.DataFrame:
     # STRATES CANONIQUES
     # =========================================================================
 
-    # strate_age_group — depuis CLAGE (catégories d'âge)
-    df_clean['strate_age_group'] = df['CLAGE'].map({
+    # meta_strate_age_group — depuis CLAGE (catégories d'âge)
+    df_clean['meta_strate_age_group'] = df['CLAGE'].map({
         2.0: '18-34',  # 18-24
         3.0: '18-34',  # 25-34
         4.0: '35-54',  # 35-44
@@ -3587,14 +3588,14 @@ def clean_data(raw_path: str) -> pd.DataFrame:
         8.0: '55+',    # 75+
     })
 
-    # strate_genre — depuis QSEXE
-    df_clean['strate_genre'] = df['QSEXE'].map({
+    # meta_strate_genre — depuis QSEXE
+    df_clean['meta_strate_genre'] = df['QSEXE'].map({
         1.0: 'homme',
         2.0: 'femme',
     })
 
-    # strate_langue — depuis QLANG (première langue apprise)
-    df_clean['strate_langue'] = df['QLANG'].map({
+    # meta_strate_langue — depuis QLANG (première langue apprise)
+    df_clean['meta_strate_langue'] = df['QLANG'].map({
         1.0: 'francophone',  # Français
         2.0: 'anglo_autre',  # Anglais
         3.0: 'francophone',  # Français et anglais → francophone
@@ -3603,8 +3604,8 @@ def clean_data(raw_path: str) -> pd.DataFrame:
         6.0: 'anglo_autre',  # Anglais et autre
     })
 
-    # strate_region — 4 strates depuis QREGION (17 régions administratives)
-    df_clean['strate_region'] = df['QREGION'].map({
+    # meta_strate_region — 4 strates depuis QREGION (17 régions administratives)
+    df_clean['meta_strate_region'] = df['QREGION'].map({
         6.0:  'montreal',   # Montréal
         13.0: 'montreal',   # Laval
         14.0: 'couronne',   # Lanaudière
@@ -3624,8 +3625,8 @@ def clean_data(raw_path: str) -> pd.DataFrame:
         17.0: 'regions',    # Centre-du-Québec
     })
 
-    # strate_education — depuis QSCOL (11 niveaux → 3 strates)
-    df_clean['strate_education'] = df['QSCOL'].map({
+    # meta_strate_education — depuis QSCOL (11 niveaux → 3 strates)
+    df_clean['meta_strate_education'] = df['QSCOL'].map({
         1.0:  'sans_diplome_sec',   # Aucune scolarité
         2.0:  'sans_diplome_sec',   # Primaire sans diplôme
         3.0:  'sans_diplome_sec',   # Primaire avec diplôme
