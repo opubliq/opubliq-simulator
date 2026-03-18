@@ -1,7 +1,7 @@
 import { createClient } from "jsr:@supabase/supabase-js@2";
 
 const GEMINI_EMBEDDING_MODEL = "gemini-embedding-001";
-const GEMINI_LLM_MODEL = "gemini-2.0-flash";
+const GEMINI_LLM_MODEL = "gemini-2.5-flash";
 const EMBEDDING_DIMENSIONS = 1536; // Matryoshka truncation — matches questions.embedding vector(1536)
 const TOP_CANDIDATES = 15;
 const DEFAULT_TOP_K = 5;
@@ -84,13 +84,14 @@ ${candidateList}`;
   const response = await fetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      contents: [{ parts: [{ text: prompt }] }],
-      generationConfig: {
-        temperature: 0.1,
-        maxOutputTokens: 512,
-      },
-    }),
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: {
+          temperature: 0.1,
+          maxOutputTokens: 4096,
+          responseMimeType: "application/json",
+        },
+      }),
   });
 
   if (!response.ok) {
