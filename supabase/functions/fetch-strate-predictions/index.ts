@@ -171,12 +171,17 @@ Deno.serve(async (req: Request) => {
       if (!grouped[qid]) {
         grouped[qid] = [];
       }
+      // Supabase may return JSONB as a serialized string — parse it if needed
+      const dist = row.distribution;
+      const distribution: Record<string, number> =
+        typeof dist === "string" ? JSON.parse(dist) : dist;
+
       grouped[qid].push({
         strate_age_group: row.strate_age_group as string,
         strate_langue: row.strate_langue as string,
         strate_region: row.strate_region as string,
         strate_genre: row.strate_genre as string,
-        distribution: row.distribution as Record<string, number>,
+        distribution,
       });
     }
 
