@@ -2,8 +2,8 @@
 // Step 3 Edge Function — LLM silicon sampling per strate
 //
 // For each of the 48 canonical strates, builds a persona prompt including:
-//   - The strate's SES profile
-//   - Historical questions with LLM weights and per-strate distributions
+//   - The strate's SES profile (including age at the time of each historical survey)
+//   - Historical questions with LLM weights, year, and per-strate distributions
 //   - Raw context and fictional question from the user
 //
 // Calls Gemini Flash per strate (2-3 in parallel with a 500ms delay between
@@ -11,10 +11,9 @@
 //
 // Input (from Step 2 / fetch-strate-predictions):
 //   {
-//     "predictions": [...],           // Step 2 output
+//     "predictions": [...],           // Step 2 output (with survey_id per question)
 //     "question": "...",              // fictional question from user
 //     "context": "...",               // optional raw context from user
-//     "question_text_from_step1": ... // optional: full question text (forwarded from Step 1)
 //   }
 //
 // Output (passed to Step 4 / aggregation):
@@ -42,7 +41,10 @@
 //   }
 // ---------------------------------------------------------------------------
 
+import { createClient, SupabaseClient } from "jsr:@supabase/supabase-js@2";
+
 const GEMINI_LLM_MODEL = "gemini-2.5-flash";
+const CURRENT_YEAR = 2026; // anchor year for age group definitions
 const PARALLEL_BATCH_SIZE = 2;    // number of strates sampled simultaneously
 const BATCH_DELAY_MS = 500;        // delay between batches (free-tier rate limit)
 
@@ -103,12 +105,21 @@ interface QuestionPredictions {
   text?: string;
   scale_type?: string | null;
   var_name?: string | null;
+  survey_id?: number;
+  year?: number;  // enriched by Step 3 via surveys table if not already set
 }
 
 interface LlmStrateSamplingRequest {
   predictions: QuestionPredictions[];
   question: string;       // fictional question from user
   context?: string;       // optional raw context
+  dry_run?: boolean;      // if true, return prompts without calling Gemini
+  dry_run_strate?: {      // if set, only return the prompt for this specific strate
+    strate_age_group: string;
+    strate_langue: string;
+    strate_region: string;
+    strate_genre: string;
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -170,6 +181,69 @@ function describeGenre(genre: Genre): string {
     "femme": "une femme",
   };
   return map[genre];
+}
+
+// ---------------------------------------------------------------------------
+// Compute the age of a strate persona at a given survey year.
+//
+// Strate age groups are defined relative to CURRENT_YEAR (2026).
+// We use the midpoint of the range to get a representative age.
+//   18_34  → midpoint 26  → born ~2000
+//   35_54  → midpoint 44  → born ~1982
+//   55_plus → midpoint 67 → born ~1959
+// ---------------------------------------------------------------------------
+
+const AGE_MIDPOINTS: Record<AgeGroup, number> = {
+  "18_34": 26,
+  "35_54": 44,
+  "55_plus": 67,
+};
+
+function describeAgeAtYear(age: AgeGroup, surveyYear: number): string {
+  const birthYear = CURRENT_YEAR - AGE_MIDPOINTS[age];
+  const ageAtSurvey = surveyYear - birthYear;
+  if (ageAtSurvey < 0) {
+    return `(non né·e en ${surveyYear})`;
+  }
+  return `environ ${ageAtSurvey} ans en ${surveyYear}`;
+}
+
+// ---------------------------------------------------------------------------
+// Fetch survey years from Supabase for all question_ids in predictions.
+// Mutates predictions in-place to add the `year` field.
+// ---------------------------------------------------------------------------
+
+async function enrichPredictionsWithYear(
+  predictions: QuestionPredictions[],
+  supabase: SupabaseClient,
+): Promise<void> {
+  // Collect survey_ids that need year resolution
+  const surveyIds = new Set<number>();
+  for (const pred of predictions) {
+    if (pred.survey_id != null && pred.year == null) {
+      surveyIds.add(pred.survey_id);
+    }
+  }
+
+  if (surveyIds.size === 0) return;
+
+  const { data, error } = await supabase
+    .from("surveys")
+    .select("id, year")
+    .in("id", Array.from(surveyIds));
+
+  if (error || !data) return; // silently skip — year will just be absent
+
+  const yearMap: Record<number, number> = {};
+  for (const row of data) {
+    yearMap[row.id as number] = row.year as number;
+  }
+
+  for (const pred of predictions) {
+    if (pred.survey_id != null && pred.year == null) {
+      pred.year = yearMap[pred.survey_id];
+    }
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -313,8 +387,10 @@ function buildStratePrompt(
     const usedFallback = !strateRow && dist ? " [estimation nationale]" : "";
 
     const questionText = pred.text ?? `Question ID ${pred.question_id}`;
+    const yearLabel = pred.year ? ` (${pred.year})` : "";
+    const ageAtSurvey = pred.year ? ` — tu avais ${describeAgeAtYear(strate_age_group, pred.year)}` : "";
     historicalLines.push(
-      `- [poids: ${(pred.llm_points / 100).toFixed(2)}${usedFallback}] ${questionText}\n  Réponses typiques de ce profil: {${distStr}}`,
+      `- [poids: ${(pred.llm_points / 100).toFixed(2)}${usedFallback}]${yearLabel}${ageAtSurvey}\n  Question : ${questionText}\n  Réponses typiques de ce profil: {${distStr}}`,
     );
   }
 
@@ -512,21 +588,11 @@ Deno.serve(async (req: Request) => {
     });
   }
 
-  // Extract Gemini API key from Authorization header
+  // Extract Gemini API key from Authorization header (not required in dry_run mode)
   const authHeader = req.headers.get("Authorization") ?? "";
   const geminiApiKey = authHeader.startsWith("Bearer ")
     ? authHeader.slice(7).trim()
     : authHeader.trim();
-
-  if (!geminiApiKey) {
-    return new Response(
-      JSON.stringify({ error: "Missing Gemini API key in Authorization header" }),
-      {
-        status: 401,
-        headers: { "Content-Type": "application/json" },
-      },
-    );
-  }
 
   let body: LlmStrateSamplingRequest;
   try {
@@ -538,7 +604,17 @@ Deno.serve(async (req: Request) => {
     });
   }
 
-  const { predictions, question, context } = body;
+  const { predictions, question, context, dry_run, dry_run_strate } = body;
+
+  if (!dry_run && !geminiApiKey) {
+    return new Response(
+      JSON.stringify({ error: "Missing Gemini API key in Authorization header" }),
+      {
+        status: 401,
+        headers: { "Content-Type": "application/json" },
+      },
+    );
+  }
 
   if (!Array.isArray(predictions) || predictions.length === 0) {
     return new Response(
@@ -561,6 +637,82 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
+    // Enrich predictions with survey year (best-effort, silently skips on error)
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+    );
+    await enrichPredictionsWithYear(predictions, supabase);
+
+    // -------------------------------------------------------------------------
+    // dry_run mode: return prompts without calling Gemini
+    // -------------------------------------------------------------------------
+    if (dry_run) {
+      const qtype = detectQuestionType(predictions);
+      const responseOptions = qtype === "multinomial" ? getResponseOptions(predictions) : [];
+      const nationalMarginal = computeNationalMarginal(predictions, qtype);
+
+      const stratesWithPrior = new Set<string>();
+      for (const pred of predictions) {
+        for (const s of pred.strates) {
+          stratesWithPrior.add(
+            `${s.strate_age_group}|${s.strate_langue}|${s.strate_region}|${s.strate_genre}`,
+          );
+        }
+      }
+
+      // If dry_run_strate is specified, return only that one prompt
+      const stratesToInspect = dry_run_strate
+        ? ALL_STRATES.filter(
+            (s) =>
+              s.strate_age_group === dry_run_strate.strate_age_group &&
+              s.strate_langue === dry_run_strate.strate_langue &&
+              s.strate_region === dry_run_strate.strate_region &&
+              s.strate_genre === dry_run_strate.strate_genre,
+          )
+        : ALL_STRATES;
+
+      const dryRunResults = stratesToInspect.map((strate) => {
+        const key = `${strate.strate_age_group}|${strate.strate_langue}|${strate.strate_region}|${strate.strate_genre}`;
+        const hadPrior = stratesWithPrior.has(key);
+        const prompt = buildStratePrompt(
+          strate,
+          predictions,
+          nationalMarginal,
+          question.trim(),
+          context,
+          qtype,
+          responseOptions,
+        );
+        return { ...strate, prompt, had_prior: hadPrior };
+      });
+
+      return new Response(
+        JSON.stringify({
+          dry_run: true,
+          question: question.trim(),
+          question_type: qtype,
+          response_options: responseOptions,
+          strate_prompts: dryRunResults,
+          meta: {
+            total_strates: dryRunResults.length,
+            strates_with_prior: dryRunResults.filter((r) => r.had_prior).length,
+            strates_using_national_marginal: dryRunResults.filter((r) => !r.had_prior).length,
+          },
+        }),
+        {
+          status: 200,
+          headers: {
+            "Content-Type": "application/json",
+            "Access-Control-Allow-Origin": "*",
+          },
+        },
+      );
+    }
+
+    // -------------------------------------------------------------------------
+    // Normal mode: call Gemini for all 48 strates
+    // -------------------------------------------------------------------------
     const strateResults = await sampleAllStrates(
       predictions,
       question.trim(),
