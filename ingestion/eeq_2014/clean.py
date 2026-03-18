@@ -1075,26 +1075,21 @@ def clean_data(raw_path: str) -> pd.DataFrame:
     # --- Q19 ---
     # op_vote_intention_independentist — Intention de vote indépendantiste
     # Source: Q19
-    # TODO: Valider le mapping exact des intentions de vote à partir du codebook (Quebec Election Study 2014 FR.doc)
-    # Le mapping ci-dessous est une hypothèse.
+    # Validé vs codebook (Quebec Election Study 2014 FR.md): 1=Oui, 2=Non, 8=NSP, 9=Refus
     df_clean['op_vote_intention_independentist'] = df['Q19'].map({
-        # 1.0: 'yes',
-        # 2.0: 'no',
-        # 3.0: 'dont_know',
-        # 4.0: 'refused',
-        # 98.0: np.nan, # Don't know
-        # 99.0: np.nan, # Refused
+        1.0: 'yes',
+        2.0: 'no',
+        8.0: np.nan,  # Je ne sais pas
+        9.0: np.nan,  # Je préfère ne pas répondre
     })
     CODEBOOK_VARIABLES['op_vote_intention_independentist'] = {
         'original_variable': 'Q19',
-        'question_label': "Si un référendum sur l'indépendance du Québec avait lieu demain, voteriez-vous OUI ou NON?", # TODO: Confirmer le libellé exact de la question dans le codebook
+        'question_label': "Si un référendum sur l'indépendance avait lieu vous demandant si vous voulez que le Québec devienne un pays indépendant, voteriez-vous OUI ou voteriez-vous NON?",
         'type': 'categorical',
         'value_labels': {
-            # 'yes': "OUI",
-            # 'no': "NON",
-            # 'dont_know': "Ne sait pas",
-            # 'refused': "Refusé",
-        } # TODO: Confirmer les labels de valeur exacts dans le codebook
+            'yes': "Oui",
+            'no': "Non",
+        }
     }
 
     # --- Q2 ---
