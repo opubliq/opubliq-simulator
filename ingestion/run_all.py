@@ -148,11 +148,15 @@ def upsert_survey(client, survey_id: str, df: pd.DataFrame, metadata: dict):
         value_labels = var_meta.get("value_labels")
         # Store None (NULL) instead of empty dict for continuous/numeric variables
         choices = {str(k): v for k, v in value_labels.items()} if value_labels else None
+        # prefix = everything before the first underscore (e.g. op, ses, meta, behav, cps)
+        prefix = var_name.split("_")[0] if "_" in var_name else var_name
         question_rows.append({
             "survey_id": survey_db_id,
             "text": var_meta.get("question_label", var_name),
             "scale_type": var_meta.get("type"),
             "choices": choices,
+            "var_name": var_name,
+            "prefix": prefix,
         })
 
     inserted_questions = 0
