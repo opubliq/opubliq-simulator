@@ -4,6 +4,7 @@ import './App.css'
 function App() {
   const [question, setQuestion] = useState('')
   const [contexte, setContexte] = useState('')
+  const [choicesText, setChoicesText] = useState('')
   const [apiKey, setApiKey] = useState('')
   const [apiKeyVisible, setApiKeyVisible] = useState(false)
 
@@ -18,7 +19,16 @@ function App() {
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    // TODO: appel Edge Function (issue 6lp)
+    const choices = choicesText
+      .split('\n')
+      .map(c => c.trim())
+      .filter(c => c.length > 0)
+    const payload = {
+      question: question.trim(),
+      context: contexte.trim(),
+      choices: choices.length > 0 ? choices : undefined,
+    }
+    console.log('Payload:', payload)
   }
 
   const canSubmit = question.trim() && contexte.trim() && apiKey.trim()
@@ -62,6 +72,23 @@ function App() {
               placeholder="Ex: Êtes-vous pour ou contre la réforme du mode de scrutin?"
               required
             />
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <label className="text-sm font-medium" htmlFor="choices">
+              Choix de réponse <span className="text-xs text-base-content/40">(optionnel)</span>
+            </label>
+            <textarea
+              id="choices"
+              className="textarea textarea-bordered w-full text-sm leading-relaxed"
+              rows={3}
+              value={choicesText}
+              onChange={(e) => setChoicesText(e.target.value)}
+              placeholder="Un choix par ligne, ex:&#10;Tout à fait d'accord&#10;Plutôt d'accord&#10;Plutôt en désaccord&#10;Tout à fait en désaccord&#10;Ne sait pas"
+            />
+            <p className="text-xs text-base-content/40">
+              Laissez vide pour que l'IA infère les choix appropriés
+            </p>
           </div>
 
           <div className="flex flex-col gap-2">
