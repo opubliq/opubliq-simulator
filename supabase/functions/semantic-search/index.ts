@@ -22,7 +22,7 @@ interface QuestionCandidate {
 }
 
 interface ScoredQuestion extends QuestionCandidate {
-  llm_weight: number;
+  llm_points: number; // integer points out of 100 — only assigned to relevant questions; unassigned points = uncovered attitudes
 }
 
 async function generateEmbedding(
@@ -68,15 +68,15 @@ async function scoreCandidatesWithLLM(
 
 New question: "${userQuestion}"
 
-Below are ${candidates.length} candidate historical questions. For each one, assign a relevance weight between 0.0 and 1.0 indicating how useful this question would be for predicting how people might answer the new question. Consider:
+You have 100 relevance points to distribute across the ${candidates.length} candidate historical questions below. Assign points to questions that would genuinely help predict how people answer the new question — based on:
 - Topical similarity (same issue/policy area)
 - Conceptual overlap (similar attitudes being measured)
-- Predictive value (responses to this question would help predict responses to the new one)
+- Predictive value (knowing someone's answer to this question helps predict their answer to the new one)
 
-Return ONLY a JSON object mapping each question ID to its weight, like:
-{"<id>": <weight>, ...}
+IMPORTANT: Do NOT assign all 100 points if the questions are not strongly relevant. If the candidates collectively cover the new question poorly, the total should reflect that — assign only as many points as the evidence warrants. Unassigned points represent attitudes not captured by the available data.
 
-Do not include any explanation or markdown. Only the raw JSON object.
+Return ONLY a JSON object mapping each question ID to its integer point allocation. Only include questions with points > 0. The values must sum to at most 100.
+Example: {"<id>": <points>, ...}
 
 Candidate questions:
 ${candidateList}`;
@@ -111,13 +111,13 @@ ${candidateList}`;
 
   try {
     const parsed = JSON.parse(cleaned);
-    // Normalize keys to numbers
+    // Parse integer points (0-100 budget), clamp to valid range
     const scores: Record<number, number> = {};
     for (const [k, v] of Object.entries(parsed)) {
       const id = parseInt(k, 10);
-      const weight = Math.max(0, Math.min(1, Number(v)));
-      if (!isNaN(id) && !isNaN(weight)) {
-        scores[id] = weight;
+      const points = Math.round(Math.max(0, Math.min(100, Number(v))));
+      if (!isNaN(id) && points > 0) {
+        scores[id] = points;
       }
     }
     return scores;
@@ -230,20 +230,25 @@ Deno.serve(async (req: Request) => {
       geminiApiKey,
     );
 
-    // Merge cosine similarity + LLM weight; LLM weight is authoritative
-    const scored: ScoredQuestion[] = typedCandidates.map((c) => ({
-      ...c,
-      llm_weight: llmScores[c.id] ?? 0,
-    }));
+    // Merge cosine similarity + LLM points; only include questions with points > 0
+    const scored: ScoredQuestion[] = typedCandidates
+      .filter((c) => (llmScores[c.id] ?? 0) > 0)
+      .map((c) => ({
+        ...c,
+        llm_points: llmScores[c.id],
+      }));
 
-    // Sort by LLM weight descending, take top_k
-    scored.sort((a, b) => b.llm_weight - a.llm_weight);
+    // Sort by llm_points descending, take top_k
+    scored.sort((a, b) => b.llm_points - a.llm_points);
     const topK = scored.slice(0, Math.max(1, top_k));
+
+    const total_points_assigned = scored.reduce((sum, c) => sum + c.llm_points, 0);
 
     return new Response(
       JSON.stringify({
         question,
         top_k,
+        total_points_assigned, // signal de couverture: < 100 = attitudes non couvertes par nos données
         results: topK,
       }),
       {
