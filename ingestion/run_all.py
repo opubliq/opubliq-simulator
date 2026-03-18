@@ -145,10 +145,14 @@ def upsert_survey(client, survey_id: str, df: pd.DataFrame, metadata: dict):
     # 3. Batch insert questions
     question_rows = []
     for var_name, var_meta in codebook.items():
+        value_labels = var_meta.get("value_labels")
+        # Store None (NULL) instead of empty dict for continuous/numeric variables
+        choices = {str(k): v for k, v in value_labels.items()} if value_labels else None
         question_rows.append({
             "survey_id": survey_db_id,
             "text": var_meta.get("question_label", var_name),
             "scale_type": var_meta.get("type"),
+            "choices": choices,
         })
 
     inserted_questions = 0
