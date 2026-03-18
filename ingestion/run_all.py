@@ -121,7 +121,7 @@ def batched(lst: list, size: int):
 
 def upsert_survey(client, survey_id: str, df: pd.DataFrame, metadata: dict):
     survey_meta = metadata["survey_metadata"]
-    codebook = metadata.get("codebook") or metadata.get("variables", {})
+    codebook = metadata.get("codebook") or metadata.get("variables") or metadata.get("codebook_variables", {})
 
     # 1. Delete existing survey (cascades to questions + respondents)
     existing = client.table("surveys").select("id").eq("source", survey_id).execute()
