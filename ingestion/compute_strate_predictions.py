@@ -48,9 +48,9 @@ SUPABASE_KEY = os.environ.get("SUPABASE_KEY") or os.environ.get("VITE_SUPABASE_P
 
 # Strates canoniques: 3 × 2 × 4 × 2 = 48
 STRATE_VALUES = {
-    "age_group": ["18_34", "35_54", "55_plus"],
+    "age_group": ["18-34", "35-54", "55+"],
     "langue":    ["francophone", "anglo_autre"],
-    "region":    ["montreal", "couronne", "quebec", "autre"],
+    "region":    ["montreal", "couronne", "quebec", "regions"],
     "genre":     ["homme", "femme"],
 }
 

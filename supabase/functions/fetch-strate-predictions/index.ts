@@ -41,6 +41,7 @@ interface StepOneResult {
   var_name?: string | null;
   prefix?: string | null;
   survey_id?: number;
+  choices?: Record<string, string> | null;
   cosine_similarity?: number;
 }
 
@@ -59,6 +60,11 @@ interface StrateRow {
 interface QuestionPredictions {
   question_id: number;
   llm_points: number;
+  text?: string;
+  scale_type?: string | null;
+  var_name?: string | null;
+  survey_id?: number;
+  choices?: Record<string, string> | null;
   strates: StrateRow[];
 }
 
@@ -186,9 +192,15 @@ Deno.serve(async (req: Request) => {
     }
 
     // Build the output in the same order as the input results (preserving LLM ranking)
+    // Forward all metadata from Step 1 so Step 3 can use text, survey_id, etc.
     const predictions: QuestionPredictions[] = results.map((r) => ({
       question_id: r.id,
       llm_points: r.llm_points,
+      text: r.text,
+      scale_type: r.scale_type,
+      var_name: r.var_name,
+      survey_id: r.survey_id,
+      choices: r.choices,
       strates: grouped[r.id] ?? [],
     }));
 

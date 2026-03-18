@@ -52,9 +52,9 @@ const BATCH_DELAY_MS = 500;        // delay between batches (free-tier rate limi
 // All 48 canonical strates
 // ---------------------------------------------------------------------------
 
-const AGE_GROUPS = ["18_34", "35_54", "55_plus"] as const;
+const AGE_GROUPS = ["18-34", "35-54", "55+"] as const;
 const LANGUES = ["francophone", "anglo_autre"] as const;
-const REGIONS = ["montreal", "couronne", "quebec", "autre"] as const;
+const REGIONS = ["montreal", "couronne", "quebec", "regions"] as const;
 const GENRES = ["homme", "femme"] as const;
 
 type AgeGroup = typeof AGE_GROUPS[number];
@@ -106,6 +106,7 @@ interface QuestionPredictions {
   scale_type?: string | null;
   var_name?: string | null;
   survey_id?: number;
+  choices?: Record<string, string> | null;  // {"raw_value": "human label"}
   year?: number;  // enriched by Step 3 via surveys table if not already set
 }
 
@@ -121,6 +122,12 @@ interface LlmStrateSamplingRequest {
     strate_region: string;
     strate_genre: string;
   };
+  limit_to_strate?: {      // if set, only sample this specific strate (saves Google API calls)
+    strate_age_group: string;
+    strate_langue: string;
+    strate_region: string;
+    strate_genre: string;
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -128,11 +135,13 @@ interface LlmStrateSamplingRequest {
 // ---------------------------------------------------------------------------
 
 interface MultinomialLlmResponse {
+  raisonnement: string;
   distribution: Record<string, number>;
   margin_of_error: number;
 }
 
 interface NumericLlmResponse {
+  raisonnement: string;
   mean: number;
   margin_of_error: number;
 }
@@ -151,9 +160,9 @@ interface StrateResult extends Strate {
 
 function describeAge(age: AgeGroup): string {
   const map: Record<AgeGroup, string> = {
-    "18_34": "18 à 34 ans",
-    "35_54": "35 à 54 ans",
-    "55_plus": "55 ans et plus",
+    "18-34": "18 à 34 ans",
+    "35-54": "35 à 54 ans",
+    "55+": "55 ans et plus",
   };
   return map[age];
 }
@@ -171,7 +180,7 @@ function describeRegion(region: Region): string {
     "montreal": "l'île de Montréal",
     "couronne": "la couronne de Montréal (banlieues)",
     "quebec": "la région de Québec",
-    "autre": "une autre région du Québec",
+    "regions": "une autre région du Québec",
   };
   return map[region];
 }
@@ -185,28 +194,38 @@ function describeGenre(genre: Genre): string {
 }
 
 // ---------------------------------------------------------------------------
-// Compute the age of a strate persona at a given survey year.
+// Compute the age range of a strate persona at a given survey year.
 //
 // Strate age groups are defined relative to CURRENT_YEAR (2026).
-// We use the midpoint of the range to get a representative age.
-//   18_34  → midpoint 26  → born ~2000
-//   35_54  → midpoint 44  → born ~1982
-//   55_plus → midpoint 67 → born ~1959
+// We compute the full range [min, max] for the group to give honest context.
+//   18-34 in 2026 → born 1992–2008 → in 2012: 4–20 ans
+//   35-54 in 2026 → born 1972–1991 → in 2012: 21–40 ans
+//   55+   in 2026 → born ≤1971     → in 2012: 41+ ans
 // ---------------------------------------------------------------------------
 
-const AGE_MIDPOINTS: Record<AgeGroup, number> = {
-  "18_34": 26,
-  "35_54": 44,
-  "55_plus": 67,
+const AGE_GROUP_BOUNDS: Record<AgeGroup, { min: number; max: number | null }> = {
+  "18-34": { min: 18, max: 34 },
+  "35-54": { min: 35, max: 54 },
+  "55+":   { min: 55, max: null },
 };
 
 function describeAgeAtYear(age: AgeGroup, surveyYear: number): string {
-  const birthYear = CURRENT_YEAR - AGE_MIDPOINTS[age];
-  const ageAtSurvey = surveyYear - birthYear;
-  if (ageAtSurvey < 0) {
-    return `(non né·e en ${surveyYear})`;
+  const { min, max } = AGE_GROUP_BOUNDS[age];
+  // Youngest member of this group in CURRENT_YEAR was born (CURRENT_YEAR - min)
+  // Oldest was born (CURRENT_YEAR - max)
+  const ageOfYoungest = surveyYear - (CURRENT_YEAR - min);  // smallest age at survey
+  const ageOfOldest   = max !== null ? surveyYear - (CURRENT_YEAR - max) : null;
+
+  if (ageOfOldest !== null && ageOfOldest < 0) {
+    return `(pas encore né·e en ${surveyYear})`;
   }
-  return `environ ${ageAtSurvey} ans en ${surveyYear}`;
+
+  const lo = Math.max(0, ageOfYoungest);
+
+  if (max === null) {
+    return `${lo} ans et plus en ${surveyYear}`;
+  }
+  return `entre ${lo} et ${ageOfOldest} ans en ${surveyYear}`;
 }
 
 // ---------------------------------------------------------------------------
@@ -295,9 +314,15 @@ function getResponseOptions(predictions: QuestionPredictions[]): string[] {
 // Format distribution for prompt readability
 // ---------------------------------------------------------------------------
 
-function formatDistribution(dist: Record<string, number>): string {
+function formatDistribution(
+  dist: Record<string, number>,
+  choices?: Record<string, string> | null,
+): string {
   return Object.entries(dist)
-    .map(([k, v]) => `"${k}": ${(v * 100).toFixed(1)}%`)
+    .map(([k, v]) => {
+      const label = choices?.[k] ?? k;
+      return `"${label}": ${(v * 100).toFixed(1)}%`;
+    })
     .join(", ");
 }
 
@@ -384,7 +409,7 @@ function buildStratePrompt(
     );
 
     const dist = strateRow?.distribution ?? nationalMarginal;
-    const distStr = dist ? formatDistribution(dist) : "(données non disponibles)";
+    const distStr = dist ? formatDistribution(dist, pred.choices) : "(données non disponibles)";
     const usedFallback = !strateRow && dist ? " [estimation nationale]" : "";
 
     const questionText = pred.text ?? `Question ID ${pred.question_id}`;
@@ -405,30 +430,35 @@ function buildStratePrompt(
 
   // Response format instructions — based on choices for the fictional question
   let formatInstructions: string;
+  const raisonnementInstructions = `- "raisonnement": ta réflexion à la première personne en tant que cette persona (3-5 phrases commençant par "Je..."). Parle depuis l'intérieur du personnage — pas "cette persona penserait X", mais "Je pense que..." ou "Pour moi...". Ancre-toi dans ton vécu, ton âge, ta région, ta langue.`;
+
   if (choices && choices.length > 0) {
     // Explicit choices provided for the fictional question
     const optionsList = choices.map((o) => `"${o}"`).join(", ");
     const exampleDist = choices.slice(0, 2).map((o, i) => `"${o}": ${i === 0 ? 0.65 : 0.35}`).join(", ");
     formatInstructions = `Les choix de réponse pour cette question sont : ${optionsList}
 
-Réponds UNIQUEMENT avec un objet JSON avec exactement deux clés :
+Réponds UNIQUEMENT avec un objet JSON avec exactement trois clés, dans cet ordre :
+${raisonnementInstructions}
 - "distribution": objet avec ces choix comme clés et des probabilités décimales comme valeurs (devant sommer à 1.0)
 - "margin_of_error": nombre décimal entre 0 et 1 représentant ton incertitude (ex: 0.08 = ±8%)
 
-Exemple : {"distribution": {${exampleDist}}, "margin_of_error": 0.08}`;
+Exemple : {"raisonnement": "Je suis un jeune francophone de Montréal...", "distribution": {${exampleDist}}, "margin_of_error": 0.08}`;
   } else if (qtype === "numeric") {
-    formatInstructions = `Réponds UNIQUEMENT avec un objet JSON avec exactement deux clés :
+    formatInstructions = `Réponds UNIQUEMENT avec un objet JSON avec exactement trois clés, dans cet ordre :
+${raisonnementInstructions}
 - "mean": nombre décimal représentant la réponse moyenne typique pour ce profil
 - "margin_of_error": nombre décimal représentant l'incertitude autour de cette moyenne
 
-Exemple : {"mean": 4.2, "margin_of_error": 0.6}`;
+Exemple : {"raisonnement": "Je suis un jeune francophone de Montréal...", "mean": 4.2, "margin_of_error": 0.6}`;
   } else {
     // No choices provided — ask LLM to infer appropriate options from the question
-    formatInstructions = `Réponds UNIQUEMENT avec un objet JSON avec exactement deux clés :
+    formatInstructions = `Réponds UNIQUEMENT avec un objet JSON avec exactement trois clés, dans cet ordre :
+${raisonnementInstructions}
 - "distribution": objet avec les options de réponse appropriées comme clés (déduis-les du type de question) et des probabilités décimales comme valeurs (devant sommer à 1.0)
 - "margin_of_error": nombre décimal entre 0 et 1 représentant ton incertitude (ex: 0.08 = ±8%)
 
-Exemple : {"distribution": {"Oui": 0.65, "Non": 0.35}, "margin_of_error": 0.08}`;
+Exemple : {"raisonnement": "Je suis un jeune francophone de Montréal...", "distribution": {"Oui": 0.65, "Non": 0.35}, "margin_of_error": 0.08}`;
   }
 
   return `Tu es ${describeGenre(strate_genre)}, ${describeAge(strate_age_group)}, ${describeLangue(strate_langue)}, vivant à ${describeRegion(strate_region)}. Tu réponds à un sondage d'opinion au Québec.${historicalSection}${contextSection}
@@ -457,7 +487,7 @@ async function callGeminiForStrate(
       contents: [{ parts: [{ text: prompt }] }],
       generationConfig: {
         temperature: 0.3,   // slight variance to reflect group-level uncertainty
-        maxOutputTokens: 512,
+        maxOutputTokens: 8000,
         responseMimeType: "application/json",
       },
     }),
@@ -469,7 +499,12 @@ async function callGeminiForStrate(
   }
 
   const data = await response.json();
-  const rawText: string = data.candidates?.[0]?.content?.parts?.[0]?.text ?? "{}";
+  const rawText: string = data.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
+
+  if (!rawText) {
+    const finishReason = data.candidates?.[0]?.finishReason ?? "unknown";
+    throw new Error(`Gemini returned empty response. finishReason=${finishReason}. Full response: ${JSON.stringify(data)}`);
+  }
 
   // Strip markdown code fences if present (defensive — responseMimeType should prevent this)
   const cleaned = rawText
@@ -477,15 +512,22 @@ async function callGeminiForStrate(
     .replace(/```\s*/gi, "")
     .trim();
 
-  const parsed = JSON.parse(cleaned);
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(cleaned);
+  } catch (e) {
+    throw new Error(`JSON parse failed: ${e instanceof Error ? e.message : String(e)}. Raw Gemini response: ${rawText.slice(0, 500)}`);
+  }
 
   // Validate and normalise the response
+  const raisonnement: string = typeof parsed.raisonnement === "string" ? parsed.raisonnement : "";
+
   if ("mean" in parsed) {
     // Numeric response
     const mean = Number(parsed.mean);
     const moe = Number(parsed.margin_of_error ?? 0);
     if (isNaN(mean)) throw new Error(`Invalid numeric mean: ${rawText}`);
-    return { mean, margin_of_error: isNaN(moe) ? 0 : moe };
+    return { raisonnement, mean, margin_of_error: isNaN(moe) ? 0 : moe };
   } else if ("distribution" in parsed) {
     // Multinomial response
     const dist = parsed.distribution as Record<string, unknown>;
@@ -505,7 +547,7 @@ async function callGeminiForStrate(
     for (const [k, v] of Object.entries(values)) {
       normalised[k] = v / sum;
     }
-    return { distribution: normalised, margin_of_error: isNaN(moe) ? 0 : moe };
+    return { raisonnement, distribution: normalised, margin_of_error: isNaN(moe) ? 0 : moe };
   } else {
     throw new Error(`Unrecognised LLM response format: ${rawText}`);
   }
@@ -521,6 +563,12 @@ async function sampleAllStrates(
   choices: string[] | undefined, // response options for the fictional question
   context: string | undefined,
   geminiApiKey: string,
+  limit_to_strate?: {
+    strate_age_group: string;
+    strate_langue: string;
+    strate_region: string;
+    strate_genre: string;
+  },
 ): Promise<StrateResult[]> {
   const qtype = detectQuestionType(predictions);
   const responseOptions = qtype === "multinomial" ? getResponseOptions(predictions) : [];
@@ -538,9 +586,20 @@ async function sampleAllStrates(
     }
   }
 
+  // Filter strates if limit_to_strate is provided
+  const stratesToProcess = limit_to_strate
+    ? ALL_STRATES.filter(
+      (s) =>
+        s.strate_age_group === limit_to_strate.strate_age_group &&
+        s.strate_langue === limit_to_strate.strate_langue &&
+        s.strate_region === limit_to_strate.strate_region &&
+        s.strate_genre === limit_to_strate.strate_genre,
+    )
+    : ALL_STRATES;
+
   // Process in batches
-  for (let i = 0; i < ALL_STRATES.length; i += PARALLEL_BATCH_SIZE) {
-    const batch = ALL_STRATES.slice(i, i + PARALLEL_BATCH_SIZE);
+  for (let i = 0; i < stratesToProcess.length; i += PARALLEL_BATCH_SIZE) {
+    const batch = stratesToProcess.slice(i, i + PARALLEL_BATCH_SIZE);
 
     const batchPromises = batch.map(async (strate): Promise<StrateResult> => {
       const key = `${strate.strate_age_group}|${strate.strate_langue}|${strate.strate_region}|${strate.strate_genre}`;
@@ -617,7 +676,7 @@ Deno.serve(async (req: Request) => {
     });
   }
 
-      const { predictions, question, context, dry_run, dry_run_strate, choices } = body;
+    const { predictions, question, context, dry_run, dry_run_strate, choices, limit_to_strate } = body;
 
   if (!dry_run && !geminiApiKey) {
     return new Response(
@@ -734,6 +793,7 @@ Deno.serve(async (req: Request) => {
       choices, // Pass choices to sampleAllStrates
       context,
       geminiApiKey,
+      limit_to_strate,
     );
 
     const failedCount = strateResults.filter((r) => r.error !== null).length;

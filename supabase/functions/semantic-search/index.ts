@@ -18,6 +18,7 @@ interface QuestionCandidate {
   var_name: string | null;
   prefix: string | null;
   survey_id: number;
+  choices: Record<string, string> | null;
   cosine_similarity: number;
 }
 

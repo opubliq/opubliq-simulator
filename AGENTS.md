@@ -44,3 +44,17 @@ bd ready --label core
 - NEVER say "ready to push when you are" - YOU must push
 - If push fails, resolve and retry until it succeeds
 
+## Scripts Python
+
+Les scripts Python de ce projet doivent être exécutés dans le virtualenv du projet :
+
+```bash
+source venv/bin/activate
+python scripts/nom_du_script.py
+```
+
+## Fichiers sensibles
+
+- Ne jamais lire, modifier ou référencer le fichier `.env.local`
+- Ce fichier contient des secrets locaux et ne doit pas être consulté
+
