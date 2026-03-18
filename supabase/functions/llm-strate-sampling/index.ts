@@ -111,9 +111,10 @@ interface QuestionPredictions {
 
 interface LlmStrateSamplingRequest {
   predictions: QuestionPredictions[];
-  question: string;       // fictional question from user
-  context?: string;       // optional raw context
-  dry_run?: boolean;      // if true, return prompts without calling Gemini
+  question: string;           // fictional question from user
+  choices?: string[];         // response options for the fictional question (null = open/numeric)
+  context?: string;           // optional raw context
+  dry_run?: boolean;          // if true, return prompts without calling Gemini
   dry_run_strate?: {      // if set, only return the prompt for this specific strate
     strate_age_group: string;
     strate_langue: string;
@@ -363,9 +364,9 @@ function buildStratePrompt(
   predictions: QuestionPredictions[],
   nationalMarginal: Record<string, number> | null,
   question: string,
+  choices: string[] | undefined,   // response options for the fictional question
   context: string | undefined,
   qtype: QuestionType,
-  responseOptions: string[],
 ): string {
   const { strate_age_group, strate_langue, strate_region, strate_genre } = strate;
 
@@ -402,21 +403,32 @@ function buildStratePrompt(
     ? `\n\nContexte fourni :\n${context.trim()}`
     : "";
 
-  // Response format instructions
+  // Response format instructions — based on choices for the fictional question
   let formatInstructions: string;
-  if (qtype === "multinomial") {
-    const optionsList = responseOptions.map((o) => `"${o}"`).join(", ");
-    formatInstructions = `Réponds UNIQUEMENT avec un objet JSON avec exactement deux clés :
-- "distribution": objet avec les options de réponse comme clés (parmi : ${optionsList}) et des probabilités décimales comme valeurs (devant sommer à 1.0)
+  if (choices && choices.length > 0) {
+    // Explicit choices provided for the fictional question
+    const optionsList = choices.map((o) => `"${o}"`).join(", ");
+    const exampleDist = choices.slice(0, 2).map((o, i) => `"${o}": ${i === 0 ? 0.65 : 0.35}`).join(", ");
+    formatInstructions = `Les choix de réponse pour cette question sont : ${optionsList}
+
+Réponds UNIQUEMENT avec un objet JSON avec exactement deux clés :
+- "distribution": objet avec ces choix comme clés et des probabilités décimales comme valeurs (devant sommer à 1.0)
 - "margin_of_error": nombre décimal entre 0 et 1 représentant ton incertitude (ex: 0.08 = ±8%)
 
-Exemple : {"distribution": {"Oui": 0.65, "Non": 0.35}, "margin_of_error": 0.08}`;
-  } else {
+Exemple : {"distribution": {${exampleDist}}, "margin_of_error": 0.08}`;
+  } else if (qtype === "numeric") {
     formatInstructions = `Réponds UNIQUEMENT avec un objet JSON avec exactement deux clés :
 - "mean": nombre décimal représentant la réponse moyenne typique pour ce profil
 - "margin_of_error": nombre décimal représentant l'incertitude autour de cette moyenne
 
 Exemple : {"mean": 4.2, "margin_of_error": 0.6}`;
+  } else {
+    // No choices provided — ask LLM to infer appropriate options from the question
+    formatInstructions = `Réponds UNIQUEMENT avec un objet JSON avec exactement deux clés :
+- "distribution": objet avec les options de réponse appropriées comme clés (déduis-les du type de question) et des probabilités décimales comme valeurs (devant sommer à 1.0)
+- "margin_of_error": nombre décimal entre 0 et 1 représentant ton incertitude (ex: 0.08 = ±8%)
+
+Exemple : {"distribution": {"Oui": 0.65, "Non": 0.35}, "margin_of_error": 0.08}`;
   }
 
   return `Tu es ${describeGenre(strate_genre)}, ${describeAge(strate_age_group)}, ${describeLangue(strate_langue)}, vivant à ${describeRegion(strate_region)}. Tu réponds à un sondage d'opinion au Québec.${historicalSection}${contextSection}
@@ -506,6 +518,7 @@ async function callGeminiForStrate(
 async function sampleAllStrates(
   predictions: QuestionPredictions[],
   question: string,
+  choices: string[] | undefined, // response options for the fictional question
   context: string | undefined,
   geminiApiKey: string,
 ): Promise<StrateResult[]> {
@@ -538,9 +551,9 @@ async function sampleAllStrates(
         predictions,
         nationalMarginal,
         question,
+        choices,
         context,
         qtype,
-        responseOptions,
       );
 
       try {
@@ -604,7 +617,7 @@ Deno.serve(async (req: Request) => {
     });
   }
 
-  const { predictions, question, context, dry_run, dry_run_strate } = body;
+      const { predictions, question, context, dry_run, dry_run_strate, choices } = body;
 
   if (!dry_run && !geminiApiKey) {
     return new Response(
@@ -649,7 +662,9 @@ Deno.serve(async (req: Request) => {
     // -------------------------------------------------------------------------
     if (dry_run) {
       const qtype = detectQuestionType(predictions);
-      const responseOptions = qtype === "multinomial" ? getResponseOptions(predictions) : [];
+      // In dry_run mode, the choices for the fictional question are the definitive ones.
+      // If not provided, the LLM will be asked to infer them.
+      const fictionalQuestionChoices = choices; 
       const nationalMarginal = computeNationalMarginal(predictions, qtype);
 
       const stratesWithPrior = new Set<string>();
@@ -680,9 +695,9 @@ Deno.serve(async (req: Request) => {
           predictions,
           nationalMarginal,
           question.trim(),
+          fictionalQuestionChoices,
           context,
           qtype,
-          responseOptions,
         );
         return { ...strate, prompt, had_prior: hadPrior };
       });
@@ -692,7 +707,7 @@ Deno.serve(async (req: Request) => {
           dry_run: true,
           question: question.trim(),
           question_type: qtype,
-          response_options: responseOptions,
+          response_options_for_fictional_question: fictionalQuestionChoices, // Changed field name
           strate_prompts: dryRunResults,
           meta: {
             total_strates: dryRunResults.length,
@@ -716,6 +731,7 @@ Deno.serve(async (req: Request) => {
     const strateResults = await sampleAllStrates(
       predictions,
       question.trim(),
+      choices, // Pass choices to sampleAllStrates
       context,
       geminiApiKey,
     );
