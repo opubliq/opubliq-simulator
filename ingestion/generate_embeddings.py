@@ -2,7 +2,7 @@
 """
 Generate embeddings for questions that don't have one yet.
 
-Uses intfloat/multilingual-e5-large-instruct (1024 dimensions) via OpenRouter.
+Uses openai/text-embedding-3-small (1536 dimensions) via OpenRouter.
 Idempotent: only processes questions where embedding IS NULL.
 Use --force to re-embed questions that already have an embedding.
 
@@ -36,8 +36,8 @@ SUPABASE_URL = os.environ.get("VITE_SUPABASE_URL") or os.environ.get("SUPABASE_U
 SUPABASE_KEY = os.environ.get("SUPABASE_KEY") or os.environ.get("VITE_SUPABASE_PUBLISHABLE_DEFAULT_KEY")
 OPENROUTER_API_KEY = os.environ.get("OPENROUTER_API_KEY")
 
-EMBEDDING_MODEL = "intfloat/multilingual-e5-large-instruct"
-EMBEDDING_DIMS = 1024  # multilingual-e5-large-instruct native output dimensionality
+EMBEDDING_MODEL = "openai/text-embedding-3-small"
+EMBEDDING_DIMS = 1536  # text-embedding-3-small native output dimensionality, fits within pgvector HNSW 2000-dim limit
 OPENROUTER_EMBEDDINGS_URL = "https://openrouter.ai/api/v1/embeddings"
 DEFAULT_BATCH_SIZE = 100
 DEFAULT_SLEEP = 1.0  # seconds between batches
