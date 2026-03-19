@@ -90,6 +90,10 @@ async function runPipeline(
   }
   const step1 = await r1.json()
 
+  if (!step1.results || step1.results.length === 0) {
+    throw new Error(`Aucune question historique pertinente trouvée pour simuler cette question. Essayez une question plus proche des thèmes couverts par les sondages disponibles.`)
+  }
+
   // Step 2 — fetch strate predictions
   onStep('step2_fetch_predictions')
   const r2 = await fetch(fnUrl('fetch-strate-predictions'), {
