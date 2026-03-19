@@ -98,6 +98,7 @@ ${candidateList}`;
       messages: [{ role: "user", content: prompt }],
       temperature: 0.1,
       max_tokens: 4096,
+      response_format: { type: "json_object" },
     }),
   });
 
@@ -109,14 +110,8 @@ ${candidateList}`;
   const data = await response.json();
   const rawText: string = data.choices?.[0]?.message?.content ?? "{}";
 
-  // Strip markdown code fences if present
-  const cleaned = rawText
-    .replace(/```json\s*/gi, "")
-    .replace(/```\s*/gi, "")
-    .trim();
-
   try {
-    const parsed = JSON.parse(cleaned);
+    const parsed = JSON.parse(rawText);
     // Parse integer points (0-100 budget), clamp to valid range
     const scores: Record<number, number> = {};
     for (const [k, v] of Object.entries(parsed)) {
