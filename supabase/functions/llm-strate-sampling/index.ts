@@ -494,6 +494,7 @@ async function callLlmForStrate(
         messages: [{ role: "user", content: prompt }],
         temperature: 0.3,
         max_tokens: 8000,
+        response_format: { type: "json_object" },
       }),
     });
 
