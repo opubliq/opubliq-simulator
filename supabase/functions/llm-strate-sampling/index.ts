@@ -6,8 +6,8 @@
 //   - Historical questions with LLM weights, year, and per-strate distributions
 //   - Raw context and fictional question from the user
 //
-// Calls Gemini Flash per strate (2-3 in parallel with a 500ms delay between
-// batches to stay within free-tier rate limits).
+// Calls OpenRouter (meta-llama/llama-3.1-8b-instruct) per strate, all 48 in parallel.
+// La clé API est lue depuis la variable d'environnement OPENROUTER_API_KEY (secret Supabase).
 //
 // Input (from Step 2 / fetch-strate-predictions):
 //   {
@@ -43,10 +43,11 @@
 
 import { createClient, SupabaseClient } from "jsr:@supabase/supabase-js@2";
 
-const GEMINI_LLM_MODEL = "gemini-2.5-flash";
+const OPENROUTER_LLM_MODEL = "meta-llama/llama-3.1-8b-instruct";
+const OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions";
 const CURRENT_YEAR = 2026; // anchor year for age group definitions
-const PARALLEL_BATCH_SIZE = 2;    // number of strates sampled simultaneously
-const BATCH_DELAY_MS = 500;        // delay between batches (free-tier rate limit)
+const PARALLEL_BATCH_SIZE = 48;   // toutes les strates en parallèle — OpenRouter payant sans rate limit contraignant
+const BATCH_DELAY_MS = 0;          // pas de délai entre batches
 
 // ---------------------------------------------------------------------------
 // All 48 canonical strates
@@ -471,86 +472,103 @@ ${formatInstructions}`;
 }
 
 // ---------------------------------------------------------------------------
-// Call Gemini Flash for a single strate
+// Call OpenRouter (Llama 3.1 8B) for a single strate — OpenAI-compatible API
 // ---------------------------------------------------------------------------
 
-async function callGeminiForStrate(
+async function callLlmForStrate(
   prompt: string,
-  geminiApiKey: string,
+  openRouterApiKey: string,
+  maxRetries = 4,
 ): Promise<LlmResponse> {
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_LLM_MODEL}:generateContent?key=${geminiApiKey}`;
+  let lastError: Error | null = null;
 
-  const response = await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      contents: [{ parts: [{ text: prompt }] }],
-      generationConfig: {
-        temperature: 0.3,   // slight variance to reflect group-level uncertainty
-        maxOutputTokens: 8000,
-        responseMimeType: "application/json",
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    const response = await fetch(OPENROUTER_API_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${openRouterApiKey}`,
       },
-    }),
-  });
+      body: JSON.stringify({
+        model: OPENROUTER_LLM_MODEL,
+        messages: [{ role: "user", content: prompt }],
+        temperature: 0.3,
+        max_tokens: 8000,
+      }),
+    });
 
-  if (!response.ok) {
-    const err = await response.text();
-    throw new Error(`Gemini error ${response.status}: ${err}`);
-  }
-
-  const data = await response.json();
-  const rawText: string = data.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
-
-  if (!rawText) {
-    const finishReason = data.candidates?.[0]?.finishReason ?? "unknown";
-    throw new Error(`Gemini returned empty response. finishReason=${finishReason}. Full response: ${JSON.stringify(data)}`);
-  }
-
-  // Strip markdown code fences if present (defensive — responseMimeType should prevent this)
-  const cleaned = rawText
-    .replace(/```json\s*/gi, "")
-    .replace(/```\s*/gi, "")
-    .trim();
-
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(cleaned);
-  } catch (e) {
-    throw new Error(`JSON parse failed: ${e instanceof Error ? e.message : String(e)}. Raw Gemini response: ${rawText.slice(0, 500)}`);
-  }
-
-  // Validate and normalise the response
-  const raisonnement: string = typeof parsed.raisonnement === "string" ? parsed.raisonnement : "";
-
-  if ("mean" in parsed) {
-    // Numeric response
-    const mean = Number(parsed.mean);
-    const moe = Number(parsed.margin_of_error ?? 0);
-    if (isNaN(mean)) throw new Error(`Invalid numeric mean: ${rawText}`);
-    return { raisonnement, mean, margin_of_error: isNaN(moe) ? 0 : moe };
-  } else if ("distribution" in parsed) {
-    // Multinomial response
-    const dist = parsed.distribution as Record<string, unknown>;
-    const moe = Number(parsed.margin_of_error ?? 0);
-
-    // Normalise to ensure sum = 1
-    const values: Record<string, number> = {};
-    let sum = 0;
-    for (const [k, v] of Object.entries(dist)) {
-      const n = Number(v);
-      if (isNaN(n) || n < 0) throw new Error(`Invalid distribution value for "${k}": ${v}`);
-      values[k] = n;
-      sum += n;
+    if (response.status === 429) {
+      const baseDelaySec = Math.pow(2, attempt + 1) * 3; // 6s, 12s, 24s, 48s
+      const jitterSec = Math.random() * baseDelaySec * 0.5; // ±50% jitter
+      const waitMs = (baseDelaySec + jitterSec) * 1000;
+      lastError = new Error(`OpenRouter error 429: rate limit. Retry after ${(baseDelaySec + jitterSec).toFixed(1)}s`);
+      if (attempt < maxRetries) {
+        await new Promise((resolve) => setTimeout(resolve, waitMs));
+        continue;
+      }
+      throw lastError;
     }
-    if (sum === 0) throw new Error(`Distribution sums to 0: ${rawText}`);
-    const normalised: Record<string, number> = {};
-    for (const [k, v] of Object.entries(values)) {
-      normalised[k] = v / sum;
+
+    if (!response.ok) {
+      const err = await response.text();
+      throw new Error(`OpenRouter error ${response.status}: ${err}`);
     }
-    return { raisonnement, distribution: normalised, margin_of_error: isNaN(moe) ? 0 : moe };
-  } else {
-    throw new Error(`Unrecognised LLM response format: ${rawText}`);
+
+    const data = await response.json();
+    const rawText: string = data.choices?.[0]?.message?.content ?? "";
+
+    if (!rawText) {
+      const finishReason = data.choices?.[0]?.finish_reason ?? "unknown";
+      throw new Error(`OpenRouter returned empty response. finish_reason=${finishReason}. Full response: ${JSON.stringify(data)}`);
+    }
+
+    // Strip markdown code fences if present
+    const cleaned = rawText
+      .replace(/```json\s*/gi, "")
+      .replace(/```\s*/gi, "")
+      .trim();
+
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(cleaned);
+    } catch (e) {
+      throw new Error(`JSON parse failed: ${e instanceof Error ? e.message : String(e)}. Raw LLM response: ${rawText.slice(0, 500)}`);
+    }
+
+    // Validate and normalise the response
+    const raisonnement: string = typeof (parsed as Record<string, unknown>).raisonnement === "string"
+      ? (parsed as Record<string, unknown>).raisonnement as string
+      : "";
+
+    if ("mean" in (parsed as object)) {
+      const mean = Number((parsed as Record<string, unknown>).mean);
+      const moe = Number((parsed as Record<string, unknown>).margin_of_error ?? 0);
+      if (isNaN(mean)) throw new Error(`Invalid numeric mean: ${rawText}`);
+      return { raisonnement, mean, margin_of_error: isNaN(moe) ? 0 : moe };
+    } else if ("distribution" in (parsed as object)) {
+      const dist = (parsed as Record<string, unknown>).distribution as Record<string, unknown>;
+      const moe = Number((parsed as Record<string, unknown>).margin_of_error ?? 0);
+
+      const values: Record<string, number> = {};
+      let sum = 0;
+      for (const [k, v] of Object.entries(dist)) {
+        const n = Number(v);
+        if (isNaN(n) || n < 0) throw new Error(`Invalid distribution value for "${k}": ${v}`);
+        values[k] = n;
+        sum += n;
+      }
+      if (sum === 0) throw new Error(`Distribution sums to 0: ${rawText}`);
+      const normalised: Record<string, number> = {};
+      for (const [k, v] of Object.entries(values)) {
+        normalised[k] = v / sum;
+      }
+      return { raisonnement, distribution: normalised, margin_of_error: isNaN(moe) ? 0 : moe };
+    } else {
+      throw new Error(`Unrecognised LLM response format: ${rawText}`);
+    }
   }
+
+  throw lastError ?? new Error("Max retries exceeded");
 }
 
 // ---------------------------------------------------------------------------
@@ -562,7 +580,7 @@ async function sampleAllStrates(
   question: string,
   choices: string[] | undefined, // response options for the fictional question
   context: string | undefined,
-  geminiApiKey: string,
+  openRouterApiKey: string,
   limit_to_strate?: {
     strate_age_group: string;
     strate_langue: string;
@@ -616,7 +634,7 @@ async function sampleAllStrates(
       );
 
       try {
-        const llmResponse = await callGeminiForStrate(prompt, geminiApiKey);
+        const llmResponse = await callLlmForStrate(prompt, openRouterApiKey);
         return { ...strate, llm_response: llmResponse, had_prior: hadPrior, error: null };
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
@@ -660,11 +678,8 @@ Deno.serve(async (req: Request) => {
     });
   }
 
-  // Extract Gemini API key from Authorization header (not required in dry_run mode)
-  const authHeader = req.headers.get("Authorization") ?? "";
-  const geminiApiKey = authHeader.startsWith("Bearer ")
-    ? authHeader.slice(7).trim()
-    : authHeader.trim();
+  // Lire la clé OpenRouter depuis les secrets Supabase (pas depuis le frontend)
+  const openRouterApiKey = Deno.env.get("OPENROUTER_API_KEY") ?? "";
 
   let body: LlmStrateSamplingRequest;
   try {
@@ -678,11 +693,11 @@ Deno.serve(async (req: Request) => {
 
     const { predictions, question, context, dry_run, dry_run_strate, choices, limit_to_strate } = body;
 
-  if (!dry_run && !geminiApiKey) {
+  if (!dry_run && !openRouterApiKey) {
     return new Response(
-      JSON.stringify({ error: "Missing Gemini API key in Authorization header" }),
+      JSON.stringify({ error: "Missing OPENROUTER_API_KEY environment variable" }),
       {
-        status: 401,
+        status: 500,
         headers: { "Content-Type": "application/json" },
       },
     );
@@ -785,14 +800,14 @@ Deno.serve(async (req: Request) => {
     }
 
     // -------------------------------------------------------------------------
-    // Normal mode: call Gemini for all 48 strates
+    // Normal mode: call OpenRouter for all 48 strates in parallel
     // -------------------------------------------------------------------------
     const strateResults = await sampleAllStrates(
       predictions,
       question.trim(),
-      choices, // Pass choices to sampleAllStrates
+      choices,
       context,
-      geminiApiKey,
+      openRouterApiKey,
       limit_to_strate,
     );
 

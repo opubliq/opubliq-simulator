@@ -1,7 +1,7 @@
 import { createClient } from "jsr:@supabase/supabase-js@2";
 
 const GEMINI_EMBEDDING_MODEL = "gemini-embedding-001";
-const GEMINI_LLM_MODEL = "gemini-2.5-flash";
+const GEMINI_LLM_MODEL = "gemini-3.1-flash-lite-preview";
 const EMBEDDING_DIMENSIONS = 1536; // Matryoshka truncation — matches questions.embedding vector(1536)
 const TOP_CANDIDATES = 15;
 const DEFAULT_TOP_K = 5;
@@ -9,6 +9,7 @@ const DEFAULT_TOP_K = 5;
 interface SemanticSearchRequest {
   question: string;
   top_k?: number;
+  gemini_api_key?: string;
 }
 
 interface QuestionCandidate {
@@ -147,24 +148,6 @@ Deno.serve(async (req: Request) => {
     });
   }
 
-  // Extract Gemini API key from Authorization header
-  const authHeader = req.headers.get("Authorization") ?? "";
-  const geminiApiKey = authHeader.startsWith("Bearer ")
-    ? authHeader.slice(7).trim()
-    : authHeader.trim();
-
-  if (!geminiApiKey) {
-    return new Response(
-      JSON.stringify({
-        error: "Missing Gemini API key in Authorization header",
-      }),
-      {
-        status: 401,
-        headers: { "Content-Type": "application/json" },
-      },
-    );
-  }
-
   let body: SemanticSearchRequest;
   try {
     body = await req.json();
@@ -175,7 +158,22 @@ Deno.serve(async (req: Request) => {
     });
   }
 
-  const { question, top_k = DEFAULT_TOP_K } = body;
+  const { question, top_k = DEFAULT_TOP_K, gemini_api_key } = body;
+
+  // Extract Gemini API key from body
+  const geminiApiKey = gemini_api_key?.trim() ?? "";
+
+  if (!geminiApiKey) {
+    return new Response(
+      JSON.stringify({
+        error: "Missing Gemini API key in request body (gemini_api_key)",
+      }),
+      {
+        status: 401,
+        headers: { "Content-Type": "application/json" },
+      },
+    );
+  }
 
   if (!question || typeof question !== "string" || question.trim() === "") {
     return new Response(

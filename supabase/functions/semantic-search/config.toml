@@ -1,0 +1,2 @@
+[functions.semantic-search]
+verify_jwt = false

@@ -1,0 +1,15 @@
+- Sidebar pour avoir plusieurs pages
+    - Page métho qui montre de façon claire et visuelle comment ça fonctionne
+- Progression en % pour le silicon sampling: 1 strate / 48 (2%), 2 strate/48 (4%), etc.
+- Il faut que ce soit plus convivial d'entrer questions et choix de réponse
+    - possible d'avoir de l'autocompletion possible dans les barres de text?
+- Le layout actuel laisse à désirer: question-choix-contexte tout dans la meme colonne. Avons-nous un layout plus beau/userfriendly à implementer?
+- Il manque la 2e couleur d'accent #f0695a, où peut-on l'inclure?
+- Il faut pouvoir mettre des documents facilement transformables en txt dans le contexte
+    - Puis il va falloir une fonction qui extrait le texte, résume ce qui est pertinent et met ça dans le prompt
+- Lorsqu'on lance la sim, il faudrait etre capable de voir un "log" genre qui montre les questions retournées par le filtrate, les points de llm_weight pour chacune, predictions par strate sur les questions historiques, prompts envoyés au LLM, raisonnement par strate, etc.  
+    - faudrait ce soit secondaire, genre que tu puisses le voir si tu veux en cliquant sur cette section specifique. Pt une autre page dans le sidebar avec la liste des questions que le user a posées.
+- Présentation des résultats, layout, graphs, etc.
+    - Distribution nationale en graph principal
+    - Puis en bas du graph principal, on peut choisir un SES-strate et voir la distribution?
+- Dans la place où on met la clé, il faut un genre de "Allez chercher la clé ici" avec lien vers sambanova
