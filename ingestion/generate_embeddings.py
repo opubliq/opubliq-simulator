@@ -1,14 +1,16 @@
 #!/usr/bin/env python3
 """
-Generate Gemini embeddings for questions that don't have one yet.
+Generate embeddings for questions that don't have one yet.
 
-Uses text-embedding-004 (768 dimensions) from Google Gemini.
+Uses intfloat/multilingual-e5-large-instruct (1024 dimensions) via OpenRouter.
 Idempotent: only processes questions where embedding IS NULL.
+Use --force to re-embed questions that already have an embedding.
 
 Usage:
   python generate_embeddings.py
   python generate_embeddings.py --survey eeq_2022
   python generate_embeddings.py --dry-run
+  python generate_embeddings.py --force
   python generate_embeddings.py --batch-size 50 --sleep 1.0
 """
 
@@ -16,6 +18,8 @@ import argparse
 import os
 import sys
 import time
+import json
+import urllib.request
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -30,51 +34,67 @@ load_dotenv(INGESTION_DIR.parent / ".env.local")
 
 SUPABASE_URL = os.environ.get("VITE_SUPABASE_URL") or os.environ.get("SUPABASE_URL")
 SUPABASE_KEY = os.environ.get("SUPABASE_KEY") or os.environ.get("VITE_SUPABASE_PUBLISHABLE_DEFAULT_KEY")
-GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
+OPENROUTER_API_KEY = os.environ.get("OPENROUTER_API_KEY")
 
-EMBEDDING_MODEL = "gemini-embedding-001"
-EMBEDDING_DIMS = 1536  # Matryoshka truncation — near-full quality, fits within pgvector HNSW 2000-dim limit
+EMBEDDING_MODEL = "intfloat/multilingual-e5-large-instruct"
+EMBEDDING_DIMS = 1024  # multilingual-e5-large-instruct native output dimensionality
+OPENROUTER_EMBEDDINGS_URL = "https://openrouter.ai/api/v1/embeddings"
 DEFAULT_BATCH_SIZE = 100
 DEFAULT_SLEEP = 1.0  # seconds between batches
 
 
 # ---------------------------------------------------------------------------
-# Gemini client
+# OpenRouter embeddings client
 # ---------------------------------------------------------------------------
 
-def make_gemini_client(api_key: str):
-    from google import genai
-    return genai.Client(api_key=api_key)
+def embed_batch(api_key: str, texts: list[str]) -> list[list[float]]:
+    """Embed a batch of texts using OpenRouter (multilingual-e5-large-instruct)."""
+    payload = json.dumps({
+        "model": EMBEDDING_MODEL,
+        "input": texts,
+    }).encode("utf-8")
 
-
-def embed_batch(client, texts: list[str]) -> list[list[float]]:
-    """Embed a batch of texts using Gemini gemini-embedding-001."""
-    from google.genai import types
-    result = client.models.embed_content(
-        model=EMBEDDING_MODEL,
-        contents=texts,
-        config=types.EmbedContentConfig(
-            task_type="SEMANTIC_SIMILARITY",
-            output_dimensionality=EMBEDDING_DIMS,
-        ),
+    req = urllib.request.Request(
+        OPENROUTER_EMBEDDINGS_URL,
+        data=payload,
+        headers={
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json",
+        },
+        method="POST",
     )
-    return [e.values for e in result.embeddings]
+
+    with urllib.request.urlopen(req) as resp:
+        data = json.loads(resp.read().decode("utf-8"))
+
+    # OpenAI-compatible response: data[i].embedding
+    embeddings = [item["embedding"] for item in data["data"]]
+
+    # Verify dimensionality
+    for emb in embeddings:
+        if len(emb) != EMBEDDING_DIMS:
+            raise ValueError(
+                f"Expected {EMBEDDING_DIMS}-dim embedding, got {len(emb)}-dim from {EMBEDDING_MODEL}"
+            )
+
+    return embeddings
 
 
 # ---------------------------------------------------------------------------
 # Fetch questions without embeddings
 # ---------------------------------------------------------------------------
 
-def fetch_questions_without_embeddings(client, survey_source: str | None) -> list[dict]:
+def fetch_questions(client, survey_source: str | None, force: bool) -> list[dict]:
     """
-    Returns list of {id, text} for questions where embedding IS NULL.
+    Returns list of {id, text, survey_id} for questions to embed.
+    If force=False (default): only questions where embedding IS NULL.
+    If force=True: all questions (or all in the given survey).
     Optionally filtered to a single survey by source identifier.
     """
-    query = (
-        client.table("questions")
-        .select("id, text, survey_id")
-        .is_("embedding", "null")
-    )
+    query = client.table("questions").select("id, text, survey_id")
+
+    if not force:
+        query = query.is_("embedding", "null")
 
     if survey_source:
         # Resolve survey_id from source string
@@ -112,31 +132,33 @@ def update_embeddings(client, question_ids: list[int], embeddings: list[list[flo
 # ---------------------------------------------------------------------------
 
 def main():
-    parser = argparse.ArgumentParser(description="Generate Gemini embeddings for questions")
+    parser = argparse.ArgumentParser(description="Generate OpenRouter embeddings for questions")
     parser.add_argument("--survey", metavar="SURVEY_ID", help="Only process questions from this survey (e.g. eeq_2022)")
-    parser.add_argument("--batch-size", type=int, default=DEFAULT_BATCH_SIZE, help=f"Questions per Gemini API call (default: {DEFAULT_BATCH_SIZE})")
+    parser.add_argument("--batch-size", type=int, default=DEFAULT_BATCH_SIZE, help=f"Questions per API call (default: {DEFAULT_BATCH_SIZE})")
     parser.add_argument("--sleep", type=float, default=DEFAULT_SLEEP, help=f"Seconds to sleep between batches (default: {DEFAULT_SLEEP})")
     parser.add_argument("--dry-run", action="store_true", help="Fetch and embed but don't write to Supabase")
+    parser.add_argument("--force", action="store_true", help="Re-embed questions that already have an embedding")
     args = parser.parse_args()
 
     # Validate env
     if not SUPABASE_URL or not SUPABASE_KEY:
         print("ERROR: SUPABASE_URL and SUPABASE_KEY must be set in .env.local")
         sys.exit(1)
-    if not GEMINI_API_KEY:
-        print("ERROR: GEMINI_API_KEY must be set in .env.local")
+    if not OPENROUTER_API_KEY:
+        print("ERROR: OPENROUTER_API_KEY must be set in .env.local")
         sys.exit(1)
 
     client = create_client(SUPABASE_URL, SUPABASE_KEY)
-    gemini = make_gemini_client(GEMINI_API_KEY)
 
     # Fetch questions
-    print(f"Fetching questions without embeddings" + (f" (survey={args.survey})" if args.survey else "") + "...")
-    questions = fetch_questions_without_embeddings(client, args.survey)
+    mode = "all questions" if args.force else "questions without embeddings"
+    survey_suffix = f" (survey={args.survey})" if args.survey else ""
+    print(f"Fetching {mode}{survey_suffix}...")
+    questions = fetch_questions(client, args.survey, args.force)
     total = len(questions)
 
     if total == 0:
-        print("No questions found without embeddings. Nothing to do.")
+        print("No questions found to embed. Nothing to do.")
         return
 
     print(f"Found {total} questions to embed.")
@@ -157,7 +179,7 @@ def main():
         print(f"  Batch {batch_num}/{total_batches}: {len(batch)} questions...", end=" ", flush=True)
 
         try:
-            embeddings = embed_batch(gemini, texts)
+            embeddings = embed_batch(OPENROUTER_API_KEY, texts)
             update_embeddings(client, ids, embeddings, args.dry_run)
             processed += len(batch)
             print(f"OK ({processed}/{total})")

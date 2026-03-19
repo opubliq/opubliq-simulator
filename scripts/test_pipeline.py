@@ -17,14 +17,16 @@ SUPABASE_KEY = (
     os.environ.get("SUPABASE_KEY")
 )
 
-# Gemini API key (should be set by user)
-GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
+# OpenRouter API key — used as the auth bearer for the semantic-search Edge Function.
+# NOTE: the semantic-search Edge Function still passes this as gemini_api_key in the
+# request body; migrating that function to OpenRouter is tracked in issue 1i7.
+OPENROUTER_API_KEY = os.environ.get("OPENROUTER_API_KEY")
 
 def test_pipeline():
     missing = []
     if not SUPABASE_URL: missing.append("SUPABASE_URL (VITE_SUPABASE_URL or SUPABASE_URL)")
     if not SUPABASE_KEY: missing.append("SUPABASE_KEY (VITE_SUPABASE_PUBLISHABLE_KEY or SUPABASE_ANON_KEY)")
-    if not GEMINI_API_KEY: missing.append("GEMINI_API_KEY")
+    if not OPENROUTER_API_KEY: missing.append("OPENROUTER_API_KEY")
     
     if missing:
         print(f"ERROR: Missing environment variables: {', '.join(missing)}")
@@ -37,7 +39,7 @@ def test_pipeline():
 
     # On utilise les mêmes headers partout car l'étape 1 a prouvé qu'ils fonctionnent
     headers = {
-        "Authorization": f"Bearer {GEMINI_API_KEY}",
+        "Authorization": f"Bearer {OPENROUTER_API_KEY}",
         "Content-Type": "application/json",
         "apikey": SUPABASE_KEY
     }
