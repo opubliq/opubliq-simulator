@@ -1,0 +1,2 @@
+[functions.fetch-strate-predictions]
+verify_jwt = false
