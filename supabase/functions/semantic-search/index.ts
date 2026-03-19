@@ -1,15 +1,16 @@
 import { createClient } from "jsr:@supabase/supabase-js@2";
 
-const GEMINI_EMBEDDING_MODEL = "gemini-embedding-001";
-const GEMINI_LLM_MODEL = "gemini-3.1-flash-lite-preview";
-const EMBEDDING_DIMENSIONS = 1536; // Matryoshka truncation — matches questions.embedding vector(1536)
+const OPENROUTER_EMBEDDING_MODEL = "openai/text-embedding-3-small";
+const OPENROUTER_LLM_MODEL = "meta-llama/llama-3.1-8b-instruct";
+const OPENROUTER_EMBEDDINGS_URL = "https://openrouter.ai/api/v1/embeddings";
+const OPENROUTER_CHAT_URL = "https://openrouter.ai/api/v1/chat/completions";
+const EMBEDDING_DIMENSIONS = 1536; // text-embedding-3-small native output — matches questions.embedding vector(1536)
 const TOP_CANDIDATES = 15;
 const DEFAULT_TOP_K = 5;
 
 interface SemanticSearchRequest {
   question: string;
   top_k?: number;
-  gemini_api_key?: string;
 }
 
 interface QuestionCandidate {
@@ -29,39 +30,42 @@ interface ScoredQuestion extends QuestionCandidate {
 
 async function generateEmbedding(
   text: string,
-  geminiApiKey: string,
+  openRouterApiKey: string,
 ): Promise<number[]> {
-  const url =
-    `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_EMBEDDING_MODEL}:embedContent?key=${geminiApiKey}`;
-
-  const response = await fetch(url, {
+  const response = await fetch(OPENROUTER_EMBEDDINGS_URL, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: `models/${GEMINI_EMBEDDING_MODEL}`,
-        content: { parts: [{ text }] },
-        taskType: "SEMANTIC_SIMILARITY",
-        outputDimensionality: EMBEDDING_DIMENSIONS,
-      }),
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${openRouterApiKey}`,
+    },
+    body: JSON.stringify({
+      model: OPENROUTER_EMBEDDING_MODEL,
+      input: text,
+    }),
   });
 
   if (!response.ok) {
     const err = await response.text();
-    throw new Error(`Gemini embedding error ${response.status}: ${err}`);
+    throw new Error(`OpenRouter embedding error ${response.status}: ${err}`);
   }
 
   const data = await response.json();
-  return data.embedding.values as number[];
+  const embedding: number[] = data.data?.[0]?.embedding;
+
+  if (!embedding || embedding.length !== EMBEDDING_DIMENSIONS) {
+    throw new Error(
+      `Expected ${EMBEDDING_DIMENSIONS}-dim embedding, got ${embedding?.length ?? 0} from ${OPENROUTER_EMBEDDING_MODEL}`,
+    );
+  }
+
+  return embedding;
 }
 
 async function scoreCandidatesWithLLM(
   userQuestion: string,
   candidates: QuestionCandidate[],
-  geminiApiKey: string,
+  openRouterApiKey: string,
 ): Promise<Record<number, number>> {
-  const url =
-    `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_LLM_MODEL}:generateContent?key=${geminiApiKey}`;
-
   const candidateList = candidates
     .map((c, i) => `${i + 1}. [ID:${c.id}] "${c.text}"`)
     .join("\n");
@@ -83,27 +87,27 @@ Example: {"<id>": <points>, ...}
 Candidate questions:
 ${candidateList}`;
 
-  const response = await fetch(url, {
+  const response = await fetch(OPENROUTER_CHAT_URL, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: {
-          temperature: 0.1,
-          maxOutputTokens: 4096,
-          responseMimeType: "application/json",
-        },
-      }),
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${openRouterApiKey}`,
+    },
+    body: JSON.stringify({
+      model: OPENROUTER_LLM_MODEL,
+      messages: [{ role: "user", content: prompt }],
+      temperature: 0.1,
+      max_tokens: 4096,
+    }),
   });
 
   if (!response.ok) {
     const err = await response.text();
-    throw new Error(`Gemini LLM error ${response.status}: ${err}`);
+    throw new Error(`OpenRouter LLM error ${response.status}: ${err}`);
   }
 
   const data = await response.json();
-  const rawText: string =
-    data.candidates?.[0]?.content?.parts?.[0]?.text ?? "{}";
+  const rawText: string = data.choices?.[0]?.message?.content ?? "{}";
 
   // Strip markdown code fences if present
   const cleaned = rawText
@@ -158,18 +162,16 @@ Deno.serve(async (req: Request) => {
     });
   }
 
-  const { question, top_k = DEFAULT_TOP_K, gemini_api_key } = body;
+  const { question, top_k = DEFAULT_TOP_K } = body;
 
-  // Extract Gemini API key from body
-  const geminiApiKey = gemini_api_key?.trim() ?? "";
+  // Read OpenRouter API key from Supabase Secrets (server-side only)
+  const openRouterApiKey = Deno.env.get("OPENROUTER_API_KEY") ?? "";
 
-  if (!geminiApiKey) {
+  if (!openRouterApiKey) {
     return new Response(
-      JSON.stringify({
-        error: "Missing Gemini API key in request body (gemini_api_key)",
-      }),
+      JSON.stringify({ error: "Missing OPENROUTER_API_KEY environment variable" }),
       {
-        status: 401,
+        status: 500,
         headers: { "Content-Type": "application/json" },
       },
     );
@@ -191,7 +193,7 @@ Deno.serve(async (req: Request) => {
 
   try {
     // Step 1a: Generate embedding for user question
-    const embedding = await generateEmbedding(question.trim(), geminiApiKey);
+    const embedding = await generateEmbedding(question.trim(), openRouterApiKey);
 
     // Step 1b: Vector similarity search — top-15 candidates
     // Exclude meta-prefixed variables (sampling weights, identifiers)
@@ -226,7 +228,7 @@ Deno.serve(async (req: Request) => {
     const llmScores = await scoreCandidatesWithLLM(
       question.trim(),
       typedCandidates,
-      geminiApiKey,
+      openRouterApiKey,
     );
 
     // Merge cosine similarity + LLM points; only include questions with points > 0

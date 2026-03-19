@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import './App.css'
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string
@@ -72,18 +72,17 @@ async function runPipeline(
   question: string,
   context: string,
   choices: string[] | undefined,
-  geminiApiKey: string,
   onStep: (step: PipelineStep) => void,
 ): Promise<SimulationResult> {
   const supabaseAuthHeader = { Authorization: `Bearer ${SUPABASE_ANON_KEY}` }
   const json = { 'Content-Type': 'application/json' }
 
-  // Step 1 — semantic search (Gemini: embeddings + LLM scoring)
+  // Step 1 — semantic search (OpenRouter: embeddings + LLM scoring, clé côté serveur)
   onStep('step1_semantic_search')
   const r1 = await fetch(fnUrl('semantic-search'), {
     method: 'POST',
     headers: { ...json, ...supabaseAuthHeader },
-    body: JSON.stringify({ question, gemini_api_key: geminiApiKey }),
+    body: JSON.stringify({ question }),
   })
   if (!r1.ok) {
     const err = await r1.json().catch(() => ({ error: r1.statusText }))
@@ -153,21 +152,10 @@ function App() {
   const [question, setQuestion] = useState('')
   const [contexte, setContexte] = useState('')
   const [choicesText, setChoicesText] = useState('')
-  const [geminiApiKey, setGeminiApiKey] = useState('')
-  const [apiKeysVisible, setApiKeysVisible] = useState(false)
 
   const [pipelineStep, setPipelineStep] = useState<PipelineStep>('idle')
   const [errorMessage, setErrorMessage] = useState('')
   const [result, setResult] = useState<SimulationResult | null>(null)
-
-  useEffect(() => {
-    const storedGemini = localStorage.getItem('gemini_api_key')
-    if (storedGemini) setGeminiApiKey(storedGemini)
-  }, [])
-
-  function handleApiKeySave() {
-    localStorage.setItem('gemini_api_key', geminiApiKey)
-  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -185,7 +173,6 @@ function App() {
         question.trim(),
         contexte.trim(),
         choices.length > 0 ? choices : undefined,
-        geminiApiKey.trim(),
         setPipelineStep,
       )
       setResult(simulationResult)
@@ -197,34 +184,12 @@ function App() {
   }
 
   const isLoading = !['idle', 'success', 'error'].includes(pipelineStep)
-  const canSubmit = question.trim() && contexte.trim() && geminiApiKey.trim() && !isLoading
+  const canSubmit = question.trim() && contexte.trim() && !isLoading
 
   return (
     <div className="min-h-screen flex flex-col max-w-5xl mx-auto border-x border-base-300">
       <header className="px-16 py-8 border-b border-base-300 flex items-center justify-between">
         <h1 className="text-2xl font-semibold tracking-tight">Simulateur de sondage</h1>
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-1">
-            <span className="text-xs text-base-content/40">Gemini</span>
-            <input
-              id="gemini-api-key"
-              type={apiKeysVisible ? 'text' : 'password'}
-              className="input input-bordered input-xs w-40"
-              value={geminiApiKey}
-              onChange={(e) => setGeminiApiKey(e.target.value)}
-              placeholder="AIza..."
-              onBlur={handleApiKeySave}
-            />
-          </div>
-          <button
-            type="button"
-            className="btn btn-ghost btn-xs text-base-content/40"
-            onClick={() => setApiKeysVisible((v) => !v)}
-            aria-label={apiKeysVisible ? 'Masquer' : 'Afficher'}
-          >
-            {apiKeysVisible ? '🙈' : '👁'}
-          </button>
-        </div>
       </header>
 
       <main className="flex-1 px-16 py-12">
