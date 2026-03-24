@@ -152,6 +152,57 @@ interface SimulationLogEntry {
 const SESSION_LOG_STORAGE_KEY = 'opubliq.simulator.session-logs.v1'
 const SESSION_LOG_LIMIT = 20
 
+type PageId = 'simulateur' | 'session_logs' | 'methodology'
+
+function MethodologyPage() {
+  return (
+    <section className="mt-8 flex flex-col gap-6">
+      <div className="sim-card">
+        <h2 className="text-xl font-semibold tracking-tight">
+          Comment la simulation transforme une question en résultat
+        </h2>
+        <p className="mt-3 text-sm text-base-content/70">
+          Le simulateur suit un pipeline en quatre couches: recherche sémantique, priors historiques,
+          simulation LLM par strate, puis agrégation finale.
+        </p>
+      </div>
+      <div className="grid gap-4 lg:grid-cols-2">
+        <div className="sim-card">
+          <h3 className="text-sm font-medium">Les 4 étapes</h3>
+          <ol className="mt-4 flex flex-col gap-3 text-sm text-base-content/70">
+            <li className="rounded-lg border border-base-300/60 bg-base-200/35 px-3 py-2">
+              <strong>1. Recherche sémantique</strong> — On retrouve les questions historiques proches.
+            </li>
+            <li className="rounded-lg border border-base-300/60 bg-base-200/35 px-3 py-2">
+              <strong>2. Priors historiques</strong> — On charge les prédictions par strate.
+            </li>
+            <li className="rounded-lg border border-base-300/60 bg-base-200/35 px-3 py-2">
+              <strong>3. Simulation LLM</strong> — Chaque strate reçoit un prompt calibré.
+            </li>
+            <li className="rounded-lg border border-base-300/60 bg-base-200/35 px-3 py-2">
+              <strong>4. Agrégation</strong> — On combine pour produire la distribution nationale.
+            </li>
+          </ol>
+        </div>
+        <div className="sim-card">
+          <h3 className="text-sm font-medium">À retenir</h3>
+          <ul className="mt-4 flex flex-col gap-2 text-sm text-base-content/70">
+            <li className="rounded-lg border border-base-300/60 px-3 py-2">
+              Le simulateur cherche une estimation plausible, pas une vérité absolue.
+            </li>
+            <li className="rounded-lg border border-base-300/60 px-3 py-2">
+              Une strate = un point de vue simulé, pas un répondant réel.
+            </li>
+            <li className="rounded-lg border border-base-300/60 px-3 py-2">
+              Le contexte récent peut déplacer la sortie même si l'historique est similaire.
+            </li>
+          </ul>
+        </div>
+      </div>
+    </section>
+  )
+}
+
 class PipelineExecutionError extends Error {
   executionLog: PipelineExecutionLog
 
@@ -603,7 +654,7 @@ function App() {
   const [question, setQuestion] = useState('')
   const [contexte, setContexte] = useState('')
   const [choicesText, setChoicesText] = useState('')
-  const [activePage, setActivePage] = useState<'simulateur' | 'session_logs'>('simulateur')
+  const [activePage, setActivePage] = useState<PageId>('simulateur')
 
   const [pipelineStep, setPipelineStep] = useState<PipelineStep>('idle')
   const [step3Progress, setStep3Progress] = useState<Step3Progress | null>(null)
@@ -739,17 +790,26 @@ function App() {
               >
                 Logs ({sessionLogs.length})
               </button>
+              <button
+                type="button"
+                className={`btn btn-sm ${activePage === 'methodology' ? 'btn-primary' : 'btn-ghost'}`}
+                onClick={() => setActivePage('methodology')}
+              >
+                Méthodologie
+              </button>
             </div>
           </div>
 
           <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
-            {activePage === 'simulateur' ? 'Simulateur de sondage' : 'Logs'}
+            {activePage === 'simulateur' ? 'Simulateur de sondage' : activePage === 'session_logs' ? 'Logs' : 'Méthodologie'}
           </h1>
 
           <p className="max-w-3xl text-sm text-base-content/70 sm:text-base">
            {activePage === 'simulateur'
              ? 'Structurez votre question, fournissez le contexte, puis laissez le pipeline estimer une distribution nationale.'
-             : 'Retrouvez l\'historique des simulations de la session et inspectez les payloads détaillés de chaque étape.'}
+             : activePage === 'session_logs'
+             ? 'Retrouvez l\'historique des simulations de la session et inspectez les payloads détaillés de chaque étape.'
+             : 'Une vue claire du pipeline: filtrage sémantique, priors historiques, simulation LLM par strate puis agrégation finale.'}
           </p>
         </header>
 
@@ -891,7 +951,7 @@ function App() {
               </div>
             </aside>
           </main>
-        ) : (
+        ) : activePage === 'session_logs' ? (
           <main className="mt-8 grid gap-6 lg:grid-cols-[minmax(260px,0.95fr)_minmax(0,1.45fr)] lg:items-start">
             <section className="sim-card lg:sticky lg:top-6">
               <div className="flex items-center justify-between gap-2">
@@ -1075,6 +1135,8 @@ function App() {
               )}
             </section>
           </main>
+        ) : (
+          <MethodologyPage />
         )}
       </div>
     </div>
