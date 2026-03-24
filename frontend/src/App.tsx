@@ -44,8 +44,17 @@ function fnUrl(name: string) {
   return `${SUPABASE_URL}/functions/v1/${name}`
 }
 
+function buildEdgeHeaders(): HeadersInit {
+  const headers: HeadersInit = { 'Content-Type': 'application/json' }
+  if (SUPABASE_PUBLISHABLE_KEY) {
+    ;(headers as Record<string, string>).Authorization = `Bearer ${SUPABASE_PUBLISHABLE_KEY}`
+  }
+  return headers
+}
+
 type PipelineStep =
   | 'idle'
+  | 'step0_context_processing'
   | 'step1_semantic_search'
   | 'step2_fetch_predictions'
   | 'step3_llm_sampling'
@@ -55,6 +64,7 @@ type PipelineStep =
 
 const STEP_LABELS: Record<PipelineStep, string> = {
   idle: '',
+  step0_context_processing: 'Traitement du contexte...',
   step1_semantic_search: 'Recherche sémantique...',
   step2_fetch_predictions: 'Chargement des prédictions historiques...',
   step3_llm_sampling: 'Simulation des strates...',
@@ -64,6 +74,7 @@ const STEP_LABELS: Record<PipelineStep, string> = {
 }
 
 const PIPELINE_FLOW: PipelineStep[] = [
+  'step0_context_processing',
   'step1_semantic_search',
   'step2_fetch_predictions',
   'step3_llm_sampling',
@@ -190,11 +201,49 @@ interface ApiCallLog {
 }
 
 interface PipelineExecutionLog {
+  context_pipeline: ApiCallLog | null
   semantic_search: ApiCallLog | null
   fetch_strate_predictions: ApiCallLog | null
   llm_prompt_dry_run: ApiCallLog | null
   llm_sampling: ApiCallLog | null
   aggregate_final_distribution: ApiCallLog | null
+}
+
+interface ContextFilePayload {
+  name: string
+  mime_type: string
+  size_bytes: number
+  content_base64: string
+}
+
+interface ContextPipelineRequest {
+  raw_text: string
+  urls: string[]
+  files: ContextFilePayload[]
+}
+
+interface ContextPipelineResponse {
+  extracted_text?: string
+  summary_factual?: string
+}
+
+interface SemanticSearchResult {
+  id: number
+  text: string
+  scale_type: string | null
+  var_name: string | null
+  prefix: string | null
+  survey_id: number
+  choices: Record<string, string> | null
+  cosine_similarity: number
+  llm_points: number
+}
+
+interface SemanticSearchResponse {
+  question: string
+  top_k: number
+  total_points_assigned?: number
+  results: SemanticSearchResult[]
 }
 
 interface SimulationLogEntry {
@@ -211,8 +260,10 @@ interface SimulationLogEntry {
 
 const SESSION_LOG_STORAGE_KEY = 'opubliq.simulator.session-logs.v1'
 const SESSION_LOG_LIMIT = 20
-const FIXED_PROMPT_CONTEXT = 'Aucun contexte supplementaire'
+const DEFAULT_PROMPT_CONTEXT = 'Aucun contexte supplementaire'
 const MAX_CONTEXT_FILES = 8
+const MAX_CONTEXT_FILE_SIZE_BYTES = 5 * 1024 * 1024
+const MAX_CONTEXT_TOTAL_BYTES = 12 * 1024 * 1024
 const CONTEXT_FILE_ACCEPT = '.pdf,.txt,.md,.markdown,.csv,.json,.xml,.html,.htm,.rtf,text/plain,text/markdown,application/pdf'
 const CONTEXT_FILE_ALLOWED_EXTENSIONS = new Set([
   '.pdf',
@@ -239,7 +290,27 @@ const CONTEXT_FILE_ALLOWED_MIME_TYPES = new Set([
   'text/rtf',
 ])
 
-type PageId = 'simulateur' | 'session_logs' | 'methodology'
+type PageId = 'simulateur' | 'session_logs' | 'methodology' | 'data_catalogue'
+
+const PAGE_TITLE: Record<PageId, string> = {
+  simulateur: 'Simulateur de sondage',
+  session_logs: 'Logs',
+  methodology: 'Méthodologie',
+  data_catalogue: 'Catalogue de données',
+}
+
+const PAGE_DESCRIPTION: Record<PageId, string> = {
+  simulateur:
+    'Structurez votre question, fournissez le contexte, puis laissez le pipeline estimer une distribution nationale.',
+  session_logs:
+    "Retrouvez l'historique des simulations de la session et inspectez les payloads détaillés de chaque étape.",
+  methodology:
+    'Une vue claire du pipeline: filtrage sémantique, priors historiques, simulation LLM par strate puis agrégation finale.',
+  data_catalogue:
+    'Explorez les questions historiques du dataset via une recherche sémantique pour identifier les thèmes déjà couverts.',
+}
+
+const CATALOGUE_SUGGESTIONS = ['économie', 'immigration', 'santé', 'logement', 'éducation', 'inflation']
 
 function parseContextUrls(urlsText: string): string[] {
   return urlsText
@@ -267,7 +338,7 @@ function isAcceptedContextFile(file: File): boolean {
   return CONTEXT_FILE_ALLOWED_EXTENSIONS.has(extension) || CONTEXT_FILE_ALLOWED_MIME_TYPES.has(file.type)
 }
 
-function formatCapturedContext(rawContext: string, urls: string[], contextFiles: File[]): string {
+function formatCapturedContext(rawContext: string, urls: string[], contextFiles: Array<{ name: string }>): string {
   const sections: string[] = []
 
   if (rawContext.trim()) {
@@ -285,6 +356,35 @@ function formatCapturedContext(rawContext: string, urls: string[], contextFiles:
   return sections.join('\n\n')
 }
 
+function arrayBufferToBase64(buffer: ArrayBuffer): string {
+  const bytes = new Uint8Array(buffer)
+  const chunkSize = 0x8000
+  let binary = ''
+
+  for (let i = 0; i < bytes.length; i += chunkSize) {
+    const chunk = bytes.subarray(i, i + chunkSize)
+    binary += String.fromCharCode(...chunk)
+  }
+
+  return btoa(binary)
+}
+
+async function serializeContextFiles(files: File[]): Promise<ContextFilePayload[]> {
+  const serialized = await Promise.all(
+    files.map(async (file): Promise<ContextFilePayload> => {
+      const buffer = await file.arrayBuffer()
+      return {
+        name: file.name,
+        mime_type: file.type || 'application/octet-stream',
+        size_bytes: file.size,
+        content_base64: arrayBufferToBase64(buffer),
+      }
+    }),
+  )
+
+  return serialized
+}
+
 function MethodologyPage() {
   return (
     <section className="mt-8 flex flex-col gap-6">
@@ -293,25 +393,28 @@ function MethodologyPage() {
           Comment la simulation transforme une question en résultat
         </h2>
         <p className="mt-3 text-sm text-base-content/70">
-          Le simulateur suit un pipeline en quatre couches: recherche sémantique, priors historiques,
-          simulation LLM par strate, puis agrégation finale.
+          Le simulateur suit un pipeline en cinq couches: traitement du contexte, recherche sémantique,
+          priors historiques, simulation LLM par strate, puis agrégation finale.
         </p>
       </div>
       <div className="grid gap-4 lg:grid-cols-2">
         <div className="sim-card">
-          <h3 className="text-sm font-medium">Les 4 étapes</h3>
+          <h3 className="text-sm font-medium">Les 5 étapes</h3>
           <ol className="mt-4 flex flex-col gap-3 text-sm text-base-content/70">
             <li className="rounded-lg border border-base-300/60 bg-base-200/35 px-3 py-2">
-              <strong>1. Recherche sémantique</strong> — On retrouve les questions historiques proches.
+              <strong>1. Traitement du contexte</strong> — Texte, URLs et PDFs sont extraits puis résumés.
             </li>
             <li className="rounded-lg border border-base-300/60 bg-base-200/35 px-3 py-2">
-              <strong>2. Priors historiques</strong> — On charge les prédictions par strate.
+              <strong>2. Recherche sémantique</strong> — On retrouve les questions historiques proches.
             </li>
             <li className="rounded-lg border border-base-300/60 bg-base-200/35 px-3 py-2">
-              <strong>3. Simulation LLM</strong> — Chaque strate reçoit un prompt calibré.
+              <strong>3. Priors historiques</strong> — On charge les prédictions par strate.
             </li>
             <li className="rounded-lg border border-base-300/60 bg-base-200/35 px-3 py-2">
-              <strong>4. Agrégation</strong> — On combine pour produire la distribution nationale.
+              <strong>4. Simulation LLM</strong> — Chaque strate reçoit un prompt calibré.
+            </li>
+            <li className="rounded-lg border border-base-300/60 bg-base-200/35 px-3 py-2">
+              <strong>5. Agrégation</strong> — On combine pour produire la distribution nationale.
             </li>
           </ol>
         </div>
@@ -346,6 +449,7 @@ class PipelineExecutionError extends Error {
 
 function buildEmptyExecutionLog(): PipelineExecutionLog {
   return {
+    context_pipeline: null,
     semantic_search: null,
     fetch_strate_predictions: null,
     llm_prompt_dry_run: null,
@@ -629,10 +733,52 @@ function formatPercent(value: number): string {
   return `${value.toFixed(1)}%`
 }
 
+function formatSimilarity(value: number): string {
+  const clamped = Math.max(0, Math.min(1, value))
+  return `${Math.round(clamped * 100)}%`
+}
+
 function formatSegmentLabel(value: string): string {
   return value
     .replace(/_/g, ' ')
     .replace(/\b\w/g, letter => letter.toUpperCase())
+}
+
+function parseSemanticSearchResponse(payload: unknown): SemanticSearchResponse {
+  if (!isRecord(payload) || !Array.isArray(payload.results)) {
+    return { question: '', top_k: 0, results: [] }
+  }
+
+  const results = payload.results
+    .filter(isRecord)
+    .map(
+      (item): SemanticSearchResult => ({
+        id: typeof item.id === 'number' ? item.id : 0,
+        text: typeof item.text === 'string' ? item.text : '',
+        scale_type: typeof item.scale_type === 'string' ? item.scale_type : null,
+        var_name: typeof item.var_name === 'string' ? item.var_name : null,
+        prefix: typeof item.prefix === 'string' ? item.prefix : null,
+        survey_id: typeof item.survey_id === 'number' ? item.survey_id : 0,
+        choices: isRecord(item.choices)
+          ? Object.fromEntries(
+              Object.entries(item.choices)
+                .filter(([, value]) => typeof value === 'string')
+                .map(([key, value]) => [key, String(value)]),
+            )
+          : null,
+        cosine_similarity: typeof item.cosine_similarity === 'number' ? item.cosine_similarity : 0,
+        llm_points: typeof item.llm_points === 'number' ? item.llm_points : 0,
+      }),
+    )
+    .filter(item => item.text.trim().length > 0)
+
+  return {
+    question: typeof payload.question === 'string' ? payload.question : '',
+    top_k: typeof payload.top_k === 'number' ? payload.top_k : results.length,
+    total_points_assigned:
+      typeof payload.total_points_assigned === 'number' ? payload.total_points_assigned : undefined,
+    results,
+  }
 }
 
 function isMultinomialLlmResponse(value: unknown): value is MultinomialLlmResponse {
@@ -788,7 +934,7 @@ function TooltipCard({ active, label, mode, payload }: TooltipCardProps) {
 
 async function runPipeline(
   question: string,
-  context: string,
+  contextRequest: ContextPipelineRequest,
   choices: string[] | undefined,
   onStep: (step: PipelineStep) => void,
   onStep3Progress: (progress: Step3Progress) => void,
@@ -806,6 +952,36 @@ async function runPipeline(
   }
 
   try {
+    onStep('step0_context_processing')
+    const contextCall = await invokeEdgeFunction('context-pipeline', contextRequest, headers)
+    executionLog.context_pipeline = asApiCallLog(
+      'context-pipeline',
+      contextRequest,
+      contextCall.status,
+      contextCall.durationMs,
+      contextCall.responsePayload,
+      contextCall.ok ? null : extractErrorMessage(contextCall.responsePayload, 'Erreur inconnue'),
+    )
+
+    const contextResponse = isRecord(contextCall.responsePayload)
+      ? (contextCall.responsePayload as ContextPipelineResponse)
+      : null
+
+    const fallbackContext = formatCapturedContext(
+      contextRequest.raw_text,
+      contextRequest.urls,
+      contextRequest.files.map(file => ({ name: file.name })),
+    )
+
+    const contextSummary =
+      typeof contextResponse?.summary_factual === 'string' && contextResponse.summary_factual.trim().length > 0
+        ? contextResponse.summary_factual
+        : typeof contextResponse?.extracted_text === 'string' && contextResponse.extracted_text.trim().length > 0
+        ? contextResponse.extracted_text
+        : fallbackContext.trim().length > 0
+        ? fallbackContext
+        : DEFAULT_PROMPT_CONTEXT
+
     onStep('step1_semantic_search')
     const step1Request = { question }
     const step1Call = await invokeEdgeFunction('semantic-search', step1Request, headers)
@@ -857,7 +1033,7 @@ async function runPipeline(
     const dryRunRequest = {
       predictions: step2.predictions,
       question,
-      context,
+      context: contextSummary,
       choices,
       dry_run: true,
     }
@@ -886,7 +1062,7 @@ async function runPipeline(
     const step3Request = {
       predictions: step2.predictions,
       question,
-      context,
+      context: contextSummary,
       choices,
     }
     const step3Call = await invokeLlmSamplingWithProgress(step3Request, headers, onStep3Progress)
@@ -960,6 +1136,13 @@ function App() {
   const [result, setResult] = useState<SimulationResult | null>(null)
   const [sessionLogs, setSessionLogs] = useState<SimulationLogEntry[]>(() => loadSessionLogs())
   const [selectedLogId, setSelectedLogId] = useState<string | null>(null)
+  const [catalogueQuery, setCatalogueQuery] = useState('')
+  const [catalogueTopK, setCatalogueTopK] = useState(10)
+  const [catalogueResults, setCatalogueResults] = useState<SemanticSearchResult[]>([])
+  const [catalogueLastQuery, setCatalogueLastQuery] = useState('')
+  const [catalogueTotalPoints, setCatalogueTotalPoints] = useState<number | null>(null)
+  const [catalogueError, setCatalogueError] = useState('')
+  const [isCatalogueLoading, setIsCatalogueLoading] = useState(false)
 
   useEffect(() => {
     if (typeof window === 'undefined') {
@@ -990,18 +1173,85 @@ function App() {
       return
     }
 
+    const oversizedFiles = selectedFiles.filter(file => file.size > MAX_CONTEXT_FILE_SIZE_BYTES)
+    if (oversizedFiles.length > 0) {
+      setErrorMessage(
+        `Certains fichiers depassent ${(MAX_CONTEXT_FILE_SIZE_BYTES / (1024 * 1024)).toFixed(0)}MB et ont ete ignores.`,
+      )
+    }
+
+    const sizeAcceptedFiles = selectedFiles.filter(file => file.size <= MAX_CONTEXT_FILE_SIZE_BYTES)
+
     const knownFiles = new Set(contextFiles.map(file => `${file.name}-${file.size}-${file.lastModified}`))
-    const dedupedNewFiles = selectedFiles.filter(file => {
+    const dedupedNewFiles = sizeAcceptedFiles.filter(file => {
       const key = `${file.name}-${file.size}-${file.lastModified}`
       return !knownFiles.has(key)
     })
 
-    setContextFiles(prev => [...prev, ...dedupedNewFiles].slice(0, MAX_CONTEXT_FILES))
+    const nextFiles = [...contextFiles, ...dedupedNewFiles].slice(0, MAX_CONTEXT_FILES)
+    const totalBytes = nextFiles.reduce((sum, file) => sum + file.size, 0)
+    if (totalBytes > MAX_CONTEXT_TOTAL_BYTES) {
+      setErrorMessage(
+        `Le total des fichiers depasse ${(MAX_CONTEXT_TOTAL_BYTES / (1024 * 1024)).toFixed(0)}MB. Retirez des fichiers pour continuer.`,
+      )
+      event.target.value = ''
+      return
+    }
+
+    setContextFiles(nextFiles)
     event.target.value = ''
   }
 
   function removeContextFile(fileIndex: number) {
     setContextFiles(prev => prev.filter((_, index) => index !== fileIndex))
+  }
+
+  async function runCatalogueSearch(rawQuery: string) {
+    const normalizedQuery = normalizeText(rawQuery.trim())
+
+    if (!normalizedQuery) {
+      setCatalogueError('Saisissez une question ou un thème pour lancer la recherche.')
+      setCatalogueResults([])
+      setCatalogueLastQuery('')
+      setCatalogueTotalPoints(null)
+      return
+    }
+
+    if (!SUPABASE_URL) {
+      setCatalogueError(
+        'Configuration manquante: definissez VITE_SUPABASE_URL (Netlify: Site settings -> Environment variables).',
+      )
+      setCatalogueResults([])
+      setCatalogueLastQuery(normalizedQuery)
+      setCatalogueTotalPoints(null)
+      return
+    }
+
+    setIsCatalogueLoading(true)
+    setCatalogueError('')
+    setCatalogueLastQuery(normalizedQuery)
+
+    try {
+      const response = await invokeEdgeFunction(
+        'semantic-search',
+        { question: normalizedQuery, top_k: catalogueTopK },
+        buildEdgeHeaders(),
+      )
+
+      if (!response.ok) {
+        throw new Error(extractErrorMessage(response.responsePayload, 'Erreur inconnue'))
+      }
+
+      const parsed = parseSemanticSearchResponse(response.responsePayload)
+      setCatalogueResults(parsed.results)
+      setCatalogueTotalPoints(parsed.total_points_assigned ?? null)
+    } catch (error) {
+      setCatalogueResults([])
+      setCatalogueTotalPoints(null)
+      setCatalogueError(error instanceof Error ? error.message : String(error))
+    } finally {
+      setIsCatalogueLoading(false)
+    }
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -1018,16 +1268,32 @@ function App() {
       .map(c => c.trim())
       .filter(c => c.length > 0)
       .map(c => normalizeText(c))
+    const totalContextFileBytes = contextFiles.reduce((sum, file) => sum + file.size, 0)
+
+    if (totalContextFileBytes > MAX_CONTEXT_TOTAL_BYTES) {
+      setErrorMessage(
+        `Le total des fichiers depasse ${(MAX_CONTEXT_TOTAL_BYTES / (1024 * 1024)).toFixed(0)}MB.`,
+      )
+      setPipelineStep('error')
+      return
+    }
 
     setResult(null)
     setErrorMessage('')
     setStep3Progress(null)
-    setPipelineStep('step1_semantic_search')
+    setPipelineStep('step0_context_processing')
 
     try {
+      const contextFilesPayload = await serializeContextFiles(contextFiles)
+      const contextRequest: ContextPipelineRequest = {
+        raw_text: normalizedRawContext,
+        urls: normalizedContextUrls,
+        files: contextFilesPayload,
+      }
+
       const simulationRun = await runPipeline(
         normalizedQuestion,
-        FIXED_PROMPT_CONTEXT,
+        contextRequest,
         choices.length > 0 ? choices : undefined,
         setPipelineStep,
         setStep3Progress,
@@ -1157,19 +1423,22 @@ function App() {
               >
                 Méthodologie
               </button>
+              <button
+                type="button"
+                className={`btn btn-sm ${activePage === 'data_catalogue' ? 'btn-primary' : 'btn-ghost'}`}
+                onClick={() => setActivePage('data_catalogue')}
+              >
+                Catalogue
+              </button>
             </div>
           </div>
 
           <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
-            {activePage === 'simulateur' ? 'Simulateur de sondage' : activePage === 'session_logs' ? 'Logs' : 'Méthodologie'}
+            {PAGE_TITLE[activePage]}
           </h1>
 
           <p className="max-w-3xl text-sm text-base-content/70 sm:text-base">
-           {activePage === 'simulateur'
-             ? 'Structurez votre question, fournissez le contexte, puis laissez le pipeline estimer une distribution nationale.'
-             : activePage === 'session_logs'
-             ? 'Retrouvez l\'historique des simulations de la session et inspectez les payloads détaillés de chaque étape.'
-             : 'Une vue claire du pipeline: filtrage sémantique, priors historiques, simulation LLM par strate puis agrégation finale.'}
+            {PAGE_DESCRIPTION[activePage]}
           </p>
         </header>
 
@@ -1213,9 +1482,7 @@ function App() {
                 <div className="sim-card">
                   <label className="text-sm font-medium" htmlFor="contexte">Contexte</label>
                   <p className="mt-2 text-xs text-base-content/60">
-                    Cette étape est limitée au UI: le prompt utilise temporairement le texte fixe
-                    {' '}
-                    <code>{FIXED_PROMPT_CONTEXT}</code>.
+                    Texte, URLs et fichiers sont extraits et normalises par la fonction Edge de contexte avant la simulation LLM.
                   </p>
                   <textarea
                     id="contexte"
@@ -1248,7 +1515,7 @@ function App() {
                     onChange={handleContextFileSelection}
                   />
                   <p className="mt-2 text-xs text-base-content/50">
-                    Jusqu'à {MAX_CONTEXT_FILES} fichiers peuvent être attachés (pdf, txt, md, etc.).
+                    Jusqu'à {MAX_CONTEXT_FILES} fichiers peuvent être attachés (max {(MAX_CONTEXT_FILE_SIZE_BYTES / (1024 * 1024)).toFixed(0)}MB par fichier, {(MAX_CONTEXT_TOTAL_BYTES / (1024 * 1024)).toFixed(0)}MB total).
                   </p>
 
                   {contextFiles.length > 0 && (
@@ -1595,11 +1862,12 @@ function App() {
                     <h3 className="text-sm font-medium">Payloads complets des étapes</h3>
                     {(
                       [
-                        selectedLog.pipeline.semantic_search,
-                        selectedLog.pipeline.fetch_strate_predictions,
-                        selectedLog.pipeline.llm_prompt_dry_run,
-                        selectedLog.pipeline.llm_sampling,
-                        selectedLog.pipeline.aggregate_final_distribution,
+                        selectedLog.pipeline.context_pipeline ?? null,
+                        selectedLog.pipeline.semantic_search ?? null,
+                        selectedLog.pipeline.fetch_strate_predictions ?? null,
+                        selectedLog.pipeline.llm_prompt_dry_run ?? null,
+                        selectedLog.pipeline.llm_sampling ?? null,
+                        selectedLog.pipeline.aggregate_final_distribution ?? null,
                       ] as Array<ApiCallLog | null>
                     )
                       .filter((step): step is ApiCallLog => step !== null)
@@ -1620,6 +1888,137 @@ function App() {
                 </div>
               )}
             </section>
+          </main>
+        ) : activePage === 'data_catalogue' ? (
+          <main className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,1.25fr)_minmax(260px,0.85fr)] lg:items-start">
+            <section className="sim-card">
+              <form
+                className="flex flex-col gap-4"
+                onSubmit={(event) => {
+                  event.preventDefault()
+                  void runCatalogueSearch(catalogueQuery)
+                }}
+              >
+                <div className="flex flex-col gap-2">
+                  <label className="text-sm font-medium" htmlFor="catalogue-query">Rechercher une question</label>
+                  <input
+                    id="catalogue-query"
+                    type="text"
+                    className="input input-bordered w-full"
+                    value={catalogueQuery}
+                    onChange={(event) => setCatalogueQuery(event.target.value)}
+                    placeholder="Ex: Êtes-vous en faveur d'un impôt sur les grandes fortunes?"
+                  />
+                </div>
+
+                <div className="flex flex-wrap items-end gap-3">
+                  <label className="text-xs text-base-content/60" htmlFor="catalogue-topk">
+                    Nombre de résultats
+                  </label>
+                  <select
+                    id="catalogue-topk"
+                    className="select select-bordered select-sm"
+                    value={catalogueTopK}
+                    onChange={(event) => setCatalogueTopK(Number(event.target.value))}
+                  >
+                    <option value={5}>5</option>
+                    <option value={10}>10</option>
+                    <option value={15}>15</option>
+                  </select>
+                  <button type="submit" className="btn btn-primary btn-sm" disabled={isCatalogueLoading}>
+                    {isCatalogueLoading ? 'Recherche...' : 'Lancer la recherche'}
+                  </button>
+                </div>
+              </form>
+
+              {catalogueError && (
+                <div role="alert" className="alert alert-error mt-4 text-sm">
+                  <span>{catalogueError}</span>
+                </div>
+              )}
+
+              {isCatalogueLoading && (
+                <div className="mt-4 flex flex-col gap-2">
+                  <progress className="progress progress-primary w-full" />
+                  <p className="text-xs text-base-content/60">Recherche des questions les plus proches en cours...</p>
+                </div>
+              )}
+
+              {!isCatalogueLoading && catalogueLastQuery && catalogueResults.length === 0 && !catalogueError && (
+                <p className="mt-4 text-sm text-base-content/60">Aucun résultat pertinent trouvé pour cette requête.</p>
+              )}
+
+              {!isCatalogueLoading && catalogueLastQuery && catalogueResults.length > 0 && (
+                <ul className="mt-5 flex flex-col gap-3">
+                  {catalogueResults.map((item) => {
+                    const choiceEntries = item.choices ? Object.entries(item.choices) : []
+                    const previewChoices = choiceEntries.slice(0, 3)
+
+                    return (
+                      <li key={item.id} className="rounded-xl border border-base-300/70 bg-base-100/75 px-4 py-3">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <p className="text-xs text-base-content/60">Question #{item.id}</p>
+                          <div className="flex items-center gap-2">
+                            <span className="badge badge-outline badge-sm">{item.llm_points} pts</span>
+                            <span className="badge badge-ghost badge-sm">Similarité {formatSimilarity(item.cosine_similarity)}</span>
+                          </div>
+                        </div>
+                        <p className="mt-2 text-sm font-medium">{item.text}</p>
+                        <p className="mt-2 text-xs text-base-content/65">
+                          Survey {item.survey_id}
+                          {item.var_name ? ` · ${item.var_name}` : ''}
+                          {item.prefix ? ` · ${item.prefix}` : ''}
+                          {item.scale_type ? ` · ${item.scale_type}` : ''}
+                        </p>
+                        {previewChoices.length > 0 && (
+                          <p className="mt-2 text-xs text-base-content/60">
+                            {previewChoices.map(([key, value]) => `${key}: ${value}`).join(' · ')}
+                            {choiceEntries.length > previewChoices.length ? ' · …' : ''}
+                          </p>
+                        )}
+                      </li>
+                    )
+                  })}
+                </ul>
+              )}
+
+              {!isCatalogueLoading && !catalogueLastQuery && (
+                <p className="mt-4 text-sm text-base-content/60">
+                  Entrez une question ou un thème pour explorer les items historiques disponibles dans le dataset.
+                </p>
+              )}
+            </section>
+
+            <aside className="sim-card lg:sticky lg:top-6">
+              <h2 className="text-sm font-medium">Repères rapides</h2>
+              <dl className="mt-4 grid grid-cols-2 gap-x-3 gap-y-2 text-sm">
+                <dt className="text-base-content/55">Dernière requête</dt>
+                <dd className="text-right text-xs">{catalogueLastQuery || '—'}</dd>
+                <dt className="text-base-content/55">Résultats</dt>
+                <dd className="text-right">{catalogueResults.length}</dd>
+                <dt className="text-base-content/55">Points couverts</dt>
+                <dd className="text-right">{catalogueTotalPoints ?? 'n/a'} / 100</dd>
+              </dl>
+
+              <div className="mt-5 border-t border-base-300/60 pt-4">
+                <h3 className="text-xs font-semibold uppercase tracking-wide text-base-content/60">Thèmes suggérés</h3>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {CATALOGUE_SUGGESTIONS.map((theme) => (
+                    <button
+                      key={theme}
+                      type="button"
+                      className="btn btn-xs btn-ghost"
+                      onClick={() => {
+                        setCatalogueQuery(theme)
+                        void runCatalogueSearch(theme)
+                      }}
+                    >
+                      {theme}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </aside>
           </main>
         ) : (
           <MethodologyPage />
