@@ -97,6 +97,13 @@
   word-break: break-word;
 }
 
+.alert-error,
+.badge-error {
+  border-color: color-mix(in oklch, var(--sim-accent-2) 65%, transparent);
+  background: color-mix(in oklch, var(--sim-accent-2) 18%, transparent);
+  color: color-mix(in oklch, var(--sim-accent-2) 85%, white 8%);
+}
+
 .input:focus,
 .input:focus-within,
 .textarea:focus,

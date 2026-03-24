@@ -16,4 +16,7 @@
   --color-primary-content: oklch(0.15 0.02 196.4);
   --color-secondary: oklch(0.651 0.148 24.5);
   --color-secondary-content: oklch(0.15 0.02 24.5);
+  --sim-accent-2: #f0695a;
+  --color-error: var(--sim-accent-2);
+  --color-error-content: #1f100d;
 }
