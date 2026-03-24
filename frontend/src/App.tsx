@@ -18,6 +18,15 @@ function normalizeSupabaseUrl(url: string | undefined) {
     .replace(/\/functions\/v1$/, '')
 }
 
+/**
+ * Normalize Unicode text to NFC (Composed) form.
+ * This ensures consistent representation of accented characters and special symbols.
+ * For example: "é" (decomposed: e + ́) becomes "é" (composed)
+ */
+function normalizeText(text: string): string {
+  return text.normalize('NFC')
+}
+
 const SUPABASE_URL = normalizeSupabaseUrl(RAW_SUPABASE_URL)
 
 function fnUrl(name: string) {
@@ -35,11 +44,11 @@ type PipelineStep =
 
 const STEP_LABELS: Record<PipelineStep, string> = {
   idle: '',
-  step1_semantic_search: 'Recherche semantique...',
-  step2_fetch_predictions: 'Chargement des predictions historiques...',
+  step1_semantic_search: 'Recherche sémantique...',
+  step2_fetch_predictions: 'Chargement des prédictions historiques...',
   step3_llm_sampling: 'Simulation des strates...',
-  step4_aggregate: 'Agregation des resultats...',
-  success: 'Simulation terminee.',
+  step4_aggregate: 'Agrégation des résultats...',
+  success: 'Simulation terminée.',
   error: '',
 }
 
@@ -86,7 +95,7 @@ function getStepLabel(step: PipelineStep, step3Progress: Step3Progress | null): 
     return STEP_LABELS[step]
   }
 
-  return `Simulation des strates... ${progressLabel}`
+  return `Simulation des strates… ${progressLabel}`
 }
 
 export interface SimulationResult {
@@ -285,7 +294,7 @@ async function invokeLlmSamplingWithProgress(
         status: response.status,
         ok: false,
         durationMs: duration(),
-        responsePayload: { error: 'Reponse JSON invalide pour etape 3' },
+        responsePayload: { error: 'Réponse JSON invalide pour étape 3' },
       }
     }
   }
@@ -372,7 +381,7 @@ async function invokeLlmSamplingWithProgress(
       status: response.status,
       ok: false,
       durationMs: duration(),
-      responsePayload: { error: 'Flux de progression invalide pour etape 3' },
+      responsePayload: { error: 'Flux de progression invalide pour étape 3' },
     }
   }
 
@@ -381,7 +390,7 @@ async function invokeLlmSamplingWithProgress(
       status: response.status,
       ok: false,
       durationMs: duration(),
-      responsePayload: { error: 'Flux de progression incomplet pour etape 3' },
+      responsePayload: { error: 'Flux de progression incomplet pour étape 3' },
     }
   }
 
@@ -464,7 +473,7 @@ async function runPipeline(
 
     if (!step1Call.ok) {
       throw new PipelineExecutionError(
-        `Etape 1 (recherche semantique) : ${extractErrorMessage(step1Call.responsePayload, 'Erreur inconnue')}`,
+         `Étape 1 (recherche sémantique) : ${extractErrorMessage(step1Call.responsePayload, 'Erreur inconnue')}`,
         executionLog,
       )
     }
@@ -472,7 +481,7 @@ async function runPipeline(
     const step1 = step1Call.responsePayload as { results?: Array<Record<string, unknown>> }
     if (!step1.results || step1.results.length === 0) {
       throw new PipelineExecutionError(
-        'Aucune question historique pertinente trouvee pour simuler cette question. Essayez une question plus proche des themes couverts par les sondages disponibles.',
+        'Aucune question historique pertinente trouvée pour simuler cette question. Essayez une question plus proche des thèmes couverts par les sondages disponibles.',
         executionLog,
       )
     }
@@ -491,7 +500,7 @@ async function runPipeline(
 
     if (!step2Call.ok) {
       throw new PipelineExecutionError(
-        `Etape 2 (predictions historiques) : ${extractErrorMessage(step2Call.responsePayload, 'Erreur inconnue')}`,
+         `Étape 2 (prédictions historiques) : ${extractErrorMessage(step2Call.responsePayload, 'Erreur inconnue')}`,
         executionLog,
       )
     }
@@ -545,7 +554,7 @@ async function runPipeline(
 
     if (!step3Call.ok) {
       throw new PipelineExecutionError(
-        `Etape 3 (simulation LLM) : ${extractErrorMessage(step3Call.responsePayload, 'Erreur inconnue')}`,
+         `Étape 3 (simulation LLM) : ${extractErrorMessage(step3Call.responsePayload, 'Erreur inconnue')}`,
         executionLog,
       )
     }
@@ -555,7 +564,7 @@ async function runPipeline(
     const failedCount = strateResults.filter(r => r.error !== null).length
     if (strateResults.length === 0 || failedCount === strateResults.length) {
       const sampleError = strateResults[0]?.error ?? 'unknown'
-      throw new PipelineExecutionError(`Toutes les strates ont echoue. Exemple : ${sampleError}`, executionLog)
+       throw new PipelineExecutionError(`Toutes les strates ont échoué. Exemple : ${sampleError}`, executionLog)
     }
 
     onStep('step4_aggregate')
@@ -572,7 +581,7 @@ async function runPipeline(
 
     if (!step4Call.ok) {
       throw new PipelineExecutionError(
-        `Etape 4 (agregation) : ${extractErrorMessage(step4Call.responsePayload, 'Erreur inconnue')}`,
+         `Étape 4 (agrégation) : ${extractErrorMessage(step4Call.responsePayload, 'Erreur inconnue')}`,
         executionLog,
       )
     }
@@ -626,6 +635,7 @@ function App() {
       .split('\n')
       .map(c => c.trim())
       .filter(c => c.length > 0)
+      .map(c => normalizeText(c))
 
     setResult(null)
     setErrorMessage('')
@@ -634,8 +644,8 @@ function App() {
 
     try {
       const simulationRun = await runPipeline(
-        question.trim(),
-        contexte.trim(),
+        normalizeText(question.trim()),
+        normalizeText(contexte.trim()),
         choices.length > 0 ? choices : undefined,
         setPipelineStep,
         setStep3Progress,
@@ -647,8 +657,8 @@ function App() {
         id: crypto.randomUUID(),
         created_at: new Date().toISOString(),
         status: 'success',
-        question: question.trim(),
-        context: contexte.trim(),
+        question: normalizeText(question.trim()),
+        context: normalizeText(contexte.trim()),
         choices,
         error_message: null,
         result: simulationRun.result,
@@ -666,10 +676,10 @@ function App() {
         id: crypto.randomUUID(),
         created_at: new Date().toISOString(),
         status: 'error',
-        question: question.trim(),
-        context: contexte.trim(),
+        question: normalizeText(question.trim()),
+        context: normalizeText(contexte.trim()),
         choices,
-        error_message: message,
+        error_message: normalizeText(message),
         result: null,
         pipeline: error instanceof PipelineExecutionError ? error.executionLog : buildEmptyExecutionLog(),
       }
@@ -719,7 +729,7 @@ function App() {
                 type="button"
                 className={`btn btn-sm ${activePage === 'simulateur' ? 'btn-primary' : 'btn-ghost'}`}
                 onClick={() => setActivePage('simulateur')}
-              >
+                >
                 Simulateur
               </button>
               <button
@@ -727,19 +737,19 @@ function App() {
                 className={`btn btn-sm ${activePage === 'session_logs' ? 'btn-primary' : 'btn-ghost'}`}
                 onClick={() => setActivePage('session_logs')}
               >
-                Session Logs ({sessionLogs.length})
+                Journaux ({sessionLogs.length})
               </button>
             </div>
           </div>
 
           <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
-            {activePage === 'simulateur' ? 'Simulateur de sondage' : 'Session Logs'}
+            {activePage === 'simulateur' ? 'Simulateur de sondage' : 'Journaux de session'}
           </h1>
 
           <p className="max-w-3xl text-sm text-base-content/70 sm:text-base">
-            {activePage === 'simulateur'
-              ? 'Structurez votre question, fournissez le contexte, puis laissez le pipeline estimer une distribution nationale.'
-              : 'Retrouvez l historique des simulations de la session et inspectez les payloads detailles de chaque etape.'}
+           {activePage === 'simulateur'
+             ? 'Structurez votre question, fournissez le contexte, puis laissez le pipeline estimer une distribution nationale.'
+             : 'Retrouvez l\'historique des simulations de la session et inspectez les payloads détaillés de chaque étape.'}
           </p>
         </header>
 
@@ -755,7 +765,7 @@ function App() {
                     className="input input-bordered mt-2 w-full"
                     value={question}
                     onChange={(e) => setQuestion(e.target.value)}
-                    placeholder="Ex: Etes-vous pour ou contre la reforme du mode de scrutin?"
+                    placeholder="Ex: Êtes-vous pour ou contre la réforme du mode de scrutin?"
                     required
                   />
                   <p className="mt-2 text-xs text-base-content/50">Formulez une question claire et unique pour des resultats plus stables.</p>
@@ -764,7 +774,7 @@ function App() {
                 <div className="sim-card">
                   <div className="flex items-end justify-between gap-3">
                     <label className="text-sm font-medium" htmlFor="choices">
-                      Choix de reponse <span className="text-xs text-base-content/40">(optionnel)</span>
+                      Choix de réponse <span className="text-xs text-base-content/40">(optionnel)</span>
                     </label>
                     <span className="text-xs text-base-content/50">{normalizedChoices.length} choix detectes</span>
                   </div>
@@ -774,9 +784,9 @@ function App() {
                     rows={4}
                     value={choicesText}
                     onChange={(e) => setChoicesText(e.target.value)}
-                    placeholder="Un choix par ligne, ex:\nTout a fait d accord\nPlutot d accord\nPlutot en desaccord\nTout a fait en desaccord\nNe sait pas"
+                    placeholder="Un choix par ligne, ex:\nTout à fait d'accord\nPlutôt d'accord\nPlutôt en désaccord\nTout à fait en désaccord\nNe sait pas"
                   />
-                  <p className="mt-2 text-xs text-base-content/50">Laissez vide pour que l IA infere les options de reponse.</p>
+                   <p className="mt-2 text-xs text-base-content/50">Laissez vide pour que l'IA infère les options de réponse.</p>
                 </div>
 
                 <div className="sim-card">
@@ -790,7 +800,7 @@ function App() {
                     placeholder="Collez ici les articles, rapports ou tout autre texte de contexte..."
                     required
                   />
-                  <p className="mt-2 text-xs text-base-content/50">Ajoutez les informations utiles: faits, chiffres, citations et angle d analyse.</p>
+                   <p className="mt-2 text-xs text-base-content/50">Ajoutez les informations utiles : faits, chiffres, citations et angle d'analyse.</p>
                 </div>
 
                 <div className="sim-card">
@@ -813,15 +823,15 @@ function App() {
 
                   {pipelineStep === 'success' && result && (
                     <div className="mt-4 flex flex-col gap-2">
-                      <div role="alert" className={`alert text-sm ${result.meta.failed_strates === 0 ? 'alert-success' : 'alert-warning'}`}>
-                        <span>
-                          Simulation terminee - {result.meta.successful_strates}/{result.meta.total_strates} strates reussies.
-                          {result.meta.failed_strates > 0 && ` (${result.meta.failed_strates} echouees)`}
-                        </span>
-                      </div>
+                       <div role="alert" className={`alert text-sm ${result.meta.failed_strates === 0 ? 'alert-success' : 'alert-warning'}`}>
+                         <span>
+                           Simulation terminée — {result.meta.successful_strates}/{result.meta.total_strates} strates réussies.
+                           {result.meta.failed_strates > 0 && ` (${result.meta.failed_strates} échouées)`}
+                         </span>
+                       </div>
                       {result.meta.failed_strates > 0 && (
                         <details className="text-xs text-base-content/50">
-                          <summary className="cursor-pointer select-none">Details des erreurs ({result.meta.failed_strates})</summary>
+                          <summary className="cursor-pointer select-none">Détails des erreurs ({result.meta.failed_strates})</summary>
                           <ul className="mt-1 flex flex-col gap-1 pl-2">
                             {result.strate_results.filter(s => s.error).map((s, i) => (
                               <li key={i}>
@@ -843,7 +853,7 @@ function App() {
 
               {result && (
                 <div className="sim-card">
-                  <h2 className="text-sm font-medium">Distribution nationale estimee</h2>
+                   <h2 className="text-sm font-medium">Distribution nationale estimée</h2>
                   <pre className="mt-3 max-h-96 overflow-auto rounded-lg bg-base-200/80 p-4 text-xs">
                     {JSON.stringify(result.national_distribution, null, 2)}
                   </pre>
@@ -853,7 +863,7 @@ function App() {
 
             <aside className="lg:sticky lg:top-6">
               <div className="sim-card mb-5">
-                <h2 className="text-sm font-medium">Parcours de simulation</h2>
+                 <h2 className="text-sm font-medium">Parcours de la simulation</h2>
                 <ol className="mt-4 flex flex-col gap-3">
                   {PIPELINE_FLOW.map((step, index) => {
                     const isComplete = pipelineStep === 'success' || currentStepIndex > index
@@ -869,7 +879,7 @@ function App() {
               </div>
 
               <div className="sim-card">
-                <h2 className="text-sm font-medium">Apercu des entrees</h2>
+                 <h2 className="text-sm font-medium">Aperçu des entrées</h2>
                 <dl className="mt-4 grid grid-cols-2 gap-x-3 gap-y-2 text-sm">
                   <dt className="text-base-content/55">Question</dt>
                   <dd className="text-right">{question.trim().length > 0 ? 'Renseignee' : 'Vide'}</dd>
@@ -885,7 +895,7 @@ function App() {
           <main className="mt-8 grid gap-6 lg:grid-cols-[minmax(260px,0.95fr)_minmax(0,1.45fr)] lg:items-start">
             <section className="sim-card lg:sticky lg:top-6">
               <div className="flex items-center justify-between gap-2">
-                <h2 className="text-sm font-medium">Historique de session</h2>
+                 <h2 className="text-sm font-medium">Historique de la session</h2>
                 <button
                   type="button"
                   className="btn btn-xs btn-ghost"
@@ -897,7 +907,7 @@ function App() {
               </div>
 
               {sessionLogs.length === 0 ? (
-                <p className="mt-4 text-sm text-base-content/60">Aucune simulation enregistree dans cette session.</p>
+                 <p className="mt-4 text-sm text-base-content/60">Aucune simulation enregistrée dans cette session.</p>
               ) : (
                 <ul className="mt-4 flex max-h-[70vh] flex-col gap-2 overflow-auto pr-1">
                   {sessionLogs.map(log => {
@@ -928,11 +938,11 @@ function App() {
 
             <section className="sim-card sim-logs-detail">
               {!selectedLog ? (
-                <p className="text-sm text-base-content/60">Selectionnez une simulation pour afficher les details.</p>
+                <p className="text-sm text-base-content/60">Sélectionnez une simulation pour afficher les détails.</p>
               ) : (
                 <div className="flex flex-col gap-5">
                   <div>
-                    <h2 className="text-sm font-medium">Simulation selectionnee</h2>
+                     <h2 className="text-sm font-medium">Simulation sélectionnée</h2>
                     <p className="mt-2 text-sm">{selectedLog.question}</p>
                     <p className="mt-1 text-xs text-base-content/60">
                       {new Date(selectedLog.created_at).toLocaleString('fr-CA')} - {selectedLog.status}
@@ -945,12 +955,12 @@ function App() {
                   </div>
 
                   <details className="sim-json-block" open>
-                    <summary>Entrees utilisateur</summary>
+                    <summary>Entrées utilisateur</summary>
                     <pre>{formatJson({ question: selectedLog.question, context: selectedLog.context, choices: selectedLog.choices })}</pre>
                   </details>
 
                   <div className="sim-log-section">
-                    <h3 className="text-sm font-medium">Questions filtrees et scorees</h3>
+                     <h3 className="text-sm font-medium">Questions filtrées et scorées</h3>
                     {scoredQuestions.length === 0 ? (
                       <p className="mt-2 text-xs text-base-content/60">Aucune question retournee.</p>
                     ) : (
@@ -968,12 +978,12 @@ function App() {
                   </div>
 
                   <div className="sim-log-section">
-                    <h3 className="text-sm font-medium">Prompts par strate</h3>
-                    {stratePrompts.length === 0 ? (
-                      <p className="mt-2 text-xs text-base-content/60">Prompt dry-run indisponible pour cette simulation.</p>
+                     <h3 className="text-sm font-medium">Prompts par strate</h3>
+                     {stratePrompts.length === 0 ? (
+                       <p className="mt-2 text-xs text-base-content/60">Prompt d'essai indisponible pour cette simulation.</p>
                     ) : (
                       <details className="sim-json-block mt-2">
-                        <summary>Afficher {stratePrompts.length} prompts</summary>
+                         <summary>Afficher {stratePrompts.length} invites de prompt</summary>
                         <ul className="mt-3 flex flex-col gap-2">
                           {stratePrompts.map((prompt, index) => {
                             const strateLabel = [
@@ -1000,9 +1010,9 @@ function App() {
                   </div>
 
                   <div className="sim-log-section">
-                    <h3 className="text-sm font-medium">Raisonnements API par strate</h3>
-                    {strateReasonings.length === 0 ? (
-                      <p className="mt-2 text-xs text-base-content/60">Aucune reponse LLM disponible.</p>
+                     <h3 className="text-sm font-medium">Raisonnements API par strate</h3>
+                     {strateReasonings.length === 0 ? (
+                       <p className="mt-2 text-xs text-base-content/60">Aucune réponse LLM disponible.</p>
                     ) : (
                       <details className="sim-json-block mt-2">
                         <summary>Afficher les raisonnements ({strateReasonings.length})</summary>
@@ -1036,7 +1046,7 @@ function App() {
                   </div>
 
                   <div className="sim-log-section">
-                    <h3 className="text-sm font-medium">Payloads complets des etapes</h3>
+                    <h3 className="text-sm font-medium">Payloads complets des étapes</h3>
                     {(
                       [
                         selectedLog.pipeline.semantic_search,
