@@ -776,7 +776,7 @@ function App() {
                     <label className="text-sm font-medium" htmlFor="choices">
                       Choix de réponse <span className="text-xs text-base-content/40">(optionnel)</span>
                     </label>
-                    <span className="text-xs text-base-content/50">{normalizedChoices.length} choix detectes</span>
+                    <span className="text-xs text-base-content/50">{normalizedChoices.length} choix détectés</span>
                   </div>
                   <textarea
                     id="choices"
@@ -882,11 +882,11 @@ function App() {
                  <h2 className="text-sm font-medium">Aperçu des entrées</h2>
                 <dl className="mt-4 grid grid-cols-2 gap-x-3 gap-y-2 text-sm">
                   <dt className="text-base-content/55">Question</dt>
-                  <dd className="text-right">{question.trim().length > 0 ? 'Renseignee' : 'Vide'}</dd>
-                  <dt className="text-base-content/55">Choix</dt>
-                  <dd className="text-right">{normalizedChoices.length || 'Auto'}</dd>
-                  <dt className="text-base-content/55">Contexte</dt>
-                  <dd className="text-right">{contexte.trim().length} caracteres</dd>
+                  <dd className="text-right">{question.trim().length > 0 ? 'Renseignée' : 'Vide'}</dd>
+                   <dt className="text-base-content/55">Choix</dt>
+                   <dd className="text-right">{normalizedChoices.length || 'Auto'}</dd>
+                   <dt className="text-base-content/55">Contexte</dt>
+                   <dd className="text-right">{contexte.trim().length} caractères</dd>
                 </dl>
               </div>
             </aside>
@@ -962,7 +962,7 @@ function App() {
                   <div className="sim-log-section">
                      <h3 className="text-sm font-medium">Questions filtrées et scorées</h3>
                     {scoredQuestions.length === 0 ? (
-                      <p className="mt-2 text-xs text-base-content/60">Aucune question retournee.</p>
+                      <p className="mt-2 text-xs text-base-content/60">Aucune question retournée.</p>
                     ) : (
                       <ul className="mt-2 flex flex-col gap-2">
                         {scoredQuestions.map((item, index) => (
