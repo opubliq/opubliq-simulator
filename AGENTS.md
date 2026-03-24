@@ -18,6 +18,12 @@ To only see issues related to the core project:
 bd ready --label core
 ```
 
+To list OpenAI models available in OpenCode:
+
+```bash
+opencode models openai
+```
+
 ## Landing the Plane (Session Completion)
 
 **When ending a work session**, you MUST complete ALL steps below. Work is NOT complete until `git push` succeeds.
@@ -53,8 +59,17 @@ source venv/bin/activate
 python scripts/nom_du_script.py
 ```
 
+## Supabase Functions
+
+- Préparer les fichiers sous `supabase/functions/<nom>` et vérifier les tests/validations demandés avant déploiement.
+- Pour déployer :
+  ```bash
+  supabase functions deploy <fonction> --project-ref <projet> [--no-verify-jwt]
+  ```
+- Docker n'a pas besoin d'être en cours d'exécution ; le CLI se rabat sur l'upload direct (on peut ignorer l'avertissement "Docker is not running").
+- Penser à noter dans `bd update <id> --append-notes "Supabase deploy done"` dès que le déploiement est terminé.
+
 ## Fichiers sensibles
 
 - Ne jamais lire, modifier ou référencer le fichier `.env.local`
 - Ce fichier contient des secrets locaux et ne doit pas être consulté
-
