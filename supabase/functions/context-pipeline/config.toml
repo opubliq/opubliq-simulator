@@ -1,0 +1,2 @@
+[functions.context-pipeline]
+verify_jwt = false
