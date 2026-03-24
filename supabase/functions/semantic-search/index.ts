@@ -1,4 +1,9 @@
 import { createClient } from "jsr:@supabase/supabase-js@2";
+import {
+  parseAndMapLLMScores,
+  type ParsedLLMScores,
+  type QuestionCandidate,
+} from "./scoring.ts";
 
 const OPENROUTER_EMBEDDING_MODEL = "openai/text-embedding-3-small";
 const OPENROUTER_LLM_MODEL = "meta-llama/llama-3.1-8b-instruct";
@@ -11,17 +16,6 @@ const DEFAULT_TOP_K = 5;
 interface SemanticSearchRequest {
   question: string;
   top_k?: number;
-}
-
-interface QuestionCandidate {
-  id: number;
-  text: string;
-  scale_type: string | null;
-  var_name: string | null;
-  prefix: string | null;
-  survey_id: number;
-  choices: Record<string, string> | null;
-  cosine_similarity: number;
 }
 
 interface ScoredQuestion extends QuestionCandidate {
@@ -54,7 +48,9 @@ async function generateEmbedding(
 
   if (!embedding || embedding.length !== EMBEDDING_DIMENSIONS) {
     throw new Error(
-      `Expected ${EMBEDDING_DIMENSIONS}-dim embedding, got ${embedding?.length ?? 0} from ${OPENROUTER_EMBEDDING_MODEL}`,
+      `Expected ${EMBEDDING_DIMENSIONS}-dim embedding, got ${
+        embedding?.length ?? 0
+      } from ${OPENROUTER_EMBEDDING_MODEL}`,
     );
   }
 
@@ -65,12 +61,13 @@ async function scoreCandidatesWithLLM(
   userQuestion: string,
   candidates: QuestionCandidate[],
   openRouterApiKey: string,
-): Promise<Record<number, number>> {
+): Promise<ParsedLLMScores> {
   const candidateList = candidates
     .map((c, i) => `${i + 1}. [ID:${c.id}] "${c.text}"`)
     .join("\n");
 
-  const prompt = `You are helping assess how relevant historical survey questions are to a new fictional survey question.
+  const prompt =
+    `You are helping assess how relevant historical survey questions are to a new fictional survey question.
 
 New question: "${userQuestion}"
 
@@ -111,17 +108,7 @@ ${candidateList}`;
   const rawText: string = data.choices?.[0]?.message?.content ?? "{}";
 
   try {
-    const parsed = JSON.parse(rawText);
-    // Parse integer points (0-100 budget), clamp to valid range
-    const scores: Record<number, number> = {};
-    for (const [k, v] of Object.entries(parsed)) {
-      const id = parseInt(k, 10);
-      const points = Math.round(Math.max(0, Math.min(100, Number(v))));
-      if (!isNaN(id) && points > 0) {
-        scores[id] = points;
-      }
-    }
-    return scores;
+    return parseAndMapLLMScores(rawText, candidates);
   } catch {
     throw new Error(`Failed to parse LLM scoring response: ${rawText}`);
   }
@@ -164,7 +151,9 @@ Deno.serve(async (req: Request) => {
 
   if (!openRouterApiKey) {
     return new Response(
-      JSON.stringify({ error: "Missing OPENROUTER_API_KEY environment variable" }),
+      JSON.stringify({
+        error: "Missing OPENROUTER_API_KEY environment variable",
+      }),
       {
         status: 500,
         headers: { "Content-Type": "application/json" },
@@ -188,7 +177,10 @@ Deno.serve(async (req: Request) => {
 
   try {
     // Step 1a: Generate embedding for user question
-    const embedding = await generateEmbedding(question.trim(), openRouterApiKey);
+    const embedding = await generateEmbedding(
+      question.trim(),
+      openRouterApiKey,
+    );
 
     // Step 1b: Vector similarity search — top-15 candidates
     // Exclude meta-prefixed variables (sampling weights, identifiers)
@@ -220,7 +212,7 @@ Deno.serve(async (req: Request) => {
     const typedCandidates = candidates as QuestionCandidate[];
 
     // Step 1c: Single LLM call to score all candidates simultaneously
-    const llmScores = await scoreCandidatesWithLLM(
+    const llmResult = await scoreCandidatesWithLLM(
       question.trim(),
       typedCandidates,
       openRouterApiKey,
@@ -228,17 +220,27 @@ Deno.serve(async (req: Request) => {
 
     // Merge cosine similarity + LLM points; only include questions with points > 0
     const scored: ScoredQuestion[] = typedCandidates
-      .filter((c) => (llmScores[c.id] ?? 0) > 0)
+      .filter((c) => (llmResult.scoresById[c.id] ?? 0) > 0)
       .map((c) => ({
         ...c,
-        llm_points: llmScores[c.id],
+        llm_points: llmResult.scoresById[c.id],
       }));
+
+    console.log("[semantic-search] LLM scoring diagnostics", {
+      requested_candidates: typedCandidates.length,
+      scored_candidates: llmResult.mappedCandidateCount,
+      returned_keys: llmResult.returnedKeyCount,
+      key_format: llmResult.keyFormat,
+    });
 
     // Sort by llm_points descending, take top_k
     scored.sort((a, b) => b.llm_points - a.llm_points);
     const topK = scored.slice(0, Math.max(1, top_k));
 
-    const total_points_assigned = scored.reduce((sum, c) => sum + c.llm_points, 0);
+    const total_points_assigned = scored.reduce(
+      (sum, c) => sum + c.llm_points,
+      0,
+    );
 
     return new Response(
       JSON.stringify({

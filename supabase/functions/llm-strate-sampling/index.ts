@@ -42,12 +42,13 @@
 // ---------------------------------------------------------------------------
 
 import { createClient, SupabaseClient } from "jsr:@supabase/supabase-js@2";
+import { type LlmResponse, parseLlmResponse } from "./llm_response.ts";
 
 const OPENROUTER_LLM_MODEL = "meta-llama/llama-3.1-8b-instruct";
 const OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions";
 const CURRENT_YEAR = 2026; // anchor year for age group definitions
-const PARALLEL_BATCH_SIZE = 48;   // toutes les strates en parallèle — OpenRouter payant sans rate limit contraignant
-const BATCH_DELAY_MS = 0;          // pas de délai entre batches
+const PARALLEL_BATCH_SIZE = 48; // toutes les strates en parallèle — OpenRouter payant sans rate limit contraignant
+const BATCH_DELAY_MS = 0; // pas de délai entre batches
 
 // ---------------------------------------------------------------------------
 // All 48 canonical strates
@@ -107,47 +108,34 @@ interface QuestionPredictions {
   scale_type?: string | null;
   var_name?: string | null;
   survey_id?: number;
-  choices?: Record<string, string> | null;  // {"raw_value": "human label"}
-  year?: number;  // enriched by Step 3 via surveys table if not already set
+  choices?: Record<string, string> | null; // {"raw_value": "human label"}
+  year?: number; // enriched by Step 3 via surveys table if not already set
 }
 
 interface LlmStrateSamplingRequest {
   predictions: QuestionPredictions[];
-  question: string;           // fictional question from user
-  choices?: string[];         // response options for the fictional question (null = open/numeric)
-  context?: string;           // optional raw context
-  dry_run?: boolean;          // if true, return prompts without calling Gemini
-  dry_run_strate?: {      // if set, only return the prompt for this specific strate
+  question: string; // fictional question from user
+  choices?: string[]; // response options for the fictional question (null = open/numeric)
+  context?: string; // optional raw context
+  dry_run?: boolean; // if true, return prompts without calling Gemini
+  dry_run_strate?: { // if set, only return the prompt for this specific strate
     strate_age_group: string;
     strate_langue: string;
     strate_region: string;
     strate_genre: string;
   };
-  limit_to_strate?: {      // if set, only sample this specific strate (saves Google API calls)
+  limit_to_strate?: { // if set, only sample this specific strate (saves Google API calls)
     strate_age_group: string;
     strate_langue: string;
     strate_region: string;
     strate_genre: string;
   };
+  stream_progress?: boolean; // if true, stream per-strate progress over SSE
 }
 
 // ---------------------------------------------------------------------------
 // LLM response types
 // ---------------------------------------------------------------------------
-
-interface MultinomialLlmResponse {
-  raisonnement: string;
-  distribution: Record<string, number>;
-  margin_of_error: number;
-}
-
-interface NumericLlmResponse {
-  raisonnement: string;
-  mean: number;
-  margin_of_error: number;
-}
-
-type LlmResponse = MultinomialLlmResponse | NumericLlmResponse;
 
 interface StrateResult extends Strate {
   llm_response: LlmResponse | null;
@@ -204,18 +192,19 @@ function describeGenre(genre: Genre): string {
 //   55+   in 2026 → born ≤1971     → in 2012: 41+ ans
 // ---------------------------------------------------------------------------
 
-const AGE_GROUP_BOUNDS: Record<AgeGroup, { min: number; max: number | null }> = {
-  "18-34": { min: 18, max: 34 },
-  "35-54": { min: 35, max: 54 },
-  "55+":   { min: 55, max: null },
-};
+const AGE_GROUP_BOUNDS: Record<AgeGroup, { min: number; max: number | null }> =
+  {
+    "18-34": { min: 18, max: 34 },
+    "35-54": { min: 35, max: 54 },
+    "55+": { min: 55, max: null },
+  };
 
 function describeAgeAtYear(age: AgeGroup, surveyYear: number): string {
   const { min, max } = AGE_GROUP_BOUNDS[age];
   // Youngest member of this group in CURRENT_YEAR was born (CURRENT_YEAR - min)
   // Oldest was born (CURRENT_YEAR - max)
-  const ageOfYoungest = surveyYear - (CURRENT_YEAR - min);  // smallest age at survey
-  const ageOfOldest   = max !== null ? surveyYear - (CURRENT_YEAR - max) : null;
+  const ageOfYoungest = surveyYear - (CURRENT_YEAR - min); // smallest age at survey
+  const ageOfOldest = max !== null ? surveyYear - (CURRENT_YEAR - max) : null;
 
   if (ageOfOldest !== null && ageOfOldest < 0) {
     return `(pas encore né·e en ${surveyYear})`;
@@ -390,11 +379,12 @@ function buildStratePrompt(
   predictions: QuestionPredictions[],
   nationalMarginal: Record<string, number> | null,
   question: string,
-  choices: string[] | undefined,   // response options for the fictional question
+  choices: string[] | undefined, // response options for the fictional question
   context: string | undefined,
   qtype: QuestionType,
 ): string {
-  const { strate_age_group, strate_langue, strate_region, strate_genre } = strate;
+  const { strate_age_group, strate_langue, strate_region, strate_genre } =
+    strate;
 
   // Build historical questions section
   const historicalLines: string[] = [];
@@ -410,19 +400,27 @@ function buildStratePrompt(
     );
 
     const dist = strateRow?.distribution ?? nationalMarginal;
-    const distStr = dist ? formatDistribution(dist, pred.choices) : "(données non disponibles)";
+    const distStr = dist
+      ? formatDistribution(dist, pred.choices)
+      : "(données non disponibles)";
     const usedFallback = !strateRow && dist ? " [estimation nationale]" : "";
 
     const questionText = pred.text ?? `Question ID ${pred.question_id}`;
     const yearLabel = pred.year ? ` (${pred.year})` : "";
-    const ageAtSurvey = pred.year ? ` — tu avais ${describeAgeAtYear(strate_age_group, pred.year)}` : "";
+    const ageAtSurvey = pred.year
+      ? ` — tu avais ${describeAgeAtYear(strate_age_group, pred.year)}`
+      : "";
     historicalLines.push(
-      `- [poids: ${(pred.llm_points / 100).toFixed(2)}${usedFallback}]${yearLabel}${ageAtSurvey}\n  Question : ${questionText}\n  Réponses typiques de ce profil: {${distStr}}`,
+      `- [poids: ${
+        (pred.llm_points / 100).toFixed(2)
+      }${usedFallback}]${yearLabel}${ageAtSurvey}\n  Question : ${questionText}\n  Réponses typiques de ce profil: {${distStr}}`,
     );
   }
 
   const historicalSection = historicalLines.length > 0
-    ? `\n\nDonnées historiques pour ce profil démographique :\n${historicalLines.join("\n")}`
+    ? `\n\nDonnées historiques pour ce profil démographique :\n${
+      historicalLines.join("\n")
+    }`
     : "\n\n(Aucune donnée historique disponible pour ce profil.)";
 
   const contextSection = context?.trim()
@@ -431,13 +429,17 @@ function buildStratePrompt(
 
   // Response format instructions — based on choices for the fictional question
   let formatInstructions: string;
-  const raisonnementInstructions = `- "raisonnement": ta réflexion à la première personne en tant que cette persona (3-5 phrases commençant par "Je..."). Parle depuis l'intérieur du personnage — pas "cette persona penserait X", mais "Je pense que..." ou "Pour moi...". Ancre-toi dans ton vécu, ton âge, ta région, ta langue.`;
+  const raisonnementInstructions =
+    `- "raisonnement": ta réflexion à la première personne en tant que cette persona (3-5 phrases commençant par "Je..."). Parle depuis l'intérieur du personnage — pas "cette persona penserait X", mais "Je pense que..." ou "Pour moi...". Ancre-toi dans ton vécu, ton âge, ta région, ta langue.`;
 
   if (choices && choices.length > 0) {
     // Explicit choices provided for the fictional question
     const optionsList = choices.map((o) => `"${o}"`).join(", ");
-    const exampleDist = choices.slice(0, 2).map((o, i) => `"${o}": ${i === 0 ? 0.65 : 0.35}`).join(", ");
-    formatInstructions = `Les choix de réponse pour cette question sont : ${optionsList}
+    const exampleDist = choices.slice(0, 2).map((o, i) =>
+      `"${o}": ${i === 0 ? 0.65 : 0.35}`
+    ).join(", ");
+    formatInstructions =
+      `Les choix de réponse pour cette question sont : ${optionsList}
 
 Réponds UNIQUEMENT avec un objet JSON avec exactement trois clés, dans cet ordre :
 ${raisonnementInstructions}
@@ -446,7 +448,8 @@ ${raisonnementInstructions}
 
 Exemple : {"raisonnement": "Je suis un jeune francophone de Montréal...", "distribution": {${exampleDist}}, "margin_of_error": 0.08}`;
   } else if (qtype === "numeric") {
-    formatInstructions = `Réponds UNIQUEMENT avec un objet JSON avec exactement trois clés, dans cet ordre :
+    formatInstructions =
+      `Réponds UNIQUEMENT avec un objet JSON avec exactement trois clés, dans cet ordre :
 ${raisonnementInstructions}
 - "mean": nombre décimal représentant la réponse moyenne typique pour ce profil
 - "margin_of_error": nombre décimal représentant l'incertitude autour de cette moyenne
@@ -454,7 +457,8 @@ ${raisonnementInstructions}
 Exemple : {"raisonnement": "Je suis un jeune francophone de Montréal...", "mean": 4.2, "margin_of_error": 0.6}`;
   } else {
     // No choices provided — ask LLM to infer appropriate options from the question
-    formatInstructions = `Réponds UNIQUEMENT avec un objet JSON avec exactement trois clés, dans cet ordre :
+    formatInstructions =
+      `Réponds UNIQUEMENT avec un objet JSON avec exactement trois clés, dans cet ordre :
 ${raisonnementInstructions}
 - "distribution": objet avec les options de réponse appropriées comme clés (déduis-les du type de question) et des probabilités décimales comme valeurs (devant sommer à 1.0)
 - "margin_of_error": nombre décimal entre 0 et 1 représentant ton incertitude (ex: 0.08 = ±8%)
@@ -462,7 +466,11 @@ ${raisonnementInstructions}
 Exemple : {"raisonnement": "Je suis un jeune francophone de Montréal...", "distribution": {"Oui": 0.65, "Non": 0.35}, "margin_of_error": 0.08}`;
   }
 
-  return `Tu es ${describeGenre(strate_genre)}, ${describeAge(strate_age_group)}, ${describeLangue(strate_langue)}, vivant à ${describeRegion(strate_region)}. Tu réponds à un sondage d'opinion au Québec.${historicalSection}${contextSection}
+  return `Tu es ${describeGenre(strate_genre)}, ${
+    describeAge(strate_age_group)
+  }, ${describeLangue(strate_langue)}, vivant à ${
+    describeRegion(strate_region)
+  }. Tu réponds à un sondage d'opinion au Québec.${historicalSection}${contextSection}
 
 Question du sondage : "${question}"
 
@@ -478,6 +486,7 @@ ${formatInstructions}`;
 async function callLlmForStrate(
   prompt: string,
   openRouterApiKey: string,
+  choices?: string[],
   maxRetries = 4,
 ): Promise<LlmResponse> {
   let lastError: Error | null = null;
@@ -502,7 +511,11 @@ async function callLlmForStrate(
       const baseDelaySec = Math.pow(2, attempt + 1) * 3; // 6s, 12s, 24s, 48s
       const jitterSec = Math.random() * baseDelaySec * 0.5; // ±50% jitter
       const waitMs = (baseDelaySec + jitterSec) * 1000;
-      lastError = new Error(`OpenRouter error 429: rate limit. Retry after ${(baseDelaySec + jitterSec).toFixed(1)}s`);
+      lastError = new Error(
+        `OpenRouter error 429: rate limit. Retry after ${
+          (baseDelaySec + jitterSec).toFixed(1)
+        }s`,
+      );
       if (attempt < maxRetries) {
         await new Promise((resolve) => setTimeout(resolve, waitMs));
         continue;
@@ -520,53 +533,14 @@ async function callLlmForStrate(
 
     if (!rawText) {
       const finishReason = data.choices?.[0]?.finish_reason ?? "unknown";
-      throw new Error(`OpenRouter returned empty response. finish_reason=${finishReason}. Full response: ${JSON.stringify(data)}`);
+      throw new Error(
+        `OpenRouter returned empty response. finish_reason=${finishReason}. Full response: ${
+          JSON.stringify(data)
+        }`,
+      );
     }
 
-    // Strip markdown code fences if present
-    const cleaned = rawText
-      .replace(/```json\s*/gi, "")
-      .replace(/```\s*/gi, "")
-      .trim();
-
-    let parsed: unknown;
-    try {
-      parsed = JSON.parse(cleaned);
-    } catch (e) {
-      throw new Error(`JSON parse failed: ${e instanceof Error ? e.message : String(e)}. Raw LLM response: ${rawText.slice(0, 500)}`);
-    }
-
-    // Validate and normalise the response
-    const raisonnement: string = typeof (parsed as Record<string, unknown>).raisonnement === "string"
-      ? (parsed as Record<string, unknown>).raisonnement as string
-      : "";
-
-    if ("mean" in (parsed as object)) {
-      const mean = Number((parsed as Record<string, unknown>).mean);
-      const moe = Number((parsed as Record<string, unknown>).margin_of_error ?? 0);
-      if (isNaN(mean)) throw new Error(`Invalid numeric mean: ${rawText}`);
-      return { raisonnement, mean, margin_of_error: isNaN(moe) ? 0 : moe };
-    } else if ("distribution" in (parsed as object)) {
-      const dist = (parsed as Record<string, unknown>).distribution as Record<string, unknown>;
-      const moe = Number((parsed as Record<string, unknown>).margin_of_error ?? 0);
-
-      const values: Record<string, number> = {};
-      let sum = 0;
-      for (const [k, v] of Object.entries(dist)) {
-        const n = Number(v);
-        if (isNaN(n) || n < 0) throw new Error(`Invalid distribution value for "${k}": ${v}`);
-        values[k] = n;
-        sum += n;
-      }
-      if (sum === 0) throw new Error(`Distribution sums to 0: ${rawText}`);
-      const normalised: Record<string, number> = {};
-      for (const [k, v] of Object.entries(values)) {
-        normalised[k] = v / sum;
-      }
-      return { raisonnement, distribution: normalised, margin_of_error: isNaN(moe) ? 0 : moe };
-    } else {
-      throw new Error(`Unrecognised LLM response format: ${rawText}`);
-    }
+    return parseLlmResponse(rawText, choices);
   }
 
   throw lastError ?? new Error("Max retries exceeded");
@@ -588,9 +562,12 @@ async function sampleAllStrates(
     strate_region: string;
     strate_genre: string;
   },
+  onProgress?: (progress: { completed: number; total: number }) => void,
 ): Promise<StrateResult[]> {
   const qtype = detectQuestionType(predictions);
-  const responseOptions = qtype === "multinomial" ? getResponseOptions(predictions) : [];
+  const responseOptions = qtype === "multinomial"
+    ? getResponseOptions(predictions)
+    : [];
   const nationalMarginal = computeNationalMarginal(predictions, qtype);
 
   const results: StrateResult[] = [];
@@ -616,12 +593,16 @@ async function sampleAllStrates(
     )
     : ALL_STRATES;
 
+  const total = stratesToProcess.length;
+  let completed = 0;
+
   // Process in batches
   for (let i = 0; i < stratesToProcess.length; i += PARALLEL_BATCH_SIZE) {
     const batch = stratesToProcess.slice(i, i + PARALLEL_BATCH_SIZE);
 
     const batchPromises = batch.map(async (strate): Promise<StrateResult> => {
-      const key = `${strate.strate_age_group}|${strate.strate_langue}|${strate.strate_region}|${strate.strate_genre}`;
+      const key =
+        `${strate.strate_age_group}|${strate.strate_langue}|${strate.strate_region}|${strate.strate_genre}`;
       const hadPrior = stratesWithPrior.has(key);
 
       const prompt = buildStratePrompt(
@@ -635,11 +616,31 @@ async function sampleAllStrates(
       );
 
       try {
-        const llmResponse = await callLlmForStrate(prompt, openRouterApiKey);
-        return { ...strate, llm_response: llmResponse, had_prior: hadPrior, error: null };
+        const llmResponse = await callLlmForStrate(
+          prompt,
+          openRouterApiKey,
+          choices,
+        );
+        const result = {
+          ...strate,
+          llm_response: llmResponse,
+          had_prior: hadPrior,
+          error: null,
+        };
+        completed += 1;
+        onProgress?.({ completed, total });
+        return result;
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
-        return { ...strate, llm_response: null, had_prior: hadPrior, error: message };
+        const result = {
+          ...strate,
+          llm_response: null,
+          had_prior: hadPrior,
+          error: message,
+        };
+        completed += 1;
+        onProgress?.({ completed, total });
+        return result;
       }
     });
 
@@ -692,11 +693,22 @@ Deno.serve(async (req: Request) => {
     });
   }
 
-    const { predictions, question, context, dry_run, dry_run_strate, choices, limit_to_strate } = body;
+  const {
+    predictions,
+    question,
+    context,
+    dry_run,
+    dry_run_strate,
+    choices,
+    limit_to_strate,
+    stream_progress,
+  } = body;
 
   if (!dry_run && !openRouterApiKey) {
     return new Response(
-      JSON.stringify({ error: "Missing OPENROUTER_API_KEY environment variable" }),
+      JSON.stringify({
+        error: "Missing OPENROUTER_API_KEY environment variable",
+      }),
       {
         status: 500,
         headers: { "Content-Type": "application/json" },
@@ -739,7 +751,7 @@ Deno.serve(async (req: Request) => {
       const qtype = detectQuestionType(predictions);
       // In dry_run mode, the choices for the fictional question are the definitive ones.
       // If not provided, the LLM will be asked to infer them.
-      const fictionalQuestionChoices = choices; 
+      const fictionalQuestionChoices = choices;
       const nationalMarginal = computeNationalMarginal(predictions, qtype);
 
       const stratesWithPrior = new Set<string>();
@@ -754,16 +766,17 @@ Deno.serve(async (req: Request) => {
       // If dry_run_strate is specified, return only that one prompt
       const stratesToInspect = dry_run_strate
         ? ALL_STRATES.filter(
-            (s) =>
-              s.strate_age_group === dry_run_strate.strate_age_group &&
-              s.strate_langue === dry_run_strate.strate_langue &&
-              s.strate_region === dry_run_strate.strate_region &&
-              s.strate_genre === dry_run_strate.strate_genre,
-          )
+          (s) =>
+            s.strate_age_group === dry_run_strate.strate_age_group &&
+            s.strate_langue === dry_run_strate.strate_langue &&
+            s.strate_region === dry_run_strate.strate_region &&
+            s.strate_genre === dry_run_strate.strate_genre,
+        )
         : ALL_STRATES;
 
       const dryRunResults = stratesToInspect.map((strate) => {
-        const key = `${strate.strate_age_group}|${strate.strate_langue}|${strate.strate_region}|${strate.strate_genre}`;
+        const key =
+          `${strate.strate_age_group}|${strate.strate_langue}|${strate.strate_region}|${strate.strate_genre}`;
         const hadPrior = stratesWithPrior.has(key);
         const prompt = buildStratePrompt(
           strate,
@@ -787,7 +800,9 @@ Deno.serve(async (req: Request) => {
           meta: {
             total_strates: dryRunResults.length,
             strates_with_prior: dryRunResults.filter((r) => r.had_prior).length,
-            strates_using_national_marginal: dryRunResults.filter((r) => !r.had_prior).length,
+            strates_using_national_marginal: dryRunResults.filter((r) =>
+              !r.had_prior
+            ).length,
           },
         }),
         {
@@ -800,8 +815,90 @@ Deno.serve(async (req: Request) => {
       );
     }
 
+    const buildFinalPayload = (strateResults: StrateResult[]) => {
+      const failedCount = strateResults.filter((r) => r.error !== null).length;
+      const successCount = strateResults.length - failedCount;
+
+      return {
+        question: question.trim(),
+        strate_results: strateResults,
+        meta: {
+          total_strates: strateResults.length,
+          success_count: successCount,
+          failed_count: failedCount,
+          strates_with_prior: strateResults.filter((r) => r.had_prior).length,
+          strates_using_national_marginal: strateResults.filter((r) =>
+            !r.had_prior
+          )
+            .length,
+        },
+      };
+    };
+
+    if (stream_progress) {
+      const stratesToProcess = limit_to_strate
+        ? ALL_STRATES.filter(
+          (s) =>
+            s.strate_age_group === limit_to_strate.strate_age_group &&
+            s.strate_langue === limit_to_strate.strate_langue &&
+            s.strate_region === limit_to_strate.strate_region &&
+            s.strate_genre === limit_to_strate.strate_genre,
+        )
+        : ALL_STRATES;
+
+      const encoder = new TextEncoder();
+      const stream = new ReadableStream({
+        start(controller) {
+          const writeEvent = (event: string, data: unknown) => {
+            const payload = `event: ${event}\ndata: ${
+              JSON.stringify(data)
+            }\n\n`;
+            controller.enqueue(encoder.encode(payload));
+          };
+
+          (async () => {
+            try {
+              writeEvent("progress", {
+                completed: 0,
+                total: stratesToProcess.length,
+              });
+
+              const strateResults = await sampleAllStrates(
+                predictions,
+                question.trim(),
+                choices,
+                context,
+                openRouterApiKey,
+                limit_to_strate,
+                ({ completed, total }) => {
+                  writeEvent("progress", { completed, total });
+                },
+              );
+
+              writeEvent("complete", buildFinalPayload(strateResults));
+            } catch (err) {
+              const message = err instanceof Error ? err.message : String(err);
+              writeEvent("error", { error: message });
+            } finally {
+              controller.close();
+            }
+          })();
+        },
+      });
+
+      return new Response(stream, {
+        status: 200,
+        headers: {
+          "Content-Type": "text/event-stream",
+          "Cache-Control": "no-cache",
+          "Connection": "keep-alive",
+          "Access-Control-Allow-Origin": "*",
+        },
+      });
+    }
+
     // -------------------------------------------------------------------------
-    // Normal mode: call OpenRouter for all 48 strates in parallel
+    // Normal mode: call OpenRouter for all strates and return final JSON
     // -------------------------------------------------------------------------
     const strateResults = await sampleAllStrates(
       predictions,
@@ -812,31 +909,13 @@ Deno.serve(async (req: Request) => {
       limit_to_strate,
     );
 
-    const failedCount = strateResults.filter((r) => r.error !== null).length;
-    const successCount = strateResults.length - failedCount;
-
-    return new Response(
-      JSON.stringify({
-        question: question.trim(),
-        strate_results: strateResults,
-        meta: {
-          total_strates: strateResults.length,
-          success_count: successCount,
-          failed_count: failedCount,
-          strates_with_prior: strateResults.filter((r) => r.had_prior).length,
-          strates_using_national_marginal: strateResults.filter(
-            (r) => !r.had_prior,
-          ).length,
-        },
-      }),
-      {
-        status: 200,
-        headers: {
-          "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "*",
-        },
+    return new Response(JSON.stringify(buildFinalPayload(strateResults)), {
+      status: 200,
+      headers: {
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Origin": "*",
       },
-    );
+    });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     return new Response(JSON.stringify({ error: message }), {

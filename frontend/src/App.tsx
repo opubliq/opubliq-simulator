@@ -1,16 +1,28 @@
-import { useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import './App.css'
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string
-const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY as string
+const RAW_SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string | undefined
+const SUPABASE_PUBLISHABLE_KEY =
+  (import.meta.env.VITE_SUPABASE_ANON_KEY ??
+    import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ??
+    '') as string
+
+function normalizeSupabaseUrl(url: string | undefined) {
+  if (!url) {
+    return ''
+  }
+
+  return url
+    .trim()
+    .replace(/\/+$/, '')
+    .replace(/\/functions\/v1$/, '')
+}
+
+const SUPABASE_URL = normalizeSupabaseUrl(RAW_SUPABASE_URL)
 
 function fnUrl(name: string) {
   return `${SUPABASE_URL}/functions/v1/${name}`
 }
-
-// ---------------------------------------------------------------------------
-// Pipeline state
-// ---------------------------------------------------------------------------
 
 type PipelineStep =
   | 'idle'
@@ -23,13 +35,20 @@ type PipelineStep =
 
 const STEP_LABELS: Record<PipelineStep, string> = {
   idle: '',
-  step1_semantic_search: 'Recherche sémantique…',
-  step2_fetch_predictions: 'Chargement des prédictions historiques…',
-  step3_llm_sampling: 'Simulation des 48 strates…',
-  step4_aggregate: 'Agrégation des résultats…',
-  success: 'Simulation terminée.',
+  step1_semantic_search: 'Recherche semantique...',
+  step2_fetch_predictions: 'Chargement des predictions historiques...',
+  step3_llm_sampling: 'Simulation des strates...',
+  step4_aggregate: 'Agregation des resultats...',
+  success: 'Simulation terminee.',
   error: '',
 }
+
+const PIPELINE_FLOW: PipelineStep[] = [
+  'step1_semantic_search',
+  'step2_fetch_predictions',
+  'step3_llm_sampling',
+  'step4_aggregate',
+]
 
 interface LlmStrateResult {
   strate_age_group: string
@@ -41,7 +60,35 @@ interface LlmStrateResult {
   error: string | null
 }
 
-// Output type from Step 4 — used by the results UI (issue 2ch)
+interface Step3Progress {
+  completed: number
+  total: number
+}
+
+function formatStep3ProgressLabel(progress: Step3Progress | null): string | null {
+  if (!progress || progress.total <= 0) {
+    return null
+  }
+
+  const completed = Math.min(Math.max(progress.completed, 0), progress.total)
+  const percent = Math.round((completed / progress.total) * 100)
+  const strateWord = completed === 1 ? 'strate' : 'strates'
+  return `${completed} ${strateWord} / ${progress.total} (${percent}%)`
+}
+
+function getStepLabel(step: PipelineStep, step3Progress: Step3Progress | null): string {
+  if (step !== 'step3_llm_sampling') {
+    return STEP_LABELS[step]
+  }
+
+  const progressLabel = formatStep3ProgressLabel(step3Progress)
+  if (!progressLabel) {
+    return STEP_LABELS[step]
+  }
+
+  return `Simulation des strates... ${progressLabel}`
+}
+
 export interface SimulationResult {
   question: string
   question_type: 'multinomial' | 'numeric'
@@ -64,102 +111,514 @@ export interface SimulationResult {
   }
 }
 
-// ---------------------------------------------------------------------------
-// Pipeline runner
-// ---------------------------------------------------------------------------
+interface ApiCallLog {
+  step: string
+  status: number | null
+  duration_ms: number
+  request_payload: unknown
+  response_payload: unknown
+  error: string | null
+}
+
+interface PipelineExecutionLog {
+  semantic_search: ApiCallLog | null
+  fetch_strate_predictions: ApiCallLog | null
+  llm_prompt_dry_run: ApiCallLog | null
+  llm_sampling: ApiCallLog | null
+  aggregate_final_distribution: ApiCallLog | null
+}
+
+interface SimulationLogEntry {
+  id: string
+  created_at: string
+  status: 'success' | 'error'
+  question: string
+  context: string
+  choices: string[]
+  error_message: string | null
+  result: SimulationResult | null
+  pipeline: PipelineExecutionLog
+}
+
+const SESSION_LOG_STORAGE_KEY = 'opubliq.simulator.session-logs.v1'
+const SESSION_LOG_LIMIT = 20
+
+class PipelineExecutionError extends Error {
+  executionLog: PipelineExecutionLog
+
+  constructor(message: string, executionLog: PipelineExecutionLog) {
+    super(message)
+    this.name = 'PipelineExecutionError'
+    this.executionLog = executionLog
+  }
+}
+
+function buildEmptyExecutionLog(): PipelineExecutionLog {
+  return {
+    semantic_search: null,
+    fetch_strate_predictions: null,
+    llm_prompt_dry_run: null,
+    llm_sampling: null,
+    aggregate_final_distribution: null,
+  }
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null
+}
+
+function extractErrorMessage(payload: unknown, fallback: string): string {
+  if (isRecord(payload) && typeof payload.error === 'string' && payload.error.trim()) {
+    return payload.error
+  }
+  return fallback
+}
+
+function serializeError(error: unknown): string {
+  if (error instanceof Error) {
+    return error.message
+  }
+  return String(error)
+}
+
+function asApiCallLog(
+  step: string,
+  requestPayload: unknown,
+  status: number | null,
+  durationMs: number,
+  responsePayload: unknown,
+  error: string | null,
+): ApiCallLog {
+  return {
+    step,
+    status,
+    duration_ms: durationMs,
+    request_payload: requestPayload,
+    response_payload: responsePayload,
+    error,
+  }
+}
+
+async function invokeEdgeFunction(
+  name: string,
+  payload: unknown,
+  headers: HeadersInit,
+): Promise<{
+  status: number
+  ok: boolean
+  durationMs: number
+  responsePayload: unknown
+}> {
+  const startedAt = performance.now()
+  const response = await fetch(fnUrl(name), {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(payload),
+  })
+
+  const durationMs = Math.round(performance.now() - startedAt)
+  const rawBody = await response.text()
+
+  if (!rawBody.trim()) {
+    return { status: response.status, ok: response.ok, durationMs, responsePayload: null }
+  }
+
+  try {
+    return {
+      status: response.status,
+      ok: response.ok,
+      durationMs,
+      responsePayload: JSON.parse(rawBody),
+    }
+  } catch {
+    return {
+      status: response.status,
+      ok: response.ok,
+      durationMs,
+      responsePayload: { raw_text: rawBody },
+    }
+  }
+}
+
+async function invokeLlmSamplingWithProgress(
+  payload: Record<string, unknown>,
+  headers: HeadersInit,
+  onProgress: (progress: Step3Progress) => void,
+): Promise<{
+  status: number
+  ok: boolean
+  durationMs: number
+  responsePayload: unknown
+}> {
+  const startedAt = performance.now()
+  const response = await fetch(fnUrl('llm-strate-sampling'), {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({ ...payload, stream_progress: true }),
+  })
+
+  const duration = () => Math.round(performance.now() - startedAt)
+
+  if (!response.ok) {
+    const rawBody = await response.text()
+    try {
+      const parsed = rawBody.trim() ? JSON.parse(rawBody) : null
+      return { status: response.status, ok: false, durationMs: duration(), responsePayload: parsed }
+    } catch {
+      return {
+        status: response.status,
+        ok: false,
+        durationMs: duration(),
+        responsePayload: rawBody.trim() ? { raw_text: rawBody } : null,
+      }
+    }
+  }
+
+  const contentType = response.headers.get('content-type') ?? ''
+  if (!contentType.includes('text/event-stream') || !response.body) {
+    const rawBody = await response.text()
+    try {
+      const parsed = rawBody.trim() ? JSON.parse(rawBody) : null
+      return { status: response.status, ok: true, durationMs: duration(), responsePayload: parsed }
+    } catch {
+      return {
+        status: response.status,
+        ok: false,
+        durationMs: duration(),
+        responsePayload: { error: 'Reponse JSON invalide pour etape 3' },
+      }
+    }
+  }
+
+  const reader = response.body.getReader()
+  const decoder = new TextDecoder()
+  let buffer = ''
+  let completePayload: unknown = null
+
+  try {
+    const processEvent = (eventBlock: string) => {
+      const lines = eventBlock
+        .split('\n')
+        .map(line => line.trimEnd())
+        .filter(Boolean)
+      const eventTypeLine = lines.find(line => line.startsWith('event:'))
+      const dataLines = lines.filter(line => line.startsWith('data:'))
+
+      if (!eventTypeLine || dataLines.length === 0) {
+        return null
+      }
+
+      const eventType = eventTypeLine.slice('event:'.length).trim()
+      const dataText = dataLines.map(line => line.slice('data:'.length).trimStart()).join('\n')
+      const payloadData = JSON.parse(dataText) as unknown
+
+      if (
+        eventType === 'progress' &&
+        isRecord(payloadData) &&
+        typeof payloadData.completed === 'number' &&
+        typeof payloadData.total === 'number'
+      ) {
+        onProgress({ completed: payloadData.completed, total: payloadData.total })
+      }
+
+      if (eventType === 'complete' && isRecord(payloadData)) {
+        completePayload = payloadData
+      }
+
+      if (eventType === 'error' && isRecord(payloadData) && typeof payloadData.error === 'string') {
+        return { error: payloadData.error }
+      }
+
+      return null
+    }
+
+    while (true) {
+      const { value, done } = await reader.read()
+      buffer += decoder.decode(value ?? new Uint8Array(), { stream: !done })
+
+      let boundaryIndex = buffer.indexOf('\n\n')
+      while (boundaryIndex >= 0) {
+        const eventBlock = buffer.slice(0, boundaryIndex)
+        buffer = buffer.slice(boundaryIndex + 2)
+        const eventError = processEvent(eventBlock)
+        if (eventError) {
+          return {
+            status: response.status,
+            ok: false,
+            durationMs: duration(),
+            responsePayload: { error: eventError.error },
+          }
+        }
+        boundaryIndex = buffer.indexOf('\n\n')
+      }
+
+      if (done) {
+        if (buffer.trim()) {
+          const eventError = processEvent(buffer)
+          if (eventError) {
+            return {
+              status: response.status,
+              ok: false,
+              durationMs: duration(),
+              responsePayload: { error: eventError.error },
+            }
+          }
+        }
+        break
+      }
+    }
+  } catch {
+    return {
+      status: response.status,
+      ok: false,
+      durationMs: duration(),
+      responsePayload: { error: 'Flux de progression invalide pour etape 3' },
+    }
+  }
+
+  if (!isRecord(completePayload) || !Array.isArray(completePayload.strate_results)) {
+    return {
+      status: response.status,
+      ok: false,
+      durationMs: duration(),
+      responsePayload: { error: 'Flux de progression incomplet pour etape 3' },
+    }
+  }
+
+  return {
+    status: response.status,
+    ok: true,
+    durationMs: duration(),
+    responsePayload: completePayload,
+  }
+}
+
+function loadSessionLogs(): SimulationLogEntry[] {
+  if (typeof window === 'undefined') {
+    return []
+  }
+
+  try {
+    const raw = window.localStorage.getItem(SESSION_LOG_STORAGE_KEY)
+    if (!raw) {
+      return []
+    }
+
+    const parsed = JSON.parse(raw)
+    if (!Array.isArray(parsed)) {
+      return []
+    }
+
+    return parsed as SimulationLogEntry[]
+  } catch {
+    return []
+  }
+}
+
+function formatJson(value: unknown): string {
+  if (value === undefined) {
+    return 'undefined'
+  }
+  return JSON.stringify(value, null, 2)
+}
+
+function first120(value: string): string {
+  const text = value.trim()
+  if (text.length <= 120) {
+    return text
+  }
+  return `${text.slice(0, 117)}...`
+}
 
 async function runPipeline(
   question: string,
   context: string,
   choices: string[] | undefined,
   onStep: (step: PipelineStep) => void,
-): Promise<SimulationResult> {
-  const supabaseAuthHeader = { Authorization: `Bearer ${SUPABASE_ANON_KEY}` }
-  const json = { 'Content-Type': 'application/json' }
-
-  // Step 1 — semantic search (OpenRouter: embeddings + LLM scoring, clé côté serveur)
-  onStep('step1_semantic_search')
-  const r1 = await fetch(fnUrl('semantic-search'), {
-    method: 'POST',
-    headers: { ...json, ...supabaseAuthHeader },
-    body: JSON.stringify({ question }),
-  })
-  if (!r1.ok) {
-    const err = await r1.json().catch(() => ({ error: r1.statusText }))
-    throw new Error(`Étape 1 (recherche sémantique) : ${err.error ?? r1.statusText}`)
-  }
-  const step1 = await r1.json()
-
-  if (!step1.results || step1.results.length === 0) {
-    throw new Error(`Aucune question historique pertinente trouvée pour simuler cette question. Essayez une question plus proche des thèmes couverts par les sondages disponibles.`)
+  onStep3Progress: (progress: Step3Progress) => void,
+): Promise<{ result: SimulationResult; executionLog: PipelineExecutionLog }> {
+  if (!SUPABASE_URL) {
+    throw new Error(
+      "Configuration manquante: definissez VITE_SUPABASE_URL (Netlify: Site settings -> Environment variables).",
+    )
   }
 
-  // Step 2 — fetch strate predictions
-  onStep('step2_fetch_predictions')
-  const r2 = await fetch(fnUrl('fetch-strate-predictions'), {
-    method: 'POST',
-    headers: { ...json, ...supabaseAuthHeader },
-    body: JSON.stringify({ results: step1.results }),
-  })
-  if (!r2.ok) {
-    const err = await r2.json().catch(() => ({ error: r2.statusText }))
-    throw new Error(`Étape 2 (prédictions historiques) : ${err.error ?? r2.statusText}`)
+  const executionLog = buildEmptyExecutionLog()
+  const headers: HeadersInit = { 'Content-Type': 'application/json' }
+  if (SUPABASE_PUBLISHABLE_KEY) {
+    ;(headers as Record<string, string>).Authorization = `Bearer ${SUPABASE_PUBLISHABLE_KEY}`
   }
-  const step2 = await r2.json()
 
-  // Step 3 — LLM sampling via edge function (clé OpenRouter côté serveur)
-  onStep('step3_llm_sampling')
-  const r3 = await fetch(fnUrl('llm-strate-sampling'), {
-    method: 'POST',
-    headers: { ...json, ...supabaseAuthHeader },
-    body: JSON.stringify({
+  try {
+    onStep('step1_semantic_search')
+    const step1Request = { question }
+    const step1Call = await invokeEdgeFunction('semantic-search', step1Request, headers)
+    executionLog.semantic_search = asApiCallLog(
+      'semantic-search',
+      step1Request,
+      step1Call.status,
+      step1Call.durationMs,
+      step1Call.responsePayload,
+      step1Call.ok ? null : extractErrorMessage(step1Call.responsePayload, 'Erreur inconnue'),
+    )
+
+    if (!step1Call.ok) {
+      throw new PipelineExecutionError(
+        `Etape 1 (recherche semantique) : ${extractErrorMessage(step1Call.responsePayload, 'Erreur inconnue')}`,
+        executionLog,
+      )
+    }
+
+    const step1 = step1Call.responsePayload as { results?: Array<Record<string, unknown>> }
+    if (!step1.results || step1.results.length === 0) {
+      throw new PipelineExecutionError(
+        'Aucune question historique pertinente trouvee pour simuler cette question. Essayez une question plus proche des themes couverts par les sondages disponibles.',
+        executionLog,
+      )
+    }
+
+    onStep('step2_fetch_predictions')
+    const step2Request = { results: step1.results }
+    const step2Call = await invokeEdgeFunction('fetch-strate-predictions', step2Request, headers)
+    executionLog.fetch_strate_predictions = asApiCallLog(
+      'fetch-strate-predictions',
+      step2Request,
+      step2Call.status,
+      step2Call.durationMs,
+      step2Call.responsePayload,
+      step2Call.ok ? null : extractErrorMessage(step2Call.responsePayload, 'Erreur inconnue'),
+    )
+
+    if (!step2Call.ok) {
+      throw new PipelineExecutionError(
+        `Etape 2 (predictions historiques) : ${extractErrorMessage(step2Call.responsePayload, 'Erreur inconnue')}`,
+        executionLog,
+      )
+    }
+
+    const step2 = step2Call.responsePayload as { predictions?: unknown[] }
+
+    const dryRunRequest = {
       predictions: step2.predictions,
       question,
       context,
       choices,
-    }),
-  })
-  if (!r3.ok) {
-    const err = await r3.json().catch(() => ({ error: r3.statusText }))
-    throw new Error(`Étape 3 (simulation LLM) : ${err.error ?? r3.statusText}`)
-  }
-  const step3 = await r3.json()
-  const strateResults: LlmStrateResult[] = step3.strate_results
+      dry_run: true,
+    }
+    try {
+      const dryRunCall = await invokeEdgeFunction('llm-strate-sampling', dryRunRequest, headers)
+      executionLog.llm_prompt_dry_run = asApiCallLog(
+        'llm-strate-sampling (dry_run)',
+        dryRunRequest,
+        dryRunCall.status,
+        dryRunCall.durationMs,
+        dryRunCall.responsePayload,
+        dryRunCall.ok ? null : extractErrorMessage(dryRunCall.responsePayload, 'Erreur inconnue'),
+      )
+    } catch (error) {
+      executionLog.llm_prompt_dry_run = asApiCallLog(
+        'llm-strate-sampling (dry_run)',
+        dryRunRequest,
+        null,
+        0,
+        null,
+        serializeError(error),
+      )
+    }
 
-  // Guard: fail early if all strates errored
-  const failedCount = strateResults.filter(r => r.error !== null).length
-  if (failedCount === strateResults.length) {
-    const sampleError = strateResults[0]?.error ?? 'unknown'
-    throw new Error(`Toutes les strates ont échoué. Exemple : ${sampleError}`)
-  }
+    onStep('step3_llm_sampling')
+    const step3Request = {
+      predictions: step2.predictions,
+      question,
+      context,
+      choices,
+    }
+    const step3Call = await invokeLlmSamplingWithProgress(step3Request, headers, onStep3Progress)
+    executionLog.llm_sampling = asApiCallLog(
+      'llm-strate-sampling',
+      step3Request,
+      step3Call.status,
+      step3Call.durationMs,
+      step3Call.responsePayload,
+      step3Call.ok ? null : extractErrorMessage(step3Call.responsePayload, 'Erreur inconnue'),
+    )
 
-  // Step 4 — aggregate
-  onStep('step4_aggregate')
-  const r4 = await fetch(fnUrl('aggregate-final-distribution'), {
-    method: 'POST',
-    headers: { ...json, ...supabaseAuthHeader },
-    body: JSON.stringify({ question, strate_results: strateResults }),
-  })
-  if (!r4.ok) {
-    const err = await r4.json().catch(() => ({ error: r4.statusText }))
-    throw new Error(`Étape 4 (agrégation) : ${err.error ?? r4.statusText}`)
-  }
+    if (!step3Call.ok) {
+      throw new PipelineExecutionError(
+        `Etape 3 (simulation LLM) : ${extractErrorMessage(step3Call.responsePayload, 'Erreur inconnue')}`,
+        executionLog,
+      )
+    }
 
-  return r4.json() as Promise<SimulationResult>
+    const step3 = step3Call.responsePayload as { strate_results?: LlmStrateResult[] }
+    const strateResults = step3.strate_results ?? []
+    const failedCount = strateResults.filter(r => r.error !== null).length
+    if (strateResults.length === 0 || failedCount === strateResults.length) {
+      const sampleError = strateResults[0]?.error ?? 'unknown'
+      throw new PipelineExecutionError(`Toutes les strates ont echoue. Exemple : ${sampleError}`, executionLog)
+    }
+
+    onStep('step4_aggregate')
+    const step4Request = { question, strate_results: strateResults }
+    const step4Call = await invokeEdgeFunction('aggregate-final-distribution', step4Request, headers)
+    executionLog.aggregate_final_distribution = asApiCallLog(
+      'aggregate-final-distribution',
+      step4Request,
+      step4Call.status,
+      step4Call.durationMs,
+      step4Call.responsePayload,
+      step4Call.ok ? null : extractErrorMessage(step4Call.responsePayload, 'Erreur inconnue'),
+    )
+
+    if (!step4Call.ok) {
+      throw new PipelineExecutionError(
+        `Etape 4 (agregation) : ${extractErrorMessage(step4Call.responsePayload, 'Erreur inconnue')}`,
+        executionLog,
+      )
+    }
+
+    return {
+      result: step4Call.responsePayload as SimulationResult,
+      executionLog,
+    }
+  } catch (error) {
+    if (error instanceof PipelineExecutionError) {
+      throw error
+    }
+
+    throw new PipelineExecutionError(serializeError(error), executionLog)
+  }
 }
-
-// ---------------------------------------------------------------------------
-// App
-// ---------------------------------------------------------------------------
 
 function App() {
   const [question, setQuestion] = useState('')
   const [contexte, setContexte] = useState('')
   const [choicesText, setChoicesText] = useState('')
+  const [activePage, setActivePage] = useState<'simulateur' | 'session_logs'>('simulateur')
 
   const [pipelineStep, setPipelineStep] = useState<PipelineStep>('idle')
+  const [step3Progress, setStep3Progress] = useState<Step3Progress | null>(null)
   const [errorMessage, setErrorMessage] = useState('')
   const [result, setResult] = useState<SimulationResult | null>(null)
+  const [sessionLogs, setSessionLogs] = useState<SimulationLogEntry[]>(() => loadSessionLogs())
+  const [selectedLogId, setSelectedLogId] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return
+    }
+    window.localStorage.setItem(SESSION_LOG_STORAGE_KEY, JSON.stringify(sessionLogs))
+  }, [sessionLogs])
+
+  const effectiveSelectedLogId =
+    selectedLogId && sessionLogs.some(log => log.id === selectedLogId)
+      ? selectedLogId
+      : (sessionLogs[0]?.id ?? null)
+
+  const selectedLog = useMemo(
+    () => sessionLogs.find(log => log.id === effectiveSelectedLogId) ?? null,
+    [effectiveSelectedLogId, sessionLogs],
+  )
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -170,135 +629,444 @@ function App() {
 
     setResult(null)
     setErrorMessage('')
+    setStep3Progress(null)
     setPipelineStep('step1_semantic_search')
 
     try {
-      const simulationResult = await runPipeline(
+      const simulationRun = await runPipeline(
         question.trim(),
         contexte.trim(),
         choices.length > 0 ? choices : undefined,
         setPipelineStep,
+        setStep3Progress,
       )
-      setResult(simulationResult)
+      setResult(simulationRun.result)
       setPipelineStep('success')
-    } catch (err) {
-      setErrorMessage(err instanceof Error ? err.message : String(err))
+
+      const newLog: SimulationLogEntry = {
+        id: crypto.randomUUID(),
+        created_at: new Date().toISOString(),
+        status: 'success',
+        question: question.trim(),
+        context: contexte.trim(),
+        choices,
+        error_message: null,
+        result: simulationRun.result,
+        pipeline: simulationRun.executionLog,
+      }
+
+      setSessionLogs(prevLogs => [newLog, ...prevLogs].slice(0, SESSION_LOG_LIMIT))
+      setSelectedLogId(newLog.id)
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error)
+      setErrorMessage(message)
       setPipelineStep('error')
+
+      const failedLog: SimulationLogEntry = {
+        id: crypto.randomUUID(),
+        created_at: new Date().toISOString(),
+        status: 'error',
+        question: question.trim(),
+        context: contexte.trim(),
+        choices,
+        error_message: message,
+        result: null,
+        pipeline: error instanceof PipelineExecutionError ? error.executionLog : buildEmptyExecutionLog(),
+      }
+
+      setSessionLogs(prevLogs => [failedLog, ...prevLogs].slice(0, SESSION_LOG_LIMIT))
+      setSelectedLogId(failedLog.id)
     }
   }
 
   const isLoading = !['idle', 'success', 'error'].includes(pipelineStep)
   const canSubmit = question.trim() && contexte.trim() && !isLoading
+  const currentStepIndex = PIPELINE_FLOW.indexOf(pipelineStep)
+  const normalizedChoices = choicesText
+    .split('\n')
+    .map(c => c.trim())
+    .filter(c => c.length > 0)
+
+  const scoredQuestions =
+    selectedLog &&
+    isRecord(selectedLog.pipeline.semantic_search?.response_payload) &&
+    Array.isArray(selectedLog.pipeline.semantic_search.response_payload.results)
+      ? (selectedLog.pipeline.semantic_search.response_payload.results as Array<Record<string, unknown>>)
+      : []
+
+  const stratePrompts =
+    selectedLog &&
+    isRecord(selectedLog.pipeline.llm_prompt_dry_run?.response_payload) &&
+    Array.isArray(selectedLog.pipeline.llm_prompt_dry_run.response_payload.strate_prompts)
+      ? (selectedLog.pipeline.llm_prompt_dry_run.response_payload.strate_prompts as Array<Record<string, unknown>>)
+      : []
+
+  const strateReasonings =
+    selectedLog &&
+    isRecord(selectedLog.pipeline.llm_sampling?.response_payload) &&
+    Array.isArray(selectedLog.pipeline.llm_sampling.response_payload.strate_results)
+      ? (selectedLog.pipeline.llm_sampling.response_payload.strate_results as Array<Record<string, unknown>>)
+      : []
 
   return (
-    <div className="min-h-screen flex flex-col max-w-5xl mx-auto border-x border-base-300">
-      <header className="px-16 py-8 border-b border-base-300 flex items-center justify-between">
-        <h1 className="text-2xl font-semibold tracking-tight">Simulateur de sondage</h1>
-      </header>
-
-      <main className="flex-1 px-16 py-12">
-        <form onSubmit={handleSubmit} className="flex flex-col gap-10 max-w-2xl">
-          <div className="flex flex-col gap-2">
-            <label className="text-sm font-medium" htmlFor="question">Question</label>
-            <input
-              id="question"
-              type="text"
-              className="input input-bordered w-full"
-              value={question}
-              onChange={(e) => setQuestion(e.target.value)}
-              placeholder="Ex: Êtes-vous pour ou contre la réforme du mode de scrutin?"
-              required
-            />
+    <div className="sim-page min-h-screen">
+      <div className="mx-auto flex max-w-6xl flex-col px-4 py-8 sm:px-8 sm:py-10 lg:px-10">
+        <header className="sim-hero">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <p className="sim-kicker">Projection Nationale</p>
+            <div className="sim-switch" role="tablist" aria-label="Navigation principale">
+              <button
+                type="button"
+                className={`btn btn-sm ${activePage === 'simulateur' ? 'btn-primary' : 'btn-ghost'}`}
+                onClick={() => setActivePage('simulateur')}
+              >
+                Simulateur
+              </button>
+              <button
+                type="button"
+                className={`btn btn-sm ${activePage === 'session_logs' ? 'btn-primary' : 'btn-ghost'}`}
+                onClick={() => setActivePage('session_logs')}
+              >
+                Session Logs ({sessionLogs.length})
+              </button>
+            </div>
           </div>
 
-          <div className="flex flex-col gap-2">
-            <label className="text-sm font-medium" htmlFor="choices">
-              Choix de réponse <span className="text-xs text-base-content/40">(optionnel)</span>
-            </label>
-            <textarea
-              id="choices"
-              className="textarea textarea-bordered w-full text-sm leading-relaxed"
-              rows={3}
-              value={choicesText}
-              onChange={(e) => setChoicesText(e.target.value)}
-              placeholder="Un choix par ligne, ex:&#10;Tout à fait d'accord&#10;Plutôt d'accord&#10;Plutôt en désaccord&#10;Tout à fait en désaccord&#10;Ne sait pas"
-            />
-            <p className="text-xs text-base-content/40">
-              Laissez vide pour que l'IA infère les choix appropriés
-            </p>
-          </div>
+          <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
+            {activePage === 'simulateur' ? 'Simulateur de sondage' : 'Session Logs'}
+          </h1>
 
-          <div className="flex flex-col gap-2">
-            <label className="text-sm font-medium" htmlFor="contexte">Contexte</label>
-            <textarea
-              id="contexte"
-              className="textarea textarea-bordered w-full text-sm leading-relaxed"
-              rows={14}
-              value={contexte}
-              onChange={(e) => setContexte(e.target.value)}
-              placeholder="Collez ici les articles, rapports ou tout autre texte de contexte..."
-              required
-            />
-          </div>
+          <p className="max-w-3xl text-sm text-base-content/70 sm:text-base">
+            {activePage === 'simulateur'
+              ? 'Structurez votre question, fournissez le contexte, puis laissez le pipeline estimer une distribution nationale.'
+              : 'Retrouvez l historique des simulations de la session et inspectez les payloads detailles de chaque etape.'}
+          </p>
+        </header>
 
-          <div className="flex flex-col gap-4">
-            <button type="submit" className="btn btn-primary" disabled={!canSubmit}>
-              {isLoading ? 'Simulation en cours…' : 'Lancer la simulation →'}
-            </button>
-
-            {/* Pipeline status */}
-            {isLoading && (
-              <div className="flex flex-col gap-2">
-                <progress className="progress progress-primary w-full" />
-                <p className="text-sm text-base-content/60">{STEP_LABELS[pipelineStep]}</p>
-              </div>
-            )}
-
-            {pipelineStep === 'error' && (
-              <div role="alert" className="alert alert-error text-sm">
-                <span>{errorMessage}</span>
-              </div>
-            )}
-
-            {pipelineStep === 'success' && result && (
-              <div className="flex flex-col gap-2">
-                <div role="alert" className={`alert text-sm ${result.meta.failed_strates === 0 ? 'alert-success' : 'alert-warning'}`}>
-                  <span>
-                    Simulation terminée — {result.meta.successful_strates}/{result.meta.total_strates} strates réussies.
-                    {result.meta.failed_strates > 0 && ` (${result.meta.failed_strates} échouées)`}
-                  </span>
+        {activePage === 'simulateur' ? (
+          <main className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,1.55fr)_minmax(280px,1fr)] lg:items-start">
+            <section className="flex flex-col gap-6">
+              <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+                <div className="sim-card">
+                  <label className="text-sm font-medium" htmlFor="question">Question</label>
+                  <input
+                    id="question"
+                    type="text"
+                    className="input input-bordered mt-2 w-full"
+                    value={question}
+                    onChange={(e) => setQuestion(e.target.value)}
+                    placeholder="Ex: Etes-vous pour ou contre la reforme du mode de scrutin?"
+                    required
+                  />
+                  <p className="mt-2 text-xs text-base-content/50">Formulez une question claire et unique pour des resultats plus stables.</p>
                 </div>
-                {result.meta.failed_strates > 0 && (
-                  <details className="text-xs text-base-content/50">
-                    <summary className="cursor-pointer select-none">Détails des erreurs ({result.meta.failed_strates})</summary>
-                    <ul className="mt-1 flex flex-col gap-1 pl-2">
-                      {result.strate_results.filter(s => s.error).map((s, i) => (
-                        <li key={i}>
-                          <details>
-                            <summary className="cursor-pointer select-none font-medium">
-                              {s.strate_age_group} · {s.strate_langue} · {s.strate_region} · {s.strate_genre}
-                            </summary>
-                            <pre className="mt-1 pl-2 font-mono whitespace-pre-wrap break-all">{s.error}</pre>
-                          </details>
-                        </li>
-                      ))}
-                    </ul>
-                  </details>
-                )}
-              </div>
-            )}
-          </div>
-        </form>
 
-        {/* Placeholder for results (issue 2ch) */}
-        {result && (
-          <div className="mt-12 max-w-2xl">
-            <pre className="text-xs bg-base-200 p-4 rounded overflow-auto max-h-96">
-              {JSON.stringify(result.national_distribution, null, 2)}
-            </pre>
-          </div>
+                <div className="sim-card">
+                  <div className="flex items-end justify-between gap-3">
+                    <label className="text-sm font-medium" htmlFor="choices">
+                      Choix de reponse <span className="text-xs text-base-content/40">(optionnel)</span>
+                    </label>
+                    <span className="text-xs text-base-content/50">{normalizedChoices.length} choix detectes</span>
+                  </div>
+                  <textarea
+                    id="choices"
+                    className="textarea textarea-bordered mt-2 w-full text-sm leading-relaxed"
+                    rows={4}
+                    value={choicesText}
+                    onChange={(e) => setChoicesText(e.target.value)}
+                    placeholder="Un choix par ligne, ex:\nTout a fait d accord\nPlutot d accord\nPlutot en desaccord\nTout a fait en desaccord\nNe sait pas"
+                  />
+                  <p className="mt-2 text-xs text-base-content/50">Laissez vide pour que l IA infere les options de reponse.</p>
+                </div>
+
+                <div className="sim-card">
+                  <label className="text-sm font-medium" htmlFor="contexte">Contexte</label>
+                  <textarea
+                    id="contexte"
+                    className="textarea textarea-bordered mt-2 w-full text-sm leading-relaxed"
+                    rows={12}
+                    value={contexte}
+                    onChange={(e) => setContexte(e.target.value)}
+                    placeholder="Collez ici les articles, rapports ou tout autre texte de contexte..."
+                    required
+                  />
+                  <p className="mt-2 text-xs text-base-content/50">Ajoutez les informations utiles: faits, chiffres, citations et angle d analyse.</p>
+                </div>
+
+                <div className="sim-card">
+                  <button type="submit" className="btn btn-primary w-full sm:w-fit" disabled={!canSubmit}>
+                    {isLoading ? 'Simulation en cours...' : 'Lancer la simulation'}
+                  </button>
+
+                  {isLoading && (
+                    <div className="mt-4 flex flex-col gap-2">
+                      <progress className="progress progress-primary w-full" />
+                      <p className="text-sm text-base-content/60">{getStepLabel(pipelineStep, step3Progress)}</p>
+                    </div>
+                  )}
+
+                  {pipelineStep === 'error' && (
+                    <div role="alert" className="alert alert-error mt-4 text-sm">
+                      <span>{errorMessage}</span>
+                    </div>
+                  )}
+
+                  {pipelineStep === 'success' && result && (
+                    <div className="mt-4 flex flex-col gap-2">
+                      <div role="alert" className={`alert text-sm ${result.meta.failed_strates === 0 ? 'alert-success' : 'alert-warning'}`}>
+                        <span>
+                          Simulation terminee - {result.meta.successful_strates}/{result.meta.total_strates} strates reussies.
+                          {result.meta.failed_strates > 0 && ` (${result.meta.failed_strates} echouees)`}
+                        </span>
+                      </div>
+                      {result.meta.failed_strates > 0 && (
+                        <details className="text-xs text-base-content/50">
+                          <summary className="cursor-pointer select-none">Details des erreurs ({result.meta.failed_strates})</summary>
+                          <ul className="mt-1 flex flex-col gap-1 pl-2">
+                            {result.strate_results.filter(s => s.error).map((s, i) => (
+                              <li key={i}>
+                                <details>
+                                  <summary className="cursor-pointer select-none font-medium">
+                                    {s.strate_age_group} - {s.strate_langue} - {s.strate_region} - {s.strate_genre}
+                                  </summary>
+                                  <pre className="mt-1 pl-2 font-mono whitespace-pre-wrap break-all">{s.error}</pre>
+                                </details>
+                              </li>
+                            ))}
+                          </ul>
+                        </details>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </form>
+
+              {result && (
+                <div className="sim-card">
+                  <h2 className="text-sm font-medium">Distribution nationale estimee</h2>
+                  <pre className="mt-3 max-h-96 overflow-auto rounded-lg bg-base-200/80 p-4 text-xs">
+                    {JSON.stringify(result.national_distribution, null, 2)}
+                  </pre>
+                </div>
+              )}
+            </section>
+
+            <aside className="lg:sticky lg:top-6">
+              <div className="sim-card mb-5">
+                <h2 className="text-sm font-medium">Parcours de simulation</h2>
+                <ol className="mt-4 flex flex-col gap-3">
+                  {PIPELINE_FLOW.map((step, index) => {
+                    const isComplete = pipelineStep === 'success' || currentStepIndex > index
+                    const isCurrent = isLoading && currentStepIndex === index
+
+                    return (
+                      <li key={step} className={`rounded-lg border px-3 py-2 text-sm transition ${isCurrent ? 'border-primary/60 bg-primary/10 text-primary' : isComplete ? 'border-success/30 bg-success/10 text-success' : 'border-base-300/70 text-base-content/65'}`}>
+                        {getStepLabel(step, step3Progress)}
+                      </li>
+                    )
+                  })}
+                </ol>
+              </div>
+
+              <div className="sim-card">
+                <h2 className="text-sm font-medium">Apercu des entrees</h2>
+                <dl className="mt-4 grid grid-cols-2 gap-x-3 gap-y-2 text-sm">
+                  <dt className="text-base-content/55">Question</dt>
+                  <dd className="text-right">{question.trim().length > 0 ? 'Renseignee' : 'Vide'}</dd>
+                  <dt className="text-base-content/55">Choix</dt>
+                  <dd className="text-right">{normalizedChoices.length || 'Auto'}</dd>
+                  <dt className="text-base-content/55">Contexte</dt>
+                  <dd className="text-right">{contexte.trim().length} caracteres</dd>
+                </dl>
+              </div>
+            </aside>
+          </main>
+        ) : (
+          <main className="mt-8 grid gap-6 lg:grid-cols-[minmax(260px,0.95fr)_minmax(0,1.45fr)] lg:items-start">
+            <section className="sim-card lg:sticky lg:top-6">
+              <div className="flex items-center justify-between gap-2">
+                <h2 className="text-sm font-medium">Historique de session</h2>
+                <button
+                  type="button"
+                  className="btn btn-xs btn-ghost"
+                  onClick={() => setSessionLogs([])}
+                  disabled={sessionLogs.length === 0}
+                >
+                  Vider
+                </button>
+              </div>
+
+              {sessionLogs.length === 0 ? (
+                <p className="mt-4 text-sm text-base-content/60">Aucune simulation enregistree dans cette session.</p>
+              ) : (
+                <ul className="mt-4 flex max-h-[70vh] flex-col gap-2 overflow-auto pr-1">
+                  {sessionLogs.map(log => {
+                    const isSelected = selectedLog?.id === log.id
+                    return (
+                      <li key={log.id}>
+                        <button
+                          type="button"
+                          className={`sim-log-list-item ${isSelected ? 'sim-log-list-item-active' : ''}`}
+                          onClick={() => setSelectedLogId(log.id)}
+                        >
+                          <div className="flex items-center justify-between gap-3">
+                            <span className="line-clamp-1 text-left text-sm font-medium">{first120(log.question)}</span>
+                            <span className={`badge badge-xs ${log.status === 'success' ? 'badge-success' : 'badge-error'}`}>
+                              {log.status}
+                            </span>
+                          </div>
+                          <p className="mt-1 text-left text-xs text-base-content/55">
+                            {new Date(log.created_at).toLocaleString('fr-CA')}
+                          </p>
+                        </button>
+                      </li>
+                    )
+                  })}
+                </ul>
+              )}
+            </section>
+
+            <section className="sim-card sim-logs-detail">
+              {!selectedLog ? (
+                <p className="text-sm text-base-content/60">Selectionnez une simulation pour afficher les details.</p>
+              ) : (
+                <div className="flex flex-col gap-5">
+                  <div>
+                    <h2 className="text-sm font-medium">Simulation selectionnee</h2>
+                    <p className="mt-2 text-sm">{selectedLog.question}</p>
+                    <p className="mt-1 text-xs text-base-content/60">
+                      {new Date(selectedLog.created_at).toLocaleString('fr-CA')} - {selectedLog.status}
+                    </p>
+                    {selectedLog.error_message && (
+                      <div role="alert" className="alert alert-error mt-3 text-sm">
+                        <span>{selectedLog.error_message}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  <details className="sim-json-block" open>
+                    <summary>Entrees utilisateur</summary>
+                    <pre>{formatJson({ question: selectedLog.question, context: selectedLog.context, choices: selectedLog.choices })}</pre>
+                  </details>
+
+                  <div className="sim-log-section">
+                    <h3 className="text-sm font-medium">Questions filtrees et scorees</h3>
+                    {scoredQuestions.length === 0 ? (
+                      <p className="mt-2 text-xs text-base-content/60">Aucune question retournee.</p>
+                    ) : (
+                      <ul className="mt-2 flex flex-col gap-2">
+                        {scoredQuestions.map((item, index) => (
+                          <li key={`${String(item.id ?? index)}-${index}`} className="rounded-lg border border-base-300/60 px-3 py-2 text-xs">
+                            <p className="font-medium">{String(item.text ?? `Question ${index + 1}`)}</p>
+                            <p className="mt-1 text-base-content/70">
+                              ID: {String(item.id ?? 'n/a')} - Points LLM: {String(item.llm_points ?? 0)} - Similarite cosine: {String(item.cosine_similarity ?? 'n/a')}
+                            </p>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+
+                  <div className="sim-log-section">
+                    <h3 className="text-sm font-medium">Prompts par strate</h3>
+                    {stratePrompts.length === 0 ? (
+                      <p className="mt-2 text-xs text-base-content/60">Prompt dry-run indisponible pour cette simulation.</p>
+                    ) : (
+                      <details className="sim-json-block mt-2">
+                        <summary>Afficher {stratePrompts.length} prompts</summary>
+                        <ul className="mt-3 flex flex-col gap-2">
+                          {stratePrompts.map((prompt, index) => {
+                            const strateLabel = [
+                              prompt.strate_age_group,
+                              prompt.strate_langue,
+                              prompt.strate_region,
+                              prompt.strate_genre,
+                            ]
+                              .filter(Boolean)
+                              .join(' - ')
+
+                            return (
+                              <li key={`${strateLabel || 'strate'}-${index}`}>
+                                <details className="sim-json-block">
+                                  <summary>{strateLabel || `Strate ${index + 1}`}</summary>
+                                  <pre>{String(prompt.prompt ?? '')}</pre>
+                                </details>
+                              </li>
+                            )
+                          })}
+                        </ul>
+                      </details>
+                    )}
+                  </div>
+
+                  <div className="sim-log-section">
+                    <h3 className="text-sm font-medium">Raisonnements API par strate</h3>
+                    {strateReasonings.length === 0 ? (
+                      <p className="mt-2 text-xs text-base-content/60">Aucune reponse LLM disponible.</p>
+                    ) : (
+                      <details className="sim-json-block mt-2">
+                        <summary>Afficher les raisonnements ({strateReasonings.length})</summary>
+                        <ul className="mt-3 flex flex-col gap-2">
+                          {strateReasonings.map((entry, index) => {
+                            const llmResponse = isRecord(entry.llm_response) ? entry.llm_response : null
+                            const reasoning = llmResponse && typeof llmResponse.raisonnement === 'string'
+                              ? llmResponse.raisonnement
+                              : null
+                            const strateLabel = [
+                              entry.strate_age_group,
+                              entry.strate_langue,
+                              entry.strate_region,
+                              entry.strate_genre,
+                            ]
+                              .filter(Boolean)
+                              .join(' - ')
+
+                            return (
+                              <li key={`${strateLabel || 'reasoning'}-${index}`} className="rounded-lg border border-base-300/60 px-3 py-2 text-xs">
+                                <p className="font-medium">{strateLabel || `Strate ${index + 1}`}</p>
+                                <p className="mt-1 whitespace-pre-wrap text-base-content/75">
+                                  {reasoning ?? String(entry.error ?? 'Raisonnement non disponible')}
+                                </p>
+                              </li>
+                            )
+                          })}
+                        </ul>
+                      </details>
+                    )}
+                  </div>
+
+                  <div className="sim-log-section">
+                    <h3 className="text-sm font-medium">Payloads complets des etapes</h3>
+                    {(
+                      [
+                        selectedLog.pipeline.semantic_search,
+                        selectedLog.pipeline.fetch_strate_predictions,
+                        selectedLog.pipeline.llm_prompt_dry_run,
+                        selectedLog.pipeline.llm_sampling,
+                        selectedLog.pipeline.aggregate_final_distribution,
+                      ] as Array<ApiCallLog | null>
+                    )
+                      .filter((step): step is ApiCallLog => step !== null)
+                      .map(step => (
+                        <details key={step.step} className="sim-json-block mt-2">
+                          <summary>
+                            {step.step} - status {step.status ?? 'n/a'} - {step.duration_ms}ms
+                          </summary>
+                          <pre>{formatJson(step)}</pre>
+                        </details>
+                      ))}
+                  </div>
+
+                  <details className="sim-json-block">
+                    <summary>JSON complet de la simulation</summary>
+                    <pre>{formatJson(selectedLog)}</pre>
+                  </details>
+                </div>
+              )}
+            </section>
+          </main>
         )}
-      </main>
+      </div>
     </div>
   )
 }

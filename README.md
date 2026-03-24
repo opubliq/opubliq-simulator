@@ -121,7 +121,11 @@ Then edit `.env.local` and fill in:
 ```env
 VITE_SUPABASE_URL=https://your-project.supabase.co
 VITE_SUPABASE_PUBLISHABLE_KEY=your-publishable-key-from-settings
+# Optional legacy alias (same value)
+VITE_SUPABASE_ANON_KEY=your-publishable-key-from-settings
 ```
+
+For Netlify deployments (`base = frontend`), define these vars in **Netlify Site settings → Environment variables** so they are available during the frontend build.
 
 Note: The Gemini API key is entered by the user directly in the UI — it's not a project config variable.
 
