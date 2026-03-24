@@ -47,6 +47,16 @@
   background: color-mix(in oklch, var(--color-base-100) 88%, transparent);
 }
 
+.sim-switch .btn {
+  transition: background-color 180ms ease, border-color 180ms ease, color 180ms ease;
+}
+
+.sim-switch .btn.btn-ghost:hover {
+  background: color-mix(in oklch, var(--sim-accent-2) 18%, transparent);
+  border-color: color-mix(in oklch, var(--sim-accent-2) 65%, transparent);
+  color: color-mix(in oklch, var(--sim-accent-2) 85%, white 8%);
+}
+
 .sim-log-list-item {
   width: 100%;
   border: 1px solid color-mix(in oklch, var(--color-base-content) 14%, transparent);
