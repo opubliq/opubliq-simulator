@@ -151,8 +151,79 @@ interface SimulationLogEntry {
 
 const SESSION_LOG_STORAGE_KEY = 'opubliq.simulator.session-logs.v1'
 const SESSION_LOG_LIMIT = 20
+const FIXED_PROMPT_CONTEXT = 'Aucun contexte supplementaire'
+const MAX_CONTEXT_FILES = 8
+const CONTEXT_FILE_ACCEPT = '.pdf,.txt,.md,.markdown,.csv,.json,.xml,.html,.htm,.rtf,text/plain,text/markdown,application/pdf'
+const CONTEXT_FILE_ALLOWED_EXTENSIONS = new Set([
+  '.pdf',
+  '.txt',
+  '.md',
+  '.markdown',
+  '.csv',
+  '.json',
+  '.xml',
+  '.html',
+  '.htm',
+  '.rtf',
+])
+const CONTEXT_FILE_ALLOWED_MIME_TYPES = new Set([
+  'application/pdf',
+  'text/plain',
+  'text/markdown',
+  'text/csv',
+  'application/json',
+  'application/xml',
+  'text/xml',
+  'text/html',
+  'application/rtf',
+  'text/rtf',
+])
 
 type PageId = 'simulateur' | 'session_logs' | 'methodology'
+
+function parseContextUrls(urlsText: string): string[] {
+  return urlsText
+    .split('\n')
+    .map(url => normalizeText(url.trim()))
+    .filter(url => {
+      if (!url) {
+        return false
+      }
+
+      try {
+        const parsedUrl = new URL(url)
+        return parsedUrl.protocol === 'https:' || parsedUrl.protocol === 'http:'
+      } catch {
+        return false
+      }
+    })
+}
+
+function isAcceptedContextFile(file: File): boolean {
+  const lowerName = file.name.toLowerCase()
+  const lastDotIndex = lowerName.lastIndexOf('.')
+  const extension = lastDotIndex >= 0 ? lowerName.slice(lastDotIndex) : ''
+
+  return CONTEXT_FILE_ALLOWED_EXTENSIONS.has(extension) || CONTEXT_FILE_ALLOWED_MIME_TYPES.has(file.type)
+}
+
+function formatCapturedContext(rawContext: string, urls: string[], contextFiles: File[]): string {
+  const sections: string[] = []
+
+  if (rawContext.trim()) {
+    sections.push(`Texte libre:\n${rawContext.trim()}`)
+  }
+
+  if (urls.length > 0) {
+    sections.push(`URLs:\n${urls.map(url => `- ${url}`).join('\n')}`)
+  }
+
+  if (contextFiles.length > 0) {
+    sections.push(`Fichiers:\n${contextFiles.map(file => `- ${file.name}`).join('\n')}`)
+  }
+
+  return sections.join('\n\n')
+}
 
 function MethodologyPage() {
   return (
@@ -653,6 +724,8 @@ async function runPipeline(
 function App() {
   const [question, setQuestion] = useState('')
   const [contexte, setContexte] = useState('')
+  const [contextUrlsText, setContextUrlsText] = useState('')
+  const [contextFiles, setContextFiles] = useState<File[]>([])
   const [choicesText, setChoicesText] = useState('')
   const [activePage, setActivePage] = useState<PageId>('simulateur')
 
@@ -680,8 +753,41 @@ function App() {
     [effectiveSelectedLogId, sessionLogs],
   )
 
+  const normalizedContextUrls = useMemo(
+    () => parseContextUrls(contextUrlsText),
+    [contextUrlsText],
+  )
+
+  function handleContextFileSelection(event: React.ChangeEvent<HTMLInputElement>) {
+    const selectedFiles = Array.from(event.target.files ?? []).filter(isAcceptedContextFile)
+
+    if (selectedFiles.length === 0) {
+      return
+    }
+
+    const knownFiles = new Set(contextFiles.map(file => `${file.name}-${file.size}-${file.lastModified}`))
+    const dedupedNewFiles = selectedFiles.filter(file => {
+      const key = `${file.name}-${file.size}-${file.lastModified}`
+      return !knownFiles.has(key)
+    })
+
+    setContextFiles(prev => [...prev, ...dedupedNewFiles].slice(0, MAX_CONTEXT_FILES))
+    event.target.value = ''
+  }
+
+  function removeContextFile(fileIndex: number) {
+    setContextFiles(prev => prev.filter((_, index) => index !== fileIndex))
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+    const normalizedQuestion = normalizeText(question.trim())
+    const normalizedRawContext = normalizeText(contexte.trim())
+    const capturedContext = formatCapturedContext(
+      normalizedRawContext,
+      normalizedContextUrls,
+      contextFiles,
+    )
     const choices = choicesText
       .split('\n')
       .map(c => c.trim())
@@ -695,8 +801,8 @@ function App() {
 
     try {
       const simulationRun = await runPipeline(
-        normalizeText(question.trim()),
-        normalizeText(contexte.trim()),
+        normalizedQuestion,
+        FIXED_PROMPT_CONTEXT,
         choices.length > 0 ? choices : undefined,
         setPipelineStep,
         setStep3Progress,
@@ -708,8 +814,8 @@ function App() {
         id: crypto.randomUUID(),
         created_at: new Date().toISOString(),
         status: 'success',
-        question: normalizeText(question.trim()),
-        context: normalizeText(contexte.trim()),
+        question: normalizedQuestion,
+        context: capturedContext,
         choices,
         error_message: null,
         result: simulationRun.result,
@@ -727,8 +833,8 @@ function App() {
         id: crypto.randomUUID(),
         created_at: new Date().toISOString(),
         status: 'error',
-        question: normalizeText(question.trim()),
-        context: normalizeText(contexte.trim()),
+        question: normalizedQuestion,
+        context: capturedContext,
         choices,
         error_message: normalizeText(message),
         result: null,
@@ -741,7 +847,9 @@ function App() {
   }
 
   const isLoading = !['idle', 'success', 'error'].includes(pipelineStep)
-  const canSubmit = question.trim() && contexte.trim() && !isLoading
+  const hasContextInput =
+    contexte.trim().length > 0 || normalizedContextUrls.length > 0 || contextFiles.length > 0
+  const canSubmit = question.trim() && hasContextInput && !isLoading
   const currentStepIndex = PIPELINE_FLOW.indexOf(pipelineStep)
   const normalizedChoices = choicesText
     .split('\n')
@@ -851,16 +959,61 @@ function App() {
 
                 <div className="sim-card">
                   <label className="text-sm font-medium" htmlFor="contexte">Contexte</label>
+                  <p className="mt-2 text-xs text-base-content/60">
+                    Cette étape est limitée au UI: le prompt utilise temporairement le texte fixe
+                    {' '}
+                    <code>{FIXED_PROMPT_CONTEXT}</code>.
+                  </p>
                   <textarea
                     id="contexte"
                     className="textarea textarea-bordered mt-2 w-full text-sm leading-relaxed"
-                    rows={12}
+                    rows={4}
                     value={contexte}
                     onChange={(e) => setContexte(e.target.value)}
-                    placeholder="Collez ici les articles, rapports ou tout autre texte de contexte..."
-                    required
+                    placeholder="Texte libre de contexte (optionnel si vous ajoutez une URL ou un fichier)..."
                   />
-                   <p className="mt-2 text-xs text-base-content/50">Ajoutez les informations utiles : faits, chiffres, citations et angle d'analyse.</p>
+                  <label className="mt-4 block text-sm font-medium" htmlFor="context-urls">URLs (une par ligne)</label>
+                  <textarea
+                    id="context-urls"
+                    className="textarea textarea-bordered mt-2 w-full text-sm leading-relaxed"
+                    rows={8}
+                    value={contextUrlsText}
+                    onChange={(e) => setContextUrlsText(e.target.value)}
+                    placeholder="https://exemple.com/article-1\nhttps://exemple.com/article-2"
+                  />
+                  <p className="mt-2 text-xs text-base-content/50">
+                    Les URL valides (http/https) sont gardées pour la prochaine étape backend.
+                  </p>
+
+                  <label className="mt-4 block text-sm font-medium" htmlFor="context-files">Fichiers</label>
+                  <input
+                    id="context-files"
+                    type="file"
+                    accept={CONTEXT_FILE_ACCEPT}
+                    multiple
+                    className="file-input file-input-bordered mt-2 w-full text-sm"
+                    onChange={handleContextFileSelection}
+                  />
+                  <p className="mt-2 text-xs text-base-content/50">
+                    Jusqu'à {MAX_CONTEXT_FILES} fichiers peuvent être attachés (pdf, txt, md, etc.).
+                  </p>
+
+                  {contextFiles.length > 0 && (
+                    <ul className="mt-3 flex flex-col gap-2">
+                      {contextFiles.map((file, index) => (
+                        <li key={`${file.name}-${file.size}-${file.lastModified}`} className="flex items-center justify-between gap-3 rounded-lg border border-base-300/70 px-3 py-2 text-xs">
+                          <span className="truncate">{file.name}</span>
+                          <button
+                            type="button"
+                            className="btn btn-xs btn-ghost"
+                            onClick={() => removeContextFile(index)}
+                          >
+                            Retirer
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
                 </div>
 
                 <div className="sim-card">
@@ -943,10 +1096,14 @@ function App() {
                 <dl className="mt-4 grid grid-cols-2 gap-x-3 gap-y-2 text-sm">
                   <dt className="text-base-content/55">Question</dt>
                   <dd className="text-right">{question.trim().length > 0 ? 'Renseignée' : 'Vide'}</dd>
-                   <dt className="text-base-content/55">Choix</dt>
-                   <dd className="text-right">{normalizedChoices.length || 'Auto'}</dd>
-                   <dt className="text-base-content/55">Contexte</dt>
-                   <dd className="text-right">{contexte.trim().length} caractères</dd>
+                    <dt className="text-base-content/55">Choix</dt>
+                    <dd className="text-right">{normalizedChoices.length || 'Auto'}</dd>
+                    <dt className="text-base-content/55">Texte libre</dt>
+                    <dd className="text-right">{contexte.trim().length} caractères</dd>
+                    <dt className="text-base-content/55">URLs</dt>
+                    <dd className="text-right">{normalizedContextUrls.length}</dd>
+                    <dt className="text-base-content/55">Fichiers</dt>
+                    <dd className="text-right">{contextFiles.length}</dd>
                 </dl>
               </div>
             </aside>
