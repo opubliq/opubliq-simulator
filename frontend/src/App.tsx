@@ -737,13 +737,13 @@ function App() {
                 className={`btn btn-sm ${activePage === 'session_logs' ? 'btn-primary' : 'btn-ghost'}`}
                 onClick={() => setActivePage('session_logs')}
               >
-                Journaux ({sessionLogs.length})
+                Logs ({sessionLogs.length})
               </button>
             </div>
           </div>
 
           <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
-            {activePage === 'simulateur' ? 'Simulateur de sondage' : 'Journaux de session'}
+            {activePage === 'simulateur' ? 'Simulateur de sondage' : 'Logs'}
           </h1>
 
           <p className="max-w-3xl text-sm text-base-content/70 sm:text-base">
