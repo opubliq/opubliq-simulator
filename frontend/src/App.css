@@ -120,3 +120,43 @@
 .textarea:focus-within {
   --input-color: #56d1d7;
 }
+
+.sim-chart-tooltip {
+  min-width: 12rem;
+  border: 1px solid color-mix(in oklch, #111217 70%, white 8%);
+  background: color-mix(in oklch, #111217 92%, black 8%);
+  border-radius: 0.7rem;
+  padding: 0.55rem 0.7rem;
+  box-shadow: 0 8px 22px color-mix(in oklch, black 55%, transparent);
+}
+
+.sim-chart-tooltip-title {
+  margin: 0;
+  font-size: 0.73rem;
+  color: color-mix(in oklch, white 78%, transparent);
+}
+
+.sim-chart-tooltip-values {
+  list-style: none;
+  margin: 0.45rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.sim-chart-tooltip-values li {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-size: 0.72rem;
+  color: color-mix(in oklch, white 84%, transparent);
+}
+
+.sim-chart-tooltip-meta {
+  margin: 0.45rem 0 0;
+  padding-top: 0.4rem;
+  border-top: 1px solid color-mix(in oklch, white 18%, transparent);
+  font-size: 0.68rem;
+  color: color-mix(in oklch, white 70%, transparent);
+}

@@ -1,4 +1,15 @@
 import { useEffect, useMemo, useState } from 'react'
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Cell,
+  Legend,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts'
 import './App.css'
 
 const RAW_SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string | undefined
@@ -69,6 +80,55 @@ interface LlmStrateResult {
   error: string | null
 }
 
+interface MultinomialLlmResponse {
+  distribution: Record<string, number>
+  margin_of_error: number
+}
+
+interface NumericLlmResponse {
+  mean: number
+  margin_of_error: number
+}
+
+type UiLlmResponse = MultinomialLlmResponse | NumericLlmResponse
+
+type SesDimensionKey = 'strate_age_group' | 'strate_langue' | 'strate_region' | 'strate_genre'
+
+interface NationalChartDatum {
+  option: string
+  value: number
+}
+
+interface SesChartDatum {
+  segment: string
+  margin_of_error: number
+  strate_count: number
+  [option: string]: number | string
+}
+
+interface TooltipPayloadEntry {
+  color?: string
+  name?: unknown
+  payload?: unknown
+  value?: unknown
+}
+
+interface TooltipCardProps {
+  active?: boolean
+  label?: string | number
+  mode: 'national' | 'ses'
+  payload?: TooltipPayloadEntry[]
+}
+
+const SES_DIMENSIONS: Array<{ key: SesDimensionKey; label: string }> = [
+  { key: 'strate_age_group', label: 'Âge' },
+  { key: 'strate_langue', label: 'Langue' },
+  { key: 'strate_region', label: 'Région' },
+  { key: 'strate_genre', label: 'Genre' },
+]
+
+const RESPONSE_PALETTE = ['#56d1d7', '#f0695a', '#f7b267', '#8bd3dd', '#b8c0ff', '#89d99d', '#f4a4c0']
+
 interface Step3Progress {
   completed: number
   total: number
@@ -101,7 +161,7 @@ function getStepLabel(step: PipelineStep, step3Progress: Step3Progress | null): 
 export interface SimulationResult {
   question: string
   question_type: 'multinomial' | 'numeric'
-  national_distribution: Record<string, number>
+  national_distribution: Record<string, number> | { mean: number }
   national_margin_of_error: number
   strate_results: {
     strate_age_group: string
@@ -109,7 +169,7 @@ export interface SimulationResult {
     strate_region: string
     strate_genre: string
     weight: number | null
-    llm_response: Record<string, unknown> | null
+    llm_response: UiLlmResponse | null
     had_prior: boolean
     error: string | null
   }[]
@@ -561,6 +621,171 @@ function first120(value: string): string {
   return `${text.slice(0, 117)}...`
 }
 
+function toPercent(value: number): number {
+  return Number((value * 100).toFixed(2))
+}
+
+function formatPercent(value: number): string {
+  return `${value.toFixed(1)}%`
+}
+
+function formatSegmentLabel(value: string): string {
+  return value
+    .replace(/_/g, ' ')
+    .replace(/\b\w/g, letter => letter.toUpperCase())
+}
+
+function isMultinomialLlmResponse(value: unknown): value is MultinomialLlmResponse {
+  if (!isRecord(value) || !isRecord(value.distribution)) {
+    return false
+  }
+
+  const margin = value.margin_of_error
+  if (typeof margin !== 'number' || Number.isNaN(margin)) {
+    return false
+  }
+
+  return Object.values(value.distribution).every(entry => typeof entry === 'number' && Number.isFinite(entry))
+}
+
+function getResponseOptions(result: SimulationResult): string[] {
+  const nationalDistribution = result.national_distribution
+  const nationalOptions =
+    'mean' in nationalDistribution
+      ? []
+      : Object.keys(nationalDistribution).filter(option => option !== 'mean')
+  if (nationalOptions.length > 0) {
+    return nationalOptions
+  }
+
+  const options = new Set<string>()
+  for (const strate of result.strate_results) {
+    if (isMultinomialLlmResponse(strate.llm_response)) {
+      for (const option of Object.keys(strate.llm_response.distribution)) {
+        options.add(option)
+      }
+    }
+  }
+  return Array.from(options)
+}
+
+function buildNationalChartData(result: SimulationResult, options: string[]): NationalChartDatum[] {
+  const nationalDistribution = result.national_distribution
+  if ('mean' in nationalDistribution) {
+    return []
+  }
+
+  return options.map(option => {
+    const rawValue = nationalDistribution[option]
+    const value = typeof rawValue === 'number' && Number.isFinite(rawValue) ? toPercent(rawValue) : 0
+    return { option, value }
+  })
+}
+
+function buildSesChartData(result: SimulationResult, dimension: SesDimensionKey, options: string[]): SesChartDatum[] {
+  interface SegmentAccumulator {
+    segment: string
+    totalWeight: number
+    strateCount: number
+    marginSquareSum: number
+    optionSums: Record<string, number>
+  }
+
+  const bySegment = new Map<string, SegmentAccumulator>()
+
+  for (const strate of result.strate_results) {
+    if (!isMultinomialLlmResponse(strate.llm_response)) {
+      continue
+    }
+
+    const weight = typeof strate.weight === 'number' && Number.isFinite(strate.weight) ? strate.weight : null
+    if (weight === null || weight <= 0) {
+      continue
+    }
+
+    const segment = String(strate[dimension])
+    const existing = bySegment.get(segment)
+    const current = existing ?? {
+      segment,
+      totalWeight: 0,
+      strateCount: 0,
+      marginSquareSum: 0,
+      optionSums: Object.fromEntries(options.map(option => [option, 0])),
+    }
+
+    for (const option of options) {
+      const probability = strate.llm_response.distribution[option] ?? 0
+      current.optionSums[option] += probability * weight
+    }
+
+    current.totalWeight += weight
+    current.strateCount += 1
+    current.marginSquareSum += (weight * strate.llm_response.margin_of_error) ** 2
+    bySegment.set(segment, current)
+  }
+
+  return Array.from(bySegment.values())
+    .map(segmentData => {
+      const row: SesChartDatum = {
+        segment: formatSegmentLabel(segmentData.segment),
+        margin_of_error:
+          segmentData.totalWeight > 0
+            ? toPercent(Math.sqrt(segmentData.marginSquareSum) / segmentData.totalWeight)
+            : 0,
+        strate_count: segmentData.strateCount,
+      }
+
+      for (const option of options) {
+        row[option] =
+          segmentData.totalWeight > 0
+            ? toPercent(segmentData.optionSums[option] / segmentData.totalWeight)
+            : 0
+      }
+
+      return row
+    })
+    .sort((a, b) => String(a.segment).localeCompare(String(b.segment), 'fr'))
+}
+
+function TooltipCard({ active, label, mode, payload }: TooltipCardProps) {
+  if (!active || !payload || payload.length === 0) {
+    return null
+  }
+
+  const rowPayload = payload[0]?.payload
+  const margin =
+    isRecord(rowPayload) && typeof rowPayload.margin_of_error === 'number' ? rowPayload.margin_of_error : null
+  const strateCount =
+    isRecord(rowPayload) && typeof rowPayload.strate_count === 'number' ? rowPayload.strate_count : null
+
+  return (
+    <div className="sim-chart-tooltip">
+      {label && <p className="sim-chart-tooltip-title">{String(label)}</p>}
+      <ul className="sim-chart-tooltip-values">
+        {payload.map((entry) => {
+          if (typeof entry.value !== 'number' || (typeof entry.name !== 'string' && typeof entry.name !== 'number')) {
+            return null
+          }
+
+          const name = String(entry.name)
+
+          return (
+            <li key={name}>
+              <span style={{ color: entry.color ?? 'inherit' }}>{name}</span>
+              <span>{formatPercent(entry.value)}</span>
+            </li>
+          )
+        })}
+      </ul>
+      {mode === 'ses' && margin !== null && (
+        <p className="sim-chart-tooltip-meta">
+          Marge d'erreur: ±{formatPercent(margin)}{strateCount !== null ? ` · ${strateCount} strate(s)` : ''}
+        </p>
+      )}
+    </div>
+  )
+}
+
 async function runPipeline(
   question: string,
   context: string,
@@ -877,6 +1102,33 @@ function App() {
       ? (selectedLog.pipeline.llm_sampling.response_payload.strate_results as Array<Record<string, unknown>>)
       : []
 
+  const responseOptions = useMemo(
+    () => (result && result.question_type === 'multinomial' ? getResponseOptions(result) : []),
+    [result],
+  )
+
+  const responseColorMap = useMemo(
+    () => Object.fromEntries(responseOptions.map((option, index) => [option, RESPONSE_PALETTE[index % RESPONSE_PALETTE.length]])),
+    [responseOptions],
+  )
+
+  const nationalChartData = useMemo(
+    () => (result && result.question_type === 'multinomial' ? buildNationalChartData(result, responseOptions) : []),
+    [result, responseOptions],
+  )
+
+  const sesChartDataByDimension = useMemo(() => {
+    if (!result || result.question_type !== 'multinomial') {
+      return [] as Array<{ key: SesDimensionKey; label: string; data: SesChartDatum[] }>
+    }
+
+    return SES_DIMENSIONS.map(dimension => ({
+      key: dimension.key,
+      label: dimension.label,
+      data: buildSesChartData(result, dimension.key, responseOptions),
+    }))
+  }, [result, responseOptions])
+
   return (
     <div className="sim-page min-h-screen">
       <div className="mx-auto flex max-w-6xl flex-col px-4 py-8 sm:px-8 sm:py-10 lg:px-10">
@@ -922,7 +1174,8 @@ function App() {
         </header>
 
         {activePage === 'simulateur' ? (
-          <main className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,1.55fr)_minmax(280px,1fr)] lg:items-start">
+          <>
+            <main className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,1.55fr)_minmax(280px,1fr)] lg:items-start">
             <section className="flex flex-col gap-6">
               <form onSubmit={handleSubmit} className="flex flex-col gap-5">
                 <div className="sim-card">
@@ -1064,14 +1317,6 @@ function App() {
                 </div>
               </form>
 
-              {result && (
-                <div className="sim-card">
-                   <h2 className="text-sm font-medium">Distribution nationale estimée</h2>
-                  <pre className="mt-3 max-h-96 overflow-auto rounded-lg bg-base-200/80 p-4 text-xs">
-                    {JSON.stringify(result.national_distribution, null, 2)}
-                  </pre>
-                </div>
-              )}
             </section>
 
             <aside className="lg:sticky lg:top-6">
@@ -1108,6 +1353,90 @@ function App() {
               </div>
             </aside>
           </main>
+
+            {result && result.question_type === 'multinomial' && (
+              <section className="mt-6 grid gap-6">
+              <div className="sim-card">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <h2 className="text-base font-semibold">Distribution nationale estimée</h2>
+                  <p className="text-xs text-base-content/60">
+                    Marge d'erreur nationale: ±{formatPercent(toPercent(result.national_margin_of_error))}
+                  </p>
+                </div>
+                <div className="mt-4 h-80 w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={nationalChartData} layout="vertical" margin={{ top: 8, right: 16, left: 6, bottom: 4 }}>
+                      <CartesianGrid strokeDasharray="4 4" stroke="color-mix(in oklch, var(--color-base-content) 24%, transparent)" />
+                      <XAxis type="number" domain={[0, 100]} tickFormatter={formatPercent} />
+                      <YAxis type="category" dataKey="option" width={180} interval={0} />
+                      <Tooltip
+                        cursor={{ fill: 'color-mix(in oklch, var(--color-primary) 18%, transparent)' }}
+                        content={(props) => <TooltipCard {...props} mode="national" />}
+                      />
+                      <Bar dataKey="value" name="National" radius={[0, 8, 8, 0]}>
+                        {nationalChartData.map(entry => (
+                          <Cell key={entry.option} fill={responseColorMap[entry.option] ?? RESPONSE_PALETTE[0]} />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+
+              <div className="grid gap-6 xl:grid-cols-2">
+                {sesChartDataByDimension.map(dimension => (
+                  <div key={dimension.key} className="sim-card">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <h3 className="text-sm font-semibold">Répartition par {dimension.label}</h3>
+                      <p className="text-xs text-base-content/60">Barres empilées par option de réponse</p>
+                    </div>
+                    <div className="mt-4 h-[24rem] w-full">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={dimension.data} margin={{ top: 8, right: 8, left: 0, bottom: 24 }}>
+                          <CartesianGrid strokeDasharray="4 4" stroke="color-mix(in oklch, var(--color-base-content) 24%, transparent)" />
+                          <XAxis dataKey="segment" interval={0} angle={-18} textAnchor="end" height={56} />
+                          <YAxis domain={[0, 100]} tickFormatter={formatPercent} />
+                          <Tooltip
+                            cursor={{ fill: 'color-mix(in oklch, var(--color-primary) 18%, transparent)' }}
+                            content={(props) => <TooltipCard {...props} mode="ses" />}
+                          />
+                          <Legend />
+                          {responseOptions.map(option => (
+                            <Bar
+                              key={`${dimension.key}-${option}`}
+                              dataKey={option}
+                              stackId="responses"
+                              fill={responseColorMap[option] ?? RESPONSE_PALETTE[0]}
+                            />
+                          ))}
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <details className="sim-json-block">
+                <summary>Données brutes (distribution nationale)</summary>
+                <pre>{formatJson(result.national_distribution)}</pre>
+              </details>
+              </section>
+            )}
+
+            {result && result.question_type === 'numeric' && (
+              <section className="mt-6">
+                <div className="sim-card">
+                  <h2 className="text-base font-semibold">Résultat numérique national</h2>
+                  <p className="mt-2 text-sm text-base-content/70">
+                    Moyenne estimée: <strong>{('mean' in result.national_distribution ? result.national_distribution.mean : 0).toFixed(2)}</strong>
+                  </p>
+                  <p className="text-sm text-base-content/70">
+                    Marge d'erreur nationale: ±{result.national_margin_of_error.toFixed(2)}
+                  </p>
+                </div>
+              </section>
+            )}
+          </>
         ) : activePage === 'session_logs' ? (
           <main className="mt-8 grid gap-6 lg:grid-cols-[minmax(260px,0.95fr)_minmax(0,1.45fr)] lg:items-start">
             <section className="sim-card lg:sticky lg:top-6">
