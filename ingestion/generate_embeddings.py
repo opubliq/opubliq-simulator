@@ -19,6 +19,8 @@ import os
 import sys
 import time
 import json
+import re
+import unicodedata
 import urllib.request
 from pathlib import Path
 
@@ -42,10 +44,50 @@ OPENROUTER_EMBEDDINGS_URL = "https://openrouter.ai/api/v1/embeddings"
 DEFAULT_BATCH_SIZE = 100
 DEFAULT_SLEEP = 1.0  # seconds between batches
 
+STOPWORDS = {
+    "a", "au", "aux", "avec", "ce", "cet", "cette", "ces", "comme", "contre", "dans", "doit", "doivent",
+    "de", "des", "did", "do", "does", "du", "elle", "en", "entre", "est", "ete", "etes", "et", "etre",
+    "eux", "fait", "faites", "il", "je", "la", "le", "les", "leur", "leurs", "lui", "ma", "mais", "me",
+    "meme", "mes", "moins", "moi", "mon", "ne", "ni", "nos", "notre", "nous", "on", "ou", "par", "pas",
+    "plus", "plutot", "pour", "qu", "que", "quel", "quelle", "quelles", "quels", "qui", "sa", "sans",
+    "se", "ses", "si", "son", "sont", "sur", "ta", "te", "tes", "toi", "ton", "tout", "tous", "toutes",
+    "tres", "un", "une", "vos", "votre", "vous", "what", "which", "who", "whom", "why", "when", "where",
+    "you", "your",
+    "y", "against", "an", "and", "are", "as", "at", "avait", "avoir", "be", "can", "could", "by", "for", "from", "had",
+    "has", "have", "in", "is", "it", "of", "on", "or", "should", "that", "the", "these", "this", "those",
+    "to", "will", "with", "would", "favor", "favour", "oppose",
+}
+
 
 # ---------------------------------------------------------------------------
 # OpenRouter embeddings client
 # ---------------------------------------------------------------------------
+
+def strip_diacritics(value: str) -> str:
+    return "".join(ch for ch in unicodedata.normalize("NFD", value) if unicodedata.category(ch) != "Mn")
+
+
+def extract_content_terms(text: str) -> list[str]:
+    normalized = strip_diacritics(text.lower())
+    tokens = re.split(r"[^a-z0-9]+", normalized)
+
+    seen: set[str] = set()
+    terms: list[str] = []
+    for token in tokens:
+        if len(token) < 2 or token in STOPWORDS or token in seen:
+            continue
+        seen.add(token)
+        terms.append(token)
+
+    return terms
+
+
+def build_embedding_input(text: str) -> str:
+    trimmed = text.strip()
+    terms = extract_content_terms(trimmed)[:24]
+    if not terms:
+        return trimmed
+    return f"{trimmed}\n\nTermes_cles: {' '.join(terms)}"
 
 def embed_batch(api_key: str, texts: list[str]) -> list[list[float]]:
     """Embed a batch of texts using OpenRouter (multilingual-e5-large-instruct)."""
@@ -172,7 +214,7 @@ def main():
     for i in range(0, total, args.batch_size):
         batch = questions[i : i + args.batch_size]
         ids = [q["id"] for q in batch]
-        texts = [q["text"] for q in batch]
+        texts = [build_embedding_input(q["text"]) for q in batch]
 
         batch_num = i // args.batch_size + 1
         total_batches = (total + args.batch_size - 1) // args.batch_size

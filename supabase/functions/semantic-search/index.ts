@@ -4,6 +4,10 @@ import {
   type ParsedLLMScores,
   type QuestionCandidate,
 } from "./scoring.ts";
+import {
+  buildEmbeddingInput,
+  extractContentTerms,
+} from "./text_preprocessing.ts";
 
 const OPENROUTER_EMBEDDING_MODEL = "openai/text-embedding-3-small";
 const OPENROUTER_LLM_MODEL = "meta-llama/llama-3.1-8b-instruct";
@@ -62,14 +66,19 @@ async function scoreCandidatesWithLLM(
   candidates: QuestionCandidate[],
   openRouterApiKey: string,
 ): Promise<ParsedLLMScores> {
+  const userTerms = extractContentTerms(userQuestion).slice(0, 12).join(", ");
   const candidateList = candidates
-    .map((c, i) => `${i + 1}. [ID:${c.id}] "${c.text}"`)
+    .map((c, i) => {
+      const terms = extractContentTerms(c.text).slice(0, 10).join(", ");
+      return `${i + 1}. [ID:${c.id}] "${c.text}" | key terms: ${terms || "none"}`;
+    })
     .join("\n");
 
   const prompt =
     `You are helping assess how relevant historical survey questions are to a new fictional survey question.
 
 New question: "${userQuestion}"
+Key terms in new question: ${userTerms || "none"}
 
 You have 100 relevance points to distribute across the ${candidates.length} candidate historical questions below. Assign points to questions that would genuinely help predict how people answer the new question — based on:
 - Topical similarity (same issue/policy area)
@@ -77,6 +86,8 @@ You have 100 relevance points to distribute across the ${candidates.length} cand
 - Predictive value (knowing someone's answer to this question helps predict their answer to the new one)
 
 IMPORTANT: Do NOT assign all 100 points if the questions are not strongly relevant. If the candidates collectively cover the new question poorly, the total should reflect that — assign only as many points as the evidence warrants. Unassigned points represent attitudes not captured by the available data.
+
+Also ignore generic wording and framing stopwords (for example: "pour", "contre", "for", "against", "are you in favor"). Focus on substantive topic terms.
 
 Return ONLY a JSON object mapping each question ID to its integer point allocation. Only include questions with points > 0. The values must sum to at most 100.
 Example: {"<id>": <points>, ...}
@@ -177,8 +188,9 @@ Deno.serve(async (req: Request) => {
 
   try {
     // Step 1a: Generate embedding for user question
+    const embeddingInput = buildEmbeddingInput(question.trim());
     const embedding = await generateEmbedding(
-      question.trim(),
+      embeddingInput,
       openRouterApiKey,
     );
 
@@ -218,12 +230,32 @@ Deno.serve(async (req: Request) => {
       openRouterApiKey,
     );
 
-    // Merge cosine similarity + LLM points; only include questions with points > 0
+    // Merge cosine similarity + LLM points; if the LLM assigns no points, fallback to the strongest pgvector match
+    const llmScores = { ...llmResult.scoresById };
+    if (Object.keys(llmScores).length === 0) {
+      let fallbackCandidate: QuestionCandidate | null = null;
+      for (const candidate of typedCandidates) {
+        if (
+          fallbackCandidate === null ||
+          candidate.cosine_similarity > fallbackCandidate.cosine_similarity
+        ) {
+          fallbackCandidate = candidate;
+        }
+      }
+
+      if (fallbackCandidate) {
+        llmScores[fallbackCandidate.id] = 1;
+        console.warn(
+          "[semantic-search] LLM returned no scores, applying 1-point fallback based on cosine similarity",
+        );
+      }
+    }
+
     const scored: ScoredQuestion[] = typedCandidates
-      .filter((c) => (llmResult.scoresById[c.id] ?? 0) > 0)
+      .filter((c) => (llmScores[c.id] ?? 0) > 0)
       .map((c) => ({
         ...c,
-        llm_points: llmResult.scoresById[c.id],
+        llm_points: llmScores[c.id] ?? 0,
       }));
 
     console.log("[semantic-search] LLM scoring diagnostics", {
